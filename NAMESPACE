@@ -1,0 +1,2 @@
+useDynLib(GenAlgPLS)
+exportPattern("^[[:alpha:]]+")

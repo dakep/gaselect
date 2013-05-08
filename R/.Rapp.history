@@ -1,0 +1,470 @@
+match.arg("si", c("simpls"))
+match.arg("As", c("simpls"))
+genAlgEvalControl <- function(numReplications = 2, numSegments = 4, plsMethod = c("simpls"), userEvalFUN = NULL) {#
+	useUserSuppliedFunction <- (!missing(userEvalFUN) && is.function(userEvalFUN));#
+	plsMethod <- match.arg(plsMethod);#
+	ctrl <- list(#
+		"useUserSuppliedFunction" = useUserSuppliedFunction,#
+		"numReplications" = numReplications,#
+		"numSegments" = numSegments,#
+		"plsMethod" = plsMethod,#
+	);#
+	if(useUserSuppliedFunction == TRUE) {#
+		ctrl["userEvalFunction"] <- userEvalFUN;#
+	}#
+	class(ctrl, "genAlgEvaluator-control");#
+	return(ctrl);#
+}
+genAlgEvalControl <- function(numReplications = 2, numSegments = 4, plsMethod = c("simpls"), userEvalFUN = NULL) {#
+	useUserSuppliedFunction <- (!missing(userEvalFUN) && is.function(userEvalFUN));#
+	plsMethod <- match.arg(plsMethod);#
+	ctrl <- list(#
+		"useUserSuppliedFunction" = useUserSuppliedFunction,#
+		"numReplications" = numReplications,#
+		"numSegments" = numSegments,#
+		"plsMethod" = plsMethod#
+	);#
+	if(useUserSuppliedFunction == TRUE) {#
+		ctrl["userEvalFunction"] <- userEvalFUN;#
+	}#
+	class(ctrl, "genAlgEvaluator-control");#
+	return(ctrl);#
+}
+genAlgEvalControl <- function(numReplications = 2, numSegments = 4, plsMethod = c("simpls"), userEvalFUN = NULL) {#
+	useUserSuppliedFunction <- (!missing(userEvalFUN) && is.function(userEvalFUN));#
+	plsMethod <- match.arg(plsMethod);#
+	ctrl <- list(#
+		"useUserSuppliedFunction" = useUserSuppliedFunction,#
+		"numReplications" = numReplications,#
+		"numSegments" = numSegments,#
+		"plsMethod" = plsMethod#
+	);#
+	if(useUserSuppliedFunction == TRUE) {#
+		ctrl["userEvalFunction"] <- userEvalFUN;#
+	}#
+	class(ctrl) <- "genAlgEvaluator-control";#
+	return(ctrl);#
+}
+genAlgEvalControl(plsMethod = "Asd")
+genAlgEvalControl(plsMethod = "si")
+genAlgEvalControl <- function(numReplications = 2, numSegments = 4, plsMethod = c("simpls"), userEvalFUN = NULL) {#
+	useUserSuppliedFunction <- (!missing(userEvalFUN) && is.function(userEvalFUN));#
+	plsMethod <- match.arg(plsMethod);#
+	ctrl <- list(#
+		"useUserSuppliedFunction" = useUserSuppliedFunction,#
+		"numReplications" = numReplications,#
+		"numSegments" = numSegments,#
+		"plsMethod" = plsMethod,#
+		"userEvalFunction" = NULL#
+	);#
+	if(useUserSuppliedFunction == TRUE) {#
+		ctrl["userEvalFunction"] <- userEvalFUN;#
+	}#
+	class(ctrl) <- "genAlgEvaluator-control";#
+	return(ctrl);#
+}
+genAlgEvalControl <- function(numReplications = 2, numSegments = 4, plsMethod = c("simpls"), userEvalFUN = NULL) {#
+	useUserSuppliedFunction <- (!missing(userEvalFUN) && is.function(userEvalFUN));#
+	if(useUserSuppliedFunction != TRUE) {#
+		userEvalFUN = NULL;#
+	}#
+	plsMethod <- match.arg(plsMethod);#
+	ctrl <- list(#
+		"useUserSuppliedFunction" = useUserSuppliedFunction,#
+		"numReplications" = numReplications,#
+		"numSegments" = numSegments,#
+		"plsMethod" = plsMethod,#
+		"userEvalFunction" = userEvalFUN#
+	);#
+	class(ctrl) <- "genAlgEvaluator-control";#
+	return(ctrl);#
+}
+genAlgEvalControl(userEvalFUN = mean)
+genAlgControl <- function(elitism = 10, mutationProbability = 0.01, onesRatio = 0.2, verbosity = 0) {#
+	maxVal <- 2^16; #
+	if(elitism < 0 || elitism > maxVal) {#
+		warning("Not storing best solutions from all generations. 'elitism' should be between 0 and ", maxVal);#
+	}#
+	if(mutationProbability < 0 || mutationProbability >= 1) {#
+		stop("The mutation probability must be between 0 and 1 (excluded).");#
+	}#
+	if(onesRatio < 0 || onesRatio >= 1) {#
+		stop("The ones ratio must be between 0 and 1 (excluded).");#
+	}#
+	if(verbosity < 0) {#
+		verbosity = 0;#
+		warning("Verbosity can not be less than 0 and thus will be set to 0");#
+	}#
+	if(verbosity > 3) {#
+		verbosity = 3;#
+		warning("Verbosity can not be greater than 3 and will thus be set to 3");#
+	}#
+	ctrl <- list(#
+		"elitism" = elitism,#
+		"mutationProb" = mutationProbability,#
+		"onesRatio" = onesRatio,#
+		"verbosity" = verbosity#
+	);#
+#
+	class(ctrl) <- "genAlg-control";#
+	return(ctrl);#
+}
+genAlgControl(elitism = -12)
+genAlgControl <- function(elitism = 10, mutationProbability = 0.01, onesRatio = 0.2, verbosity = 0) {#
+	maxVal <- 2^16; #
+	if(elitism < 0 || elitism > maxVal) {#
+		warning("Not storing best solutions from all generations. 'elitism' should be between 0 and ", maxVal);#
+		elitism <- 0;#
+	}#
+	if(mutationProbability < 0 || mutationProbability >= 1) {#
+		stop("The mutation probability must be between 0 and 1 (excluded).");#
+	}#
+	if(onesRatio < 0 || onesRatio >= 1) {#
+		stop("The ones ratio must be between 0 and 1 (excluded).");#
+	}#
+	if(verbosity < 0) {#
+		verbosity = 0;#
+		warning("Verbosity can not be less than 0 and thus will be set to 0");#
+	}#
+	if(verbosity > 3) {#
+		verbosity = 3;#
+		warning("Verbosity can not be greater than 3 and will thus be set to 3");#
+	}#
+	ctrl <- list(#
+		"elitism" = elitism,#
+		"mutationProb" = mutationProbability,#
+		"onesRatio" = onesRatio,#
+		"verbosity" = verbosity#
+	);#
+#
+	class(ctrl) <- "genAlg-control";#
+	return(ctrl);#
+}
+genAlgControl(elitism = 2999192929)
+genAlgControl(elitism = 29)
+genAlgControl(mutationProbability=-12)
+genAlgControl(mutationProbability=1)
+genAlgControl(mutationProbability=0)
+genAlgControl(mutationProbability=0.21)
+genAlgControl(onesRatio=12)
+genAlgControl(onesRatio=-0.0001)
+genAlgControl <- function(elitism = 10, mutationProbability = 0.01, onesRatio = 0.2, verbosity = 0) {#
+	maxVal <- 2^16; #
+	if(elitism < 0 || elitism > maxVal) {#
+		warning("Not storing best solutions from all generations. 'elitism' should be between 0 and ", maxVal);#
+		elitism <- 0;#
+	}#
+	if(mutationProbability < 0 || mutationProbability >= 1) {#
+		stop("The mutation probability must be between 0 and 1 (excluded).");#
+	}#
+	if(onesRatio <= 0 || onesRatio >= 1) {#
+		stop("The ones ratio must be between 0 and 1 (both excluded).");#
+	}#
+	if(verbosity < 0) {#
+		verbosity = 0;#
+		warning("Verbosity can not be less than 0 and thus will be set to 0");#
+	}#
+	if(verbosity > 3) {#
+		verbosity = 3;#
+		warning("Verbosity can not be greater than 3 and will thus be set to 3");#
+	}#
+	ctrl <- list(#
+		"elitism" = elitism,#
+		"mutationProb" = mutationProbability,#
+		"onesRatio" = onesRatio,#
+		"verbosity" = verbosity#
+	);#
+#
+	class(ctrl) <- "genAlg-control";#
+	return(ctrl);#
+}
+genAlgControl(onesRatio=0)
+genAlgControl(onesRatio=0.1)
+genAlgControl(onesRatio=1)
+genAlgControl(onesRatio=0.9)
+genAlgControl(verbosity=4)
+genAlgControl(verbosity=-1)
+genAlgControl(verbosity=0)
+genAlgEvalControl()
+missing(NULL)
+?missing
+missing
+genAlgEvalControl <- function(numReplications = 2, numSegments = 4, plsMethod = c("simpls"), userEvalFUN = NULL) {#
+	useUserSuppliedFunction <- (!missing(userEvalFUN) && is.function(userEvalFUN));#
+	if(useUserSuppliedFunction != TRUE) {#
+		userEvalFUN = NULL;#
+	}#
+	plsMethod <- match.arg(plsMethod);#
+	ctrl <- list(#
+		"useUserSuppliedFunction" = useUserSuppliedFunction,#
+		"numReplications" = numReplications,#
+		"numSegments" = numSegments,#
+		"plsMethod" = plsMethod,#
+		"userEvalFunction" = userEvalFUN#
+	);#
+	class(ctrl) <- "genAlgEvaluator-control";#
+	return(ctrl);#
+};#
+#
+genAlgControl <- function(popSize, elitism = 10, mutationProbability = 0.01, onesRatio = 0.2, verbosity = 0) {#
+	maxVal <- 2^16; #
+	if(elitism < 0 || elitism > maxVal) {#
+		warning("Not storing best solutions from all generations. 'elitism' should be between 0 and ", maxVal);#
+		elitism <- 0;#
+	}#
+	if(mutationProbability < 0 || mutationProbability >= 1) {#
+		stop("The mutation probability must be between 0 and 1 (excluded).");#
+	}#
+	if(onesRatio <= 0 || onesRatio >= 1) {#
+		stop("The ones ratio must be between 0 and 1 (both excluded).");#
+	}#
+	if(verbosity < 0) {#
+		verbosity <- 0;#
+		warning("The verbosity level can not be less than 0 and thus will be set to 0");#
+	}#
+	if(verbosity > 3) {#
+		verbosity <- 3;#
+		warning("The verbosity level can not be greater than 3 and will thus be set to 3");#
+	}#
+	ctrl <- list(#
+		"populationSize" = popSize,#
+		"elitism" = elitism,#
+		"mutationProb" = mutationProbability,#
+		"onesRatio" = onesRatio,#
+		"verbosity" = verbosity#
+	);#
+#
+	class(ctrl) <- "genAlg-control";#
+	return(ctrl);#
+};
+genAlgControl()
+genAlg <- function(y, X, control = genAlgControl(popSize = ncol(X) / 10), evalControl = genAlgEvalControl()) {}
+genAlg <- function(y, X, control = genAlgControl(popSize = ncol(X) / 10), evalControl = genAlgEvalControl()) {#
+	print(control);#
+	print(evalControl);#
+}
+genAlg()
+genAlg(1, 2)
+genAlgEvalControl <- function(numReplications = 2, numSegments = 4, plsMethod = c("simpls"), userEvalFUN = NULL) {#
+	useUserSuppliedFunction <- (!missing(userEvalFUN) && is.function(userEvalFUN));#
+	if(useUserSuppliedFunction != TRUE) {#
+		userEvalFUN = NULL;#
+	}#
+	plsMethod <- match.arg(plsMethod);#
+	ctrl <- list(#
+		"useUserSuppliedFunction" = useUserSuppliedFunction,#
+		"numReplications" = numReplications,#
+		"numSegments" = numSegments,#
+		"plsMethod" = plsMethod,#
+		"userEvalFunction" = userEvalFUN#
+	);#
+	class(ctrl) <- "genAlgEvaluator-control";#
+	return(ctrl);#
+};#
+#
+genAlgControl <- function(populationSize, numGenerations, elitism = 10, mutationProbability = 0.01, onesRatio = 0.2, verbosity = 0) {#
+	MAXUINT16 <- 2^16; #
+	if(populationSize < 0 || populationSize > MAXUINT16) {#
+		stop("The population size must be between 0 and ", MAXUINT16);#
+	}#
+#
+	if(numGenerations < 0 || numGenerations > MAXUINT16) {#
+		stop("The number of generations must be between 0 and ", MAXUINT16);#
+	}#
+	if(elitism < 0 || elitism > MAXUINT16) {#
+		warning("Not storing best solutions from all generations. 'elitism' should be between 0 and ", MAXUINT16);#
+		elitism <- 0;#
+	}#
+	if(mutationProbability < 0 || mutationProbability >= 1) {#
+		stop("The mutation probability must be between 0 and 1 (excluded).");#
+	}#
+	if(onesRatio <= 0 || onesRatio >= 1) {#
+		stop("The ones ratio must be between 0 and 1 (both excluded).");#
+	}#
+	if(verbosity < 0) {#
+		verbosity <- 0;#
+		warning("The verbosity level can not be less than 0 and thus will be set to 0");#
+	}#
+	if(verbosity > 3) {#
+		verbosity <- 3;#
+		warning("The verbosity level can not be greater than 3 and will thus be set to 3");#
+	}#
+	ctrl <- list(#
+		"populationSize" = populationSize,#
+		"numGenerations" = numGenerations,#
+		"elitism" = elitism,#
+		"mutationProb" = mutationProbability,#
+		"onesRatio" = onesRatio,#
+		"verbosity" = verbosity#
+	);#
+#
+	class(ctrl) <- "genAlg-control";#
+	return(ctrl);#
+};
+genAlg <- function(y, X, control = genAlgControl(populationSize = sqrt(ncol(X)), numGenerations = 100), evalControl = genAlgEvalControl()) {#
+	print(control);#
+	print(evalControl);#
+}
+genAlgEvalControl <- function(numReplications = 2L, numSegments = 4L, plsMethod = c("simpls"), userEvalFUN = NULL) {#
+	useUserSuppliedFunction <- (!missing(userEvalFUN) && is.function(userEvalFUN));#
+	if(useUserSuppliedFunction != TRUE) {#
+		userEvalFUN = NULL;#
+	}#
+	plsMethod <- match.arg(plsMethod);#
+	ctrl <- list(#
+		"useUserSuppliedFunction" = useUserSuppliedFunction,#
+		"numReplications" = as.integer(numReplications),#
+		"numSegments" = as.integer(numSegments),#
+		"plsMethod" = plsMethod,#
+		"userEvalFunction" = userEvalFUN#
+	);#
+	class(ctrl) <- "genAlgEvaluator-control";#
+	return(ctrl);#
+};#
+#
+genAlgControl <- function(populationSize, numGenerations, elitism = 10L, mutationProbability = 0.01, onesRatio = 0.2, verbosity = 0L) {#
+	MAXUINT16 <- 2^16; #
+	if(populationSize < 0 || populationSize > MAXUINT16) {#
+		stop("The population size must be between 0 and ", MAXUINT16);#
+	}#
+#
+	if(numGenerations < 0 || numGenerations > MAXUINT16) {#
+		stop("The number of generations must be between 0 and ", MAXUINT16);#
+	}#
+	if(elitism < 0 || elitism > MAXUINT16) {#
+		warning("Not storing best solutions from all generations. 'elitism' should be between 0 and ", MAXUINT16);#
+		elitism <- 0;#
+	}#
+	if(mutationProbability < 0 || mutationProbability >= 1) {#
+		stop("The mutation probability must be between 0 and 1 (excluded).");#
+	}#
+	if(onesRatio <= 0 || onesRatio >= 1) {#
+		stop("The ones ratio must be between 0 and 1 (both excluded).");#
+	}#
+	if(verbosity < 0) {#
+		verbosity <- 0;#
+		warning("The verbosity level can not be less than 0 and thus will be set to 0");#
+	}#
+	if(verbosity > 3) {#
+		verbosity <- 3;#
+		warning("The verbosity level can not be greater than 3 and will thus be set to 3");#
+	}#
+	ctrl <- list(#
+		"populationSize" = as.integer(populationSize),#
+		"numGenerations" = as.integer(numGenerations),#
+		"elitism" = as.integer(elitism),#
+		"mutationProb" = mutationProbability,#
+		"onesRatio" = onesRatio,#
+		"verbosity" = as.integer(verbosity)#
+	);#
+#
+	class(ctrl) <- "genAlg-control";#
+	return(ctrl);#
+};
+genAlg <- function(y, X, control = genAlgControl(populationSize = floor(sqrt(ncol(X))), numGenerations = 100L), evalControl = genAlgEvalControl()) {#
+	print(control);#
+	print(evalControl);#
+}
+genAlg <- function(y, X, control = genAlgControl(populationSize = floor(sqrt(ncol(X))), numGenerations = 100L), evalControl = genAlgEvalControl()) {#
+	print(str(control));#
+	print(str(evalControl));#
+}
+genAlg(1, matrix(NA_real_, nrow = 10, ncol = 1000))
+dims(c(123)
+)
+dim(c(123))
+is.class
+?inherits
+matrix(1:100, ncol = 1)
+as.vector(matrix(1:100, ncol = 1))
+c(matrix(1:100, ncol = 1))
+genAlgEvalControl <- function(numReplications = 2L, numSegments = 4L, plsMethod = c("simpls"), userEvalFUN = NULL) {#
+	useUserSuppliedFunction <- (!missing(userEvalFUN) && is.function(userEvalFUN));#
+	if(useUserSuppliedFunction != TRUE) {#
+		userEvalFUN = NULL;#
+	}#
+	plsMethod <- match.arg(plsMethod);#
+	ctrl <- list(#
+		"useUserSuppliedFunction" = useUserSuppliedFunction,#
+		"numReplications" = as.integer(numReplications),#
+		"numSegments" = as.integer(numSegments),#
+		"plsMethod" = plsMethod,#
+		"userEvalFunction" = userEvalFUN#
+	);#
+	class(ctrl) <- "genAlgEvaluator-control";#
+	return(ctrl);#
+};#
+#
+genAlgControl <- function(populationSize, numGenerations, elitism = 10L, mutationProbability = 0.01, onesRatio = 0.2, verbosity = 0L) {#
+	MAXUINT16 <- 2^16; #
+	if(populationSize < 0 || populationSize > MAXUINT16) {#
+		stop("The population size must be between 0 and ", MAXUINT16);#
+	}#
+#
+	if(numGenerations < 0 || numGenerations > MAXUINT16) {#
+		stop("The number of generations must be between 0 and ", MAXUINT16);#
+	}#
+	if(elitism < 0 || elitism > MAXUINT16) {#
+		warning("Not storing best solutions from all generations. 'elitism' should be between 0 and ", MAXUINT16);#
+		elitism <- 0;#
+	}#
+#
+	populationSize  <- as.integer(populationSize);#
+	numGenerations  <- as.integer(numGenerations);#
+	elitism <- as.integer(elitism);#
+	if(elitism >= populationSize * numGenerations) {#
+		warning("Requested more elite solutions than possible");#
+		elitism <- populationSize * numGenerations; #
+	}#
+	if(mutationProbability < 0 || mutationProbability >= 1) {#
+		stop("The mutation probability must be between 0 and 1 (excluded).");#
+	}#
+	if(onesRatio <= 0 || onesRatio >= 1) {#
+		stop("The ones ratio must be between 0 and 1 (both excluded).");#
+	}#
+	if(verbosity < 0) {#
+		verbosity <- 0;#
+		warning("The verbosity level can not be less than 0 and thus will be set to 0");#
+	}#
+	if(verbosity > 3) {#
+		verbosity <- 3;#
+		warning("The verbosity level can not be greater than 3 and will thus be set to 3");#
+	}#
+	ctrl <- list(#
+		"populationSize" = populationSize,#
+		"numGenerations" = numGenerations,#
+		"elitism" = elitism,#
+		"mutationProb" = mutationProbability,#
+		"onesRatio" = onesRatio,#
+		"verbosity" = as.integer(verbosity)#
+	);#
+#
+	class(ctrl) <- "genAlg-control";#
+	return(ctrl);#
+};
+genAlg <- function(y, X, control = genAlgControl(populationSize = floor(sqrt(ncol(X))), numGenerations = 100L), evalControl = genAlgEvalControl()) {#
+	if(!is.numeric(y) || !(is.vector(y) || is.matrix(y) && ncol(y) == 1)) {#
+		stop("y must be a numeric vector or numeric matrix with 1 column");#
+	}#
+#
+	if(!is.numeric(X) || !is.matrix(X)) {#
+		stop("X must be a numeric matrix");#
+	}#
+#
+	if(class(control) != "genAlg-control") {#
+		stop("control must be an object with class 'genAlg-control'. Use the method 'genAlgControl' to obtain an object of this type");#
+	}#
+#
+	if(class(evalControl) != "genAlgEvaluator-control") {#
+		stop("control must be an object with class 'genAlgEvaluator-control'. Use the method 'genAlgEvalControl' to obtain an object of this type");#
+	}#
+#
+	y <- as.matrix(y);#
+#
+	if(nrow(y) != nrow(X)) {#
+		stop("Length of y doesn't match number of rows in X");#
+	}#
+}
+genAlg(1, matrix(NA_real_, nrow = 10, ncol = 100))
+genAlg(1:100, matrix(NA_real_, nrow = 10, ncol = 100))
+genAlg(1:10, matrix(NA_real_, nrow = 10, ncol = 100))
