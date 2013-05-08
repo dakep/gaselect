@@ -56,7 +56,6 @@ void PLS::setSubmatrixViewRows(const arma::uvec &rows) {
 arma::mat PLS::predict(arma::mat newX, uint16_t ncomp) const {
 	arma::cube coefs = this->getCoefficients();
 	if(ncomp >= coefs.n_slices) {
-		Rcpp::Rcout << "ncomp = " << ncomp << " --- max ncomp: " << coefs.n_slices << std::endl;
 		throw Rcpp::exception("Can not predict values for a model with more components than fit components", __FILE__, __LINE__);
 	}
 	arma::mat pred = newX * coefs.slice(ncomp);
