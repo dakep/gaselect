@@ -3,8 +3,10 @@
 //  
 //
 
-#ifndef _Population_h
-#define _Population_h
+#ifndef GenAlgPLS_Population_h
+#define GenAlgPLS_Population_h
+
+#include "config.h"
 
 #include <iostream>
 #include <vector>

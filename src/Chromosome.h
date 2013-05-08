@@ -1,5 +1,7 @@
-#ifndef _Chromosome_h
-#define _Chromosome_h
+#ifndef GenAlgPLS_Chromosome_h
+#define GenAlgPLS_Chromosome_h
+
+#include "config.h"
 
 #include <inttypes.h>
 #include <vector>
@@ -9,8 +11,6 @@
 #include <Rcpp/stats/random/runif.h>
 
 #include "Control.h"
-
-#define MIN_MUTATION_PROBABILITY 0.000001f
 
 class InvalidCopulationException : public Rcpp::exception {
 

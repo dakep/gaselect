@@ -6,6 +6,8 @@
 //  Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 //
 
+#include "config.h"
+
 #include <iostream>
 #include <RcppArmadillo.h>
 #include "PLSSimpls.h"
@@ -15,7 +17,6 @@ PLSSimpls::PLSSimpls(const arma::mat &X, const arma::mat &Y, const bool fitValue
 }
 
 PLSSimpls::~PLSSimpls() {
-	Rcpp::Rcout << "Delte PLSSimpls" << std::endl;
 }
 
 void PLSSimpls::subviewChanged() {

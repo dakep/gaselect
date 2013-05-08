@@ -3,6 +3,8 @@
 //  
 //
 
+#include "config.h"
+
 #include <inttypes.h>
 #include <algorithm>
 #include <vector>
@@ -13,10 +15,6 @@
 
 #include "Chromosome.h"
 #include "GenAlg.h"
-
-#define DELIMITER_POSITION 4
-#define BITS_PER_BYTE 8
-#define DISCRETE_CORRECTION 0.0000000001 // 1e-10
 
 using namespace Rcpp;
 
@@ -213,10 +211,12 @@ void Chromosome::generateRandomBits(uint_fast64_t* bits, uint16_t size, double o
 		bitsToSet = (int) binomGen();
 		negateResult = (bitsToSet > (this->bitsPerPart / 2));
 		setBitAt = 0;
-	
-		if(this->ctrl.getVerbosity() == DEBUG) {
+		
+#ifdef ENABLE_DEBUG_VERBOSITY
+		if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
 			Rcout << "Setting " << bitsToSet << "/" << this->bitsPerPart << " bits" << std::endl;
 		}
+#endif
 		
 		if(negateResult) {
 			// More bits have to be set than not set
@@ -286,8 +286,9 @@ std::vector<Chromosome*> Chromosome::copulateWith(const Chromosome &other) {
 			
 			child1->chromosomeParts[i] = (this->chromosomeParts[i] & randomMask) | (other.chromosomeParts[i] & negRandomMask);
 			child2->chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
-			
-			if(this->ctrl.getVerbosity() == DEBUG) {
+
+#ifdef ENABLE_DEBUG_VERBOSITY
+			if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
 				Rcout << "Mask for part " << i << ": ";
 				this->printBits(Rcout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
 				
@@ -299,6 +300,7 @@ std::vector<Chromosome*> Chromosome::copulateWith(const Chromosome &other) {
 			}	
 		}
 	}
+#endif
 	
 	children.reserve(2);
 	children.push_back(child1);

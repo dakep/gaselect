@@ -6,11 +6,10 @@
 //
 //
 
+#include "config.h"
+
 #include <algorithm>
 #include "PLSEvaluator.h"
-
-#define swapInt(a, b) ((a ^= b), (b ^= a), (a ^= b))
-#define DISCRETE_CORRECTION 0.0000000001
 
 double PLSEvaluator::evaluate(Chromosome &ch) const {
 	arma::uvec columnSubset = ch.toColumnSubset();
@@ -29,10 +28,11 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	double bestFitness = -sumSSD.min();
 	ch.setFitness(bestFitness);
 
-	if(this->verbosity == DEBUG) {
+#ifdef ENABLE_DEBUG_VERBOSITY
+	if(this->verbosity == DEBUG_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSSD.t() << std::endl;
 	}
-
+#endif
 	return bestFitness;
 }
 
@@ -46,11 +46,13 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
 	for(rep = 0; rep < this->numReplications; ++rep) {
 		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
 	}
-
-	if(this->verbosity == DEBUG) {
+	
+#ifdef ENABLE_DEBUG_VERBOSITY
+	if(this->verbosity == DEBUG_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSSD << std::endl;
 	}
-	
+#endif
+
 	return -sumSSD.min();
 }
 
@@ -116,11 +118,13 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 			segment = rowNumbers.rows(0, segmentLength);
 			notSegment = rowNumbers.rows(segmentLength + 1, this->nrows - 1);
 		}
-
-		if(this->verbosity == DEBUG) {
+		
+#ifdef ENABLE_DEBUG_VERBOSITY
+		if(this->verbosity == DEBUG_VERBOSE) {
 			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;
 		}
-		
+#endif
+
 		leftOutX = this->pls->getX().submat(segment, columnSubset);
 		leftOutY = this->pls->getY().rows(segment);
 		
@@ -147,10 +151,12 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 		
 		n += nSeg;
 	}
-
-	if(this->verbosity == DEBUG) {
+	
+#ifdef ENABLE_DEBUG_VERBOSITY
+	if(this->verbosity == DEBUG_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Resulting M2n:" << std::endl << arma::sqrt(residM2n) << std::endl;
 	}
+#endif
 	
 //	Altough the square root doesn't change the order of the values,
 //	it may be necessary to accurately reflect the "distance" between two values

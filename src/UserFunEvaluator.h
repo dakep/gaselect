@@ -6,8 +6,10 @@
 //
 //
 
-#ifndef GenAlgTest_UserFunEvaluator_h
-#define GenAlgTest_UserFunEvaluator_h
+#ifndef GenAlgPLS_UserFunEvaluator_h
+#define GenAlgPLS_UserFunEvaluator_h
+
+#include "config.h"
 
 #include <RcppArmadillo.h>
 #include "Evaluator.h"

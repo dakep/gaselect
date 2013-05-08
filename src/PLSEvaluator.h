@@ -6,8 +6,10 @@
 //
 //
 
-#ifndef GenAlgTest_PLSEvaluator_h
-#define GenAlgTest_PLSEvaluator_h
+#ifndef GenAlgPLS_PLSEvaluator_h
+#define GenAlgPLS_PLSEvaluator_h
+
+#include "config.h"
 
 #include <RcppArmadillo.h>
 #include <Rcpp/stats/random/runif.h>
@@ -19,7 +21,7 @@
 
 class PLSEvaluator : public Evaluator {
 public:
-	PLSEvaluator(PLS &pls, const uint16_t numReplications, const uint16_t numSegments, const VerbosityLevel &verbosity) : Evaluator(verbosity),
+	PLSEvaluator(PLS &pls, const uint16_t numReplications, const uint16_t numSegments, const VerbosityLevel verbosity) : Evaluator(verbosity),
 		numReplications(numReplications), numSegments(numSegments), unifGen(), nrows(pls.getX().n_rows), segmentLength(nrows / numSegments), incompleteSegments(nrows % numSegments), pls(&pls) {};
 //	~PLSEvaluator();
 

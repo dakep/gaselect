@@ -2,6 +2,8 @@
 //  Population.cpp
 //
 
+#include "config.h"
+
 #include <vector>
 #include <algorithm>
 #include <iomanip>
@@ -9,10 +11,6 @@
 #include <Rcpp/stats/random/runif.h>
 
 #include "Population.h"
-
-#define TAB_DELIMITER "    "
-#define PRECISION 8
-#define WIDTH PRECISION + 5
 
 using namespace Rcpp;
 
@@ -133,18 +131,22 @@ void Population::run() {
 		this->addChromosomeToElite(tmpChromosome1);
 		this->currentGeneration.push_back(tmpChromosome1);
 	}
-
-	if(this->ctrl.getVerbosity() == DEBUG) {
+	
+#ifdef ENABLE_DEBUG_VERBOSITY
+	if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
 		Rcout << "Fitness map: ";
 	}
+#endif
 	
 	for(fitnessMapIt = this->fitnessMap.begin(); fitnessMapIt != this->fitnessMap.end(); ++fitnessMapIt) {
 		sumFitness += (*fitnessMapIt) - minFitness;
 		(*fitnessMapIt) = sumFitness;
 		
-		if(this->ctrl.getVerbosity() == DEBUG) {
+#ifdef ENABLE_DEBUG_VERBOSITY
+		if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
 			Rcout << sumFitness << " | ";
 		}
+#endif
 	}
 
 
@@ -159,11 +161,13 @@ void Population::run() {
 		for(j = 0; j < popSizeHalf; ++j) {
 			tmpChromosome1 = this->getChromosomeFromFitnessMap(unifGen() * sumFitness);
 			tmpChromosome2 = this->getChromosomeFromFitnessMap(unifGen() * sumFitness);
-			
-			if(this->ctrl.getVerbosity() == DEBUG) {
+
+#ifdef ENABLE_DEBUG_VERBOSITY
+			if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
 				Rcout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and" << std::endl
 				<< *tmpChromosome2 << std::endl;
 			}
+#endif
 			
 			children = tmpChromosome1->copulateWith((*tmpChromosome2));
 			
@@ -193,9 +197,11 @@ void Population::run() {
 			newGeneration.push_back(children[1]);
 		}
 		
-		if(this->ctrl.getVerbosity() == DEBUG) {
+#ifdef ENABLE_DEBUG_VERBOSITY
+		if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
 			Rcout << "Fitness map: ";
 		}
+#endif
 		
 		sumFitness = 0.0;
 		
@@ -203,10 +209,12 @@ void Population::run() {
 			sumFitness += (*fitnessMapIt) - minFitness;
 			(*fitnessMapIt) = sumFitness;
 			
-			if(this->ctrl.getVerbosity() == DEBUG) {
+#ifdef ENABLE_DEBUG_VERBOSITY
+			if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
 				Rcout << sumFitness << " | ";
 			}
 		}
+#endif
 		
 		// Housekeeping
 		this->currentGeneration = newGeneration;

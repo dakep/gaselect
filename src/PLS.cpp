@@ -6,6 +6,8 @@
 //  Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 //
 
+#include "config.h"
+
 #include "PLS.h"
 
 PLS::PLS(const arma::mat &X, const arma::mat &Y, const bool fitValues) : X(X), Y(Y), fitValues(fitValues), validResultState(false), viewX(X), viewY(Y) {

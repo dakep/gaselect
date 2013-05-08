@@ -3,6 +3,8 @@
 //  
 //
 
+#include "config.h"
+
 #include "Control.h"
 
 void Control::setPopulationSize(uint16_t popSize) {

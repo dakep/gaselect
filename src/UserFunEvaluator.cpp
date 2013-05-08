@@ -6,6 +6,7 @@
 //
 //
 
+#include "config.h"
 #include "UserFunEvaluator.h"
 
 double UserFunEvaluator::evaluate(Chromosome &ch) const {

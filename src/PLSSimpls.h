@@ -6,8 +6,10 @@
 //  Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 //
 
-#ifndef GenAlgTest_PLSSimpls_h
-#define GenAlgTest_PLSSimpls_h
+#ifndef GenAlgPLS_PLSSimpls_h
+#define GenAlgPLS_PLSSimpls_h
+
+#include "config.h"
 
 #include <RcppArmadillo.h>
 #include "PLS.h"

@@ -2,8 +2,10 @@
 //  PLS.h
 //
 
-#ifndef GenAlgTest_PLS_h
-#define GenAlgTest_PLS_h
+#ifndef GenAlgPLS_PLS_h
+#define GenAlgPLS_PLS_h
+
+#include "config.h"
 
 #include <RcppArmadillo.h>
 #include <inttypes.h>

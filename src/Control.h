@@ -3,8 +3,10 @@
 //  
 //
 
-#ifndef _Control_h
-#define _Control_h
+#ifndef GenAlgPLS_Control_h
+#define GenAlgPLS_Control_h
+
+#include "config.h"
 
 #include <iostream>
 #include <inttypes.h>
@@ -14,7 +16,7 @@ enum VerbosityLevel {
 	OFF = 0,
 	ON,
 	MORE_VERBOSE,
-	DEBUG
+	DEBUG_VERBOSE
 };
 
 class Control {

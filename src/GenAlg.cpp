@@ -3,6 +3,8 @@
 //  GenAlgTest
 //
 
+#include "config.h"
+
 #include <RcppArmadillo.h>
 #include <set>
 #include <inttypes.h>
@@ -110,7 +112,7 @@ BEGIN_RCPP
 	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 	PLSSimpls pls(X, Y, false);
-	PLSEvaluator eval(pls, Rcpp::as<uint16_t>(numReplications), Rcpp::as<uint16_t>(numSegments), DEBUG);
+	PLSEvaluator eval(pls, Rcpp::as<uint16_t>(numReplications), Rcpp::as<uint16_t>(numSegments), DEBUG_VERBOSE);
 	
 	arma::uvec colSubset(X.n_cols);
 	

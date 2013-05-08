@@ -6,15 +6,16 @@
 //  Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 //
 
-#ifndef GenAlgTest_Evaluator_h
-#define GenAlgTest_Evaluator_h
+#ifndef GenAlgPLS_Evaluator_h
+#define GenAlgPLS_Evaluator_h
 
+#include "config.h"
 #include "Control.h"
 #include "Chromosome.h"
 
 class Evaluator {
 public:
-	Evaluator(const VerbosityLevel &verbosity) : verbosity(verbosity) {}
+	Evaluator(const VerbosityLevel verbosity) : verbosity(verbosity) {}
 	virtual ~Evaluator() {};
 	
 	virtual double evaluate(Chromosome &ch) const = 0;

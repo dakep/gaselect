@@ -6,10 +6,10 @@
 //  Copyright (c) 2013 __MyCompanyName__. All rights reserved.
 //
 
-#ifndef GenAlgTest_GenAlg_h
-#define GenAlgTest_GenAlg_h
+#ifndef GenAlgPLS_GenAlg_h
+#define GenAlgPLS_GenAlg_h
 
-// #define TIMING_BENCHMARK
+#include "config.h"
 
 #include <RcppArmadillo.h>
 
