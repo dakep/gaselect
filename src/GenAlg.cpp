@@ -21,15 +21,15 @@
 using namespace Rcpp;
 
 SEXP genAlg(SEXP Scontrol, SEXP SX, SEXP Sy) {
-//SEXP genAlg(SEXP chromosomeSize, SEXP populationSize, SEXP numGenerations, SEXP onesRatio, SEXP mutationProb, SEXP elitism, SEXP verbosity, SEXP evalFunction) {
-	
-BEGIN_RCPP	
-	Control ctrl;
-	List control = List(Scontrol);
-	bool useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
 	::Evaluator *eval;
 	PLS *pls;
-	
+	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls
+	bool useUserFunction = false;
+BEGIN_RCPP
+
+	Control ctrl;
+	List control = List(Scontrol);
+
 	// All checks are disabled and must be performed in the R code calling this script
 	// Otherwise unexpected behaviour
 
@@ -41,7 +41,8 @@ BEGIN_RCPP
 	ctrl.setMutate0To1Probability(as<double>(control["mutationProb"]));
 	ctrl.setOnesRatio(as<double>(control["onesRatio"]));
 	ctrl.setVerbosity((VerbosityLevel) as<int>(control["verbosity"]));
-	
+
+	useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
 	if(useUserFunction) {
 		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.getVerbosity());
 	} else {
@@ -52,17 +53,19 @@ BEGIN_RCPP
 		PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
 
 		pls = PLS::getInstance(method, X, Y, false);
+		toFree |= 2; // pls has to be freed
 		
 		eval = new PLSEvaluator(*pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.getVerbosity());
 	}
-	
+	toFree |= 1; // eval has to be freed
+
 	if(ctrl.getVerbosity() == MORE_VERBOSE) {
 		Rcout << ctrl << std::endl;		
 	}
 	
 	Population pop(ctrl, *eval);
 	pop.run();
-	
+
 	SortedChromosomes result = pop.getResult();
 
 	Rcpp::LogicalMatrix retMatrix(ctrl.getChromosomeSize(), (const int) result.size());
@@ -74,18 +77,26 @@ BEGIN_RCPP
 		retMatrix.column(i) = (*it)->toLogicalVector();
 	}
 
-	delete eval;
-	if(!useUserFunction) {
+	delete eval; // must definitely be freed
+	if((toFree & 2) > 0) {
 		delete pls;
 	}
 	
 	return Rcpp::List::create(Rcpp::Named("subsets") = retMatrix,
 							  Rcpp::Named("fitness") = retFitnesses);
-END_RCPP
+VOID_END_RCPP
+	if((toFree & 1) > 0) {
+		delete eval;
+	}
+	if((toFree & 2) > 0) {
+		delete pls;
+	}
+	
+	return R_NilValue;
 }
 
 SEXP simpls(SEXP Xs, SEXP Ys, SEXP numOfComp, SEXP newXs) {
-BEGIN_RCPP
+BEGIN_RCPP	
 	Rcpp::NumericMatrix XMat(Xs);
 	Rcpp::NumericMatrix YMat(Ys);
 	Rcpp::NumericMatrix newXMat(newXs);
@@ -113,7 +124,7 @@ BEGIN_RCPP
 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 	PLSSimpls pls(X, Y, false);
 	PLSEvaluator eval(pls, Rcpp::as<uint16_t>(numReplications), Rcpp::as<uint16_t>(numSegments), DEBUG_VERBOSE);
-	
+
 	arma::uvec colSubset(X.n_cols);
 	
 	for(uint16_t i = 0; i < X.n_cols; ++i) {

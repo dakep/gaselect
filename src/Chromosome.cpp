@@ -297,10 +297,10 @@ std::vector<Chromosome*> Chromosome::copulateWith(const Chromosome &other) {
 				this->printBits(Rcout, child1->chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl
 				<< "Child 2:";
 				this->printBits(Rcout, child2->chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl;
-			}	
+			}
+#endif
 		}
 	}
-#endif
 	
 	children.reserve(2);
 	children.push_back(child1);
@@ -361,7 +361,7 @@ arma::uvec Chromosome::toColumnSubset() const {
 	uint_fast64_t mask = ((uint_fast64_t) 1) << this->unusedBits;
 	uint16_t csIndex = 0;
 	arma::uword truePos = 0;
-	
+
 	for (uint16_t i = 0; i < this->numParts && csIndex < columnSubset.n_elem; ++i) {
 		do {
 			if((this->chromosomeParts[i] & mask) > 0) {
@@ -411,9 +411,15 @@ bool Chromosome::isFitterThan(const Chromosome &ch) const {
  */
 inline uint16_t Chromosome::popcount() const {
 	uint16_t count = 0;
-	uint16_t i = 0;
+	
+#ifdef USE_BUILTIN_POPCOUNT
+	for(uint16_t i = 0; i < this->numParts; ++i) {
+		count += __builtin_popcountl(this->chromosomeParts[i]);
+	}
+#else
+	uint16_t i = 1;
 	uint_fast64_t tmp = this->chromosomeParts[0] & ( UINT_FAST64_MAX << this->unusedBits ); // "remove" first unused bits
-
+	
 	do {
 		tmp -= (tmp >> 1) & Chromosome::M1;								// put count of each 2 bits into those 2 bits
 		tmp = (tmp & Chromosome::M2) + ((tmp >> 2) & Chromosome::M2);	// put count of each 4 bits into those 4 bits
@@ -422,7 +428,8 @@ inline uint16_t Chromosome::popcount() const {
 		count += (tmp * Chromosome::H01) >> 56;							// adds left 8 bits of tmp + (tmp << 8) + (tmp << 16) + (tmp << 24) + ...
 		
 		tmp = this->chromosomeParts[i];
-	} while(++i < this->numParts);
+	} while(i++ < this->numParts);
+#endif
 	
 	return count;
 }

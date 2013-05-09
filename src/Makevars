@@ -3,9 +3,10 @@ PKG_LIBS = `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"` $(LAPACK_LIBS) $(BLAS_L
 
 
 ## Debug
+# -DENABLE_DEBUG_VERBOSITY
 OPTFLAGS = -O2
-PKG_CFLAGS= -g -pipe -std=gnu99 -Wall -pedantic
-PKG_CXXFLAGS= -g -pipe -Wall -pedantic
+PKG_CFLAGS= -g -pipe -std=gnu99 -Wall -pedantic -DUSE_BUILTIN_POPCOUNT
+PKG_CXXFLAGS= -g -pipe -Wall -pedantic -DUSE_BUILTIN_POPCOUNT
 
 ## As an alternative, one can also add this code in a file 'configure'
 ##

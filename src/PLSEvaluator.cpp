@@ -20,7 +20,6 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	arma::uword rep = 0;
 	sumSSD.zeros();
 
-
 	for(rep = 0; rep < this->numReplications; ++rep) {
 		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
 	}
@@ -42,7 +41,7 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
 	arma::uvec rowNumbers = this->initRowNumbers();
 	arma::uword rep = 0;
 	sumSSD.zeros();
-	
+		
 	for(rep = 0; rep < this->numReplications; ++rep) {
 		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
 	}
@@ -81,10 +80,10 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 	arma::uword randPos = 0, i = 0;
 	arma::uword n = 0, nSeg = 0;
 
-	// If not all segments are the same length, segmentLength is the shorter one
-	// (i.e. the complete segments will be one element larger)
+	// If not all segments are the same length, segmentLength is the longer one
+	// (i.e. the incomplete segments will be one element shorter)
 	arma::uword segmentLength = this->segmentLength;
-	arma::uword incompleteSegments = this->incompleteSegments;
+	int32_t completeSegments = this->completeSegments;
 	arma::uvec segment;
 	arma::uvec notSegment;
 		
@@ -94,6 +93,10 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 	
 	residM2n.zeros();
 	
+	if(this->completeSegments > 0) {
+		++segmentLength;
+	}
+
 	for(; seg < this->numSegments; ++seg) {
 		// Determine segment
 		// Randomly permute the last (numSegments - seg) * segmentLength elements
@@ -115,8 +118,8 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 				std::swap(rowNumbers[n + i], rowNumbers[randPos]);
 				std::swap(rowNumbers[i], rowNumbers[n + i]);
 			}
-			segment = rowNumbers.rows(0, segmentLength);
-			notSegment = rowNumbers.rows(segmentLength + 1, this->nrows - 1);
+			segment = rowNumbers.rows(0, segmentLength - 1);
+			notSegment = rowNumbers.rows(segmentLength, this->nrows - 1);
 		}
 		
 #ifdef ENABLE_DEBUG_VERBOSITY
@@ -124,19 +127,23 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;
 		}
 #endif
-
+		try {
 		leftOutX = this->pls->getX().submat(segment, columnSubset);
 		leftOutY = this->pls->getY().rows(segment);
-		
+		} catch (std::logic_error le) {
+			Rcpp::Rcout << "Column subset: " << columnSubset.t() << std::endl << std::endl;
+			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;
+			throw le;
+		}
 		this->pls->setSubmatrixView(notSegment, columnSubset);
 		
-		if(seg == incompleteSegments - 1) {
-			++segmentLength;
+		if(--completeSegments == 0) {
+			--segmentLength;
 		}
 		
 		
 		this->pls->fit(ncomp);
-		
+
 		// Calculate the standard error for observations not present in this segment
 		for(comp = 0; comp < ncomp; ++comp) {
 			residuals = leftOutY - this->pls->predict(leftOutX, comp);
@@ -151,6 +158,7 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 		
 		n += nSeg;
 	}
+	
 	
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->verbosity == DEBUG_VERBOSE) {

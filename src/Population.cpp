@@ -213,8 +213,8 @@ void Population::run() {
 			if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
 				Rcout << sumFitness << " | ";
 			}
-		}
 #endif
+		}
 		
 		// Housekeeping
 		this->currentGeneration = newGeneration;

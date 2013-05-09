@@ -9,7 +9,7 @@
 #ifndef GenAlgPLS_config_h
 #define GenAlgPLS_config_h
 
-#define ENABLE_DEBUG_VERBOSITY
+// #define ENABLE_DEBUG_VERBOSITY
 
 //#define TIMING_BENCHMARK
 
