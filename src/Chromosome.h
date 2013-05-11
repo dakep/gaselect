@@ -16,7 +16,6 @@ class InvalidCopulationException : public Rcpp::exception {
 
 public:
 		InvalidCopulationException(const char *file, const int line);
-
 };
 
 class Chromosome {
@@ -27,7 +26,7 @@ public:
 	~Chromosome();
 	
 	void mutate();
-	std::vector<Chromosome*> copulateWith(const Chromosome &other);
+	std::vector<Chromosome> copulateWith(const Chromosome &other);
 
 	void setFitness(double fitness);
 	double getFitness() const;
@@ -39,6 +38,7 @@ public:
 	
 	bool operator==(const Chromosome &ch) const;
 	bool operator!=(const Chromosome &ch) const;
+	Chromosome operator=(const Chromosome &ch) const;
 	
 	friend std::ostream& operator<<(std::ostream &os, const Chromosome &ch);
 private:

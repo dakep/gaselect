@@ -25,8 +25,8 @@ public:
 	void run();
 
 	struct ChromosomeComparator {
-		bool operator() (const Chromosome *lhs, const Chromosome *rhs) const {
-			return rhs->isFitterThan(*lhs);
+		bool operator() (const Chromosome &lhs, const Chromosome &rhs) const {
+			return rhs.isFitterThan(lhs);
 		}
 	};
 	
@@ -34,26 +34,26 @@ public:
 	 * Returns the last generation and the elite (if any)
 	 * Invalid once the Population object is destroyed!
 	 */
-	std::multiset<Chromosome*, Population::ChromosomeComparator> getResult() const;
+	std::multiset<Chromosome, Population::ChromosomeComparator> getResult() const;
 	
 private:
-	std::multiset<Chromosome*, Population::ChromosomeComparator> elite;
-	std::vector<Chromosome*> currentGeneration;
+	std::multiset<Chromosome, Population::ChromosomeComparator> elite;
+	std::vector<Chromosome> currentGeneration;
 	std::vector<double> fitnessMap;
 	double minEliteFitness;
 	
 //	double evaluateFitness(Chromosome* ch);
-	Chromosome* getChromosomeFromFitnessMap(double rand) const;
-	void addChromosomeToElite(Chromosome* ch);
+	Chromosome getChromosomeFromFitnessMap(double rand) const;
+	void addChromosomeToElite(Chromosome &ch);
 	
-	std::ostream& printChromosomeFitness(std::ostream &os, Chromosome *ch);
+	std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch);
 	
-	void cleanCurrentGeneration();
+//	void cleanCurrentGeneration();
 
 	const Control ctrl;
 	const Evaluator * const evaluator;
 };
 
-typedef std::multiset<Chromosome*, Population::ChromosomeComparator> SortedChromosomes;
+typedef std::multiset<Chromosome, Population::ChromosomeComparator> SortedChromosomes;
 
 #endif

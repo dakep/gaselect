@@ -245,7 +245,7 @@ void Chromosome::generateRandomBits(uint_fast64_t* bits, uint16_t size, double o
 	}
 }
 
-std::vector<Chromosome*> Chromosome::copulateWith(const Chromosome &other) {
+std::vector<Chromosome> Chromosome::copulateWith(const Chromosome &other) {
 #ifdef TIMING_BENCHMARK
 	timeval start, end;
 	
@@ -255,10 +255,10 @@ std::vector<Chromosome*> Chromosome::copulateWith(const Chromosome &other) {
 		throw InvalidCopulationException(__FILE__, __LINE__);
 	}
 	
-	std::vector<Chromosome*> children;
+	std::vector<Chromosome> children;
 	
-	Chromosome* child1 = new Chromosome(*this, false);
-	Chromosome* child2 = new Chromosome(*this, false);
+	Chromosome child1(*this, false);
+	Chromosome child2(*this, false);
 
 	uint_fast64_t randomMask = 0;
 	uint_fast64_t negRandomMask = 0;
@@ -270,7 +270,7 @@ std::vector<Chromosome*> Chromosome::copulateWith(const Chromosome &other) {
 		if(this->chromosomeParts[i] == other.chromosomeParts[i]) {
 			// Just copy the chromosome part to both children if it is the same
 			// for both parents
-			child1->chromosomeParts[i] = child2->chromosomeParts[i] = this->chromosomeParts[i];
+			child1.chromosomeParts[i] = child2.chromosomeParts[i] = this->chromosomeParts[i];
 			if(this->ctrl.getVerbosity() == MORE_VERBOSE) {
 				Rcout << "Chromosome part is the same for both parents -- copy part to both children" << std::endl;
 			}
@@ -285,8 +285,8 @@ std::vector<Chromosome*> Chromosome::copulateWith(const Chromosome &other) {
 			} while(randomMask == 0);
 			negRandomMask = ~randomMask;
 			
-			child1->chromosomeParts[i] = (this->chromosomeParts[i] & randomMask) | (other.chromosomeParts[i] & negRandomMask);
-			child2->chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
+			child1.chromosomeParts[i] = (this->chromosomeParts[i] & randomMask) | (other.chromosomeParts[i] & negRandomMask);
+			child2.chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
 
 #ifdef ENABLE_DEBUG_VERBOSITY
 			if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
@@ -404,6 +404,10 @@ bool Chromosome::isFitterThan(const Chromosome &ch) const {
 	// Both chromosomes have (almost) same fitness
 	// so check if this chormosome has less bits set than the other chromosome
 	return (this->popcount() < ch.popcount());
+}
+
+Chromosome Chromosome::operator=(const Chromosome &ch) const {
+	return Chromosome(ch);
 }
 
 /**
