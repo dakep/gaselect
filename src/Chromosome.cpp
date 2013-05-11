@@ -95,8 +95,10 @@ void Chromosome::mutate() {
 		
 	uint16_t randPos = 0;
 	uint16_t i = 0;
-		
-	uint16_t *posPop = new uint16_t[(numNotSetBits < numSetBits) ? numSetBits : numNotSetBits];
+	
+	std::vector<uint16_t> posPop;
+	posPop.reserve((numNotSetBits < numSetBits) ? numSetBits : numNotSetBits);
+//	uint16_t *posPop = new uint16_t[(numNotSetBits < numSetBits) ? numSetBits : numNotSetBits];
 	
 	// The new position is somewhere between i and # of 1's,
 	// so the random number can be between 0 and # of 1's - i;
@@ -152,6 +154,8 @@ void Chromosome::mutate() {
 		} while (mask > 0);
 		mask = (uint_fast64_t) 1;
 	}
+	
+//	delete[] posPop;
 	
 // Slower, but simpler algorithm
 	

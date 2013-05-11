@@ -28,17 +28,13 @@ Population::Population(const Control &ctrl, const ::Evaluator &evaluator) : ctrl
 
 Population::~Population() {
 	SortedChromosomes::iterator rmEliteIter = this->elite.begin();
-	std::vector<Chromosome*>::iterator rmGenerationIter = this->currentGeneration.begin();
 	
 	// Delete all elite chromosomes from stack
 	for(; rmEliteIter != this->elite.end(); ++rmEliteIter) {
 		delete (*rmEliteIter);
 	}
 	
-	// Delete all chromosomes from the last generation from stack
-	for(; rmGenerationIter != this->currentGeneration.end(); ++rmGenerationIter) {
-		delete (*rmGenerationIter);
-	}
+	this->cleanCurrentGeneration();
 }
 
 //inline double Population::evaluateFitness(Chromosome* ch) {
@@ -217,6 +213,8 @@ void Population::run() {
 		}
 		
 		// Housekeeping
+		// first delete old chromsomes
+		this->cleanCurrentGeneration();
 		this->currentGeneration = newGeneration;
 		newGeneration.clear();
 		
@@ -242,3 +240,12 @@ inline std::ostream& Population::printChromosomeFitness(std::ostream &os, Chromo
 	return os;
 }
 
+
+inline void Population::cleanCurrentGeneration() {
+	std::vector<Chromosome*>::iterator rmGenerationIter = this->currentGeneration.begin();
+	
+	// Delete all chromosomes from the last generation from stack
+	for(; rmGenerationIter != this->currentGeneration.end(); ++rmGenerationIter) {
+		delete (*rmGenerationIter);
+	}
+}

@@ -47,6 +47,8 @@ private:
 	void addChromosomeToElite(Chromosome* ch);
 	
 	std::ostream& printChromosomeFitness(std::ostream &os, Chromosome *ch);
+	
+	void cleanCurrentGeneration();
 
 	const Control ctrl;
 	const Evaluator * const evaluator;
