@@ -48,8 +48,8 @@ BEGIN_RCPP
 	} else {
 		Rcpp::NumericMatrix XMat(SX);
 		Rcpp::NumericMatrix YMat(Sy);
-		arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
-		arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
+		arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false, true);
+		arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false, true);
 		PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
 
 		pls = PLS::getInstance(method, X, Y, false);
@@ -73,8 +73,8 @@ BEGIN_RCPP
 	uint16_t i = (uint16_t) result.size() - 1;
 	
 	for(SortedChromosomes::iterator it = result.begin(); it != result.end(); ++it, --i) {
-		retFitnesses[i] = (*it)->getFitness();
-		retMatrix.column(i) = (*it)->toLogicalVector();
+		retFitnesses[i] = it->getFitness();
+		retMatrix.column(i) = it->toLogicalVector();
 	}
 
 	delete eval; // must definitely be freed
