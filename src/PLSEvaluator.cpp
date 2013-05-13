@@ -113,7 +113,7 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 				// The probability that the uniform generator returns *exactly* 1 is zero, but it might happen
 				// anyway. Substracting a very small number may result in negative results, but the
 				// integer is unsigned so it can not get smaller than 0
-				randPos = n + i + (arma::uword) ((this->unifGen() - DISCRETE_CORRECTION) * (this->nrows - n - i));
+				randPos = n + i + (arma::uword) (this->unifGen() * (this->nrows - n - i));
 								
 				std::swap(rowNumbers[n + i], rowNumbers[randPos]);
 				std::swap(rowNumbers[i], rowNumbers[n + i]);

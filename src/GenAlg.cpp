@@ -27,24 +27,21 @@ SEXP genAlg(SEXP Scontrol, SEXP SX, SEXP Sy) {
 	bool useUserFunction = false;
 BEGIN_RCPP
 
-	Control ctrl;
 	List control = List(Scontrol);
-
 	// All checks are disabled and must be performed in the R code calling this script
 	// Otherwise unexpected behaviour
-
-	// All list elements accessed below HAVE to be set in the control list
-	ctrl.setChromosomeSize(as<uint16_t>(control["chromosomeSize"]));
-	ctrl.setPopulationSize(as<uint16_t>(control["populationSize"]));
-	ctrl.setNumberOfGenerations(as<uint16_t>(control["numGenerations"]));
-	ctrl.setElitism(as<uint16_t>(control["elitism"]));
-	ctrl.setMutate0To1Probability(as<double>(control["mutationProb"]));
-	ctrl.setOnesRatio(as<double>(control["onesRatio"]));
-	ctrl.setVerbosity((VerbosityLevel) as<int>(control["verbosity"]));
+	Control ctrl(as<uint16_t>(control["chromosomeSize"]),
+				 as<uint16_t>(control["populationSize"]),
+				 as<uint16_t>(control["numGenerations"]),
+				 as<uint16_t>(control["elitism"]),
+				 as<uint16_t>(control["minVariables"]),
+				 as<uint16_t>(control["maxVariables"]),
+				 (VerbosityLevel) as<int>(control["verbosity"]));
+	//as<double>(control["mutationProb"])
 
 	useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
 	if(useUserFunction) {
-		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.getVerbosity());
+		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
 	} else {
 		Rcpp::NumericMatrix XMat(SX);
 		Rcpp::NumericMatrix YMat(Sy);
@@ -55,11 +52,11 @@ BEGIN_RCPP
 		pls = PLS::getInstance(method, X, Y, false);
 		toFree |= 2; // pls has to be freed
 		
-		eval = new PLSEvaluator(*pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.getVerbosity());
+		eval = new PLSEvaluator(*pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity);
 	}
 	toFree |= 1; // eval has to be freed
 
-	if(ctrl.getVerbosity() == MORE_VERBOSE) {
+	if(ctrl.verbosity == MORE_VERBOSE) {
 		Rcout << ctrl << std::endl;		
 	}
 	
@@ -68,7 +65,7 @@ BEGIN_RCPP
 
 	SortedChromosomes result = pop.getResult();
 
-	Rcpp::LogicalMatrix retMatrix(ctrl.getChromosomeSize(), (const int) result.size());
+	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());
 	Rcpp::NumericVector retFitnesses((const int) result.size());
 	uint16_t i = (uint16_t) result.size() - 1;
 	

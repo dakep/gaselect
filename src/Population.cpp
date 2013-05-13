@@ -18,10 +18,10 @@ Population::Population(const Control &ctrl, const ::Evaluator &evaluator) : ctrl
 	// Initialize a vector of doubles that is used to
 	// map a 0-1 uniform random variable to the appropriate
 	// chromosome. 
-	this->fitnessMap.reserve(this->ctrl.getPopulationSize());
+	this->fitnessMap.reserve(this->ctrl.populationSize);
 	
 	// initialize original population (generation 0) totally randomly
-	this->currentGeneration.reserve(this->ctrl.getPopulationSize());
+	this->currentGeneration.reserve(this->ctrl.populationSize);
 	
 	this->minEliteFitness = 0.0;
 }
@@ -38,7 +38,7 @@ Population::~Population() {
 }
 
 Chromosome Population::getChromosomeFromFitnessMap(double rand) const {
-	int imin = 0, imax = this->ctrl.getPopulationSize();
+	int imin = 0, imax = this->ctrl.populationSize;
 	int imid = 0;
 	bool found = false;
 	
@@ -61,8 +61,8 @@ Chromosome Population::getChromosomeFromFitnessMap(double rand) const {
 
 inline void Population::addChromosomeToElite(Chromosome& ch) {
 	// Add chromosome to elite if better than the worst elite-chromosome
-	if(this->ctrl.getElitism() > 0 && (ch.getFitness() > this->minEliteFitness || this->elite.size() < this->ctrl.getElitism())) {
-		if(this->elite.size() >= this->ctrl.getElitism()) {
+	if(this->ctrl.elitism > 0 && (ch.getFitness() > this->minEliteFitness || this->elite.size() < this->ctrl.elitism)) {
+		if(this->elite.size() >= this->ctrl.elitism) {
 			this->elite.erase(this->elite.begin());
 		}
 
@@ -70,7 +70,7 @@ inline void Population::addChromosomeToElite(Chromosome& ch) {
 
 		this->minEliteFitness = this->elite.begin()->getFitness();
 		
-		if(this->ctrl.getVerbosity() == MORE_VERBOSE) {
+		if(this->ctrl.verbosity == MORE_VERBOSE) {
 			Rcout << "Adding chromosome to elite. New minimum fitness for elite is " << this->minEliteFitness << std::endl;
 		}
 	}
@@ -78,8 +78,9 @@ inline void Population::addChromosomeToElite(Chromosome& ch) {
 
 void Population::run() {
 	int i = 0, j = 0;
-	int popSizeHalf = this->ctrl.getPopulationSize() / 2;
-	
+	int popSizeHalf = this->ctrl.populationSize / 2;
+	VariablePositionPopulation varPosPop(this->ctrl.chromosomeSize);
+
 	double sumFitness = 0.0;
 	double minFitness = 0.0;
 
@@ -90,22 +91,22 @@ void Population::run() {
 	std::vector<double>::iterator fitnessMapIt;
 	Rcpp::stats::UnifGenerator__0__1 unifGen;
 	
-	newGeneration.reserve(this->ctrl.getPopulationSize());
-	newFitnessMap.reserve(this->ctrl.getPopulationSize());
+	newGeneration.reserve(this->ctrl.populationSize);
+	newFitnessMap.reserve(this->ctrl.populationSize);
 	
-	if(this->ctrl.getVerbosity() > OFF) {
+	if(this->ctrl.verbosity > OFF) {
 		Rcout << "Generating initial population:" << std::endl;
 	}
 	
-	for(i = this->ctrl.getPopulationSize(); i > 0; --i) {
-		Chromosome tmpChromosome1(this->ctrl);
+	for(i = this->ctrl.populationSize; i > 0; --i) {
+		Chromosome tmpChromosome1(this->ctrl, varPosPop);
 
 		this->fitnessMap.push_back(this->evaluator->evaluate(tmpChromosome1));
 		if(tmpChromosome1.getFitness() < minFitness) {
 			minFitness = tmpChromosome1.getFitness();
 		}
 				
-		if(this->ctrl.getVerbosity() == MORE_VERBOSE) {
+		if(this->ctrl.verbosity == MORE_VERBOSE) {
 			this->printChromosomeFitness(Rcout, tmpChromosome1);
 		}
 		this->addChromosomeToElite(tmpChromosome1);
@@ -113,7 +114,7 @@ void Population::run() {
 	}
 	
 #ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
+	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
 		Rcout << "Fitness map: ";
 	}
 #endif
@@ -123,16 +124,16 @@ void Population::run() {
 		(*fitnessMapIt) = sumFitness;
 		
 #ifdef ENABLE_DEBUG_VERBOSITY
-		if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
+		if(this->ctrl.verbosity == DEBUG_VERBOSE) {
 			Rcout << sumFitness << " | ";
 		}
 #endif
 	}
 
 
-	for(i = this->ctrl.getNumberOfGenerations(); i > 0; --i) {
-		if(this->ctrl.getVerbosity() > OFF) {
-			Rcout << "Generating generation " << (this->ctrl.getNumberOfGenerations() - i + 1) << std::endl;
+	for(i = this->ctrl.numGenerations; i > 0; --i) {
+		if(this->ctrl.verbosity > OFF) {
+			Rcout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
 		
 		minFitness = 0.0;
@@ -143,7 +144,7 @@ void Population::run() {
 			Chromosome tmpChromosome2 = this->getChromosomeFromFitnessMap(unifGen() * sumFitness);
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-			if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
+			if(this->ctrl.verbosity == DEBUG_VERBOSE) {
 				Rcout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and" << std::endl
 				<< *tmpChromosome2 << std::endl;
 			}
@@ -165,7 +166,7 @@ void Population::run() {
 				minFitness = children[1].getFitness();
 			}
 
-			if(this->ctrl.getVerbosity() == MORE_VERBOSE) {
+			if(this->ctrl.verbosity == MORE_VERBOSE) {
 				this->printChromosomeFitness(Rcout, children[0]);
 				this->printChromosomeFitness(Rcout, children[1]);
 			}
@@ -178,7 +179,7 @@ void Population::run() {
 		}
 		
 #ifdef ENABLE_DEBUG_VERBOSITY
-		if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
+		if(this->ctrl.verbosity == DEBUG_VERBOSE) {
 			Rcout << "Fitness map: ";
 		}
 #endif
@@ -190,7 +191,7 @@ void Population::run() {
 			(*fitnessMapIt) = sumFitness;
 			
 #ifdef ENABLE_DEBUG_VERBOSITY
-			if(this->ctrl.getVerbosity() == DEBUG_VERBOSE) {
+			if(this->ctrl.verbosity == DEBUG_VERBOSE) {
 				Rcout << sumFitness << " | ";
 			}
 #endif
@@ -210,7 +211,7 @@ void Population::run() {
 SortedChromosomes Population::getResult() const {
 	SortedChromosomes result(this->currentGeneration.begin(), this->currentGeneration.end());
 
-	if(this->ctrl.getElitism() > 0 && this->elite.size() > 0) {
+	if(this->ctrl.elitism > 0 && this->elite.size() > 0) {
 		result.insert(this->elite.begin(), this->elite.end());
 	}
 

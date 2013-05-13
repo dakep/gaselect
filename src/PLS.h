@@ -66,11 +66,11 @@ public:
 	arma::mat predict(arma::mat newX, uint16_t ncomp) const;
 	arma::cube predict(arma::mat newX) const;
 
-	const arma::mat getX() const { return this->X; }
-	const arma::mat getY() const { return this->Y; }
+	const arma::mat & getX() const { return this->X; }
+	const arma::mat & getY() const { return this->Y; }
 protected:
-	const arma::mat X;
-	const arma::mat Y;
+	const arma::mat & X;
+	const arma::mat & Y;
 	const bool fitValues;
 	
 	bool validResultState;

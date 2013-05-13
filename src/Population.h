@@ -50,7 +50,7 @@ private:
 	
 //	void cleanCurrentGeneration();
 
-	const Control ctrl;
+	const Control & ctrl;
 	const Evaluator * const evaluator;
 };
 

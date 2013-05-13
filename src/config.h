@@ -9,6 +9,8 @@
 #ifndef GenAlgPLS_config_h
 #define GenAlgPLS_config_h
 
+#include <inttypes.h>
+
 // #define ENABLE_DEBUG_VERBOSITY
 
 //#define TIMING_BENCHMARK
@@ -19,6 +21,12 @@
 #define WIDTH PRECISION + 5
 #define DELIMITER_POSITION 4
 #define BITS_PER_BYTE 8
-#define DISCRETE_CORRECTION 0.0000000001 // 1e-10
+#define RNG_MAX_BITS 32
+
+typedef uint64_t IntChromosome;
+#define INT_CHROMOSOME_BITS 64
+#define INT_CHROMOSOME_MAX UINT64_MAX
+#define RANDS_PER_INT_CHROMOSOME 2
+
 
 #endif
