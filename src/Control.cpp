@@ -8,8 +8,9 @@
 #include <algorithm>
 #include "Control.h"
 
-Control::Control(const uint16_t chromosomeSize, const uint16_t popSize, const uint16_t numGenerations, const uint16_t elitism, const uint16_t minVariables, const uint16_t maxVariables, const enum VerbosityLevel verbosity) :
-	chromosomeSize(chromosomeSize), populationSize(popSize), numGenerations(numGenerations), elitism(elitism), minVariables(minVariables), maxVariables(maxVariables), verbosity(verbosity) {
+Control::Control(const uint16_t chromosomeSize, const uint16_t popSize, const uint16_t numGenerations, const uint16_t elitism, const uint16_t minVariables, const uint16_t maxVariables, const double mutationProbability, const enum VerbosityLevel verbosity) :
+	chromosomeSize(chromosomeSize), populationSize(popSize), numGenerations(numGenerations), elitism(elitism), minVariables(minVariables), maxVariables(maxVariables),
+	mutationProbability(mutationProbability), verbosity(verbosity) {
 
 		this->variablePositionPopulation.reserve(this->chromosomeSize);
 		
@@ -43,7 +44,7 @@ std::ostream& operator<<(std::ostream &os, const Control &ctrl) {
 		<< "Number of generations: " << ctrl.numGenerations << std::endl
 		<< "Number of elite chromosomes to keep: " << ctrl.elitism << std::endl
 		<< "Number of variables set: " << ctrl.minVariables << " to " << ctrl.maxVariables << std::endl
-//		<< "Probability to mutate 0 to 1: " << ctrl.mutate0To1Probability << std::endl
+		<< "Mutation probability " << ctrl.mutationProbability << std::endl
 	<< "Verbosity Level: " << ctrl.verbosity << std::endl;
 
 	return os;

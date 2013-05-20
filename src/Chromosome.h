@@ -11,6 +11,7 @@
 #include <Rcpp/stats/random/runif.h>
 
 #include "Control.h"
+#include "TruncatedGeomGenerator.h"
 #include "VariablePositionPopulation.h"
 
 class InvalidCopulationException : public Rcpp::exception {
@@ -24,13 +25,13 @@ class Chromosome {
 public:
 	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop);
 	Chromosome(const Chromosome &other, bool copyChromosomeParts = true);
-	~Chromosome();
+//	~Chromosome();
 	
 	void mutate();
 	std::vector<Chromosome> copulateWith(const Chromosome &other);
 
-	void setFitness(double fitness);
-	double getFitness() const;
+	void setFitness(double fitness) { this->fitness = fitness; };
+	double getFitness() const { return this->fitness; };
 
 	Rcpp::LogicalVector toLogicalVector() const;
 	arma::uvec toColumnSubset() const;
@@ -49,10 +50,13 @@ private:
 	static const uint64_t H01 = 0x0101010101010101; // the sum of 256 to the power of 0,1,2,3...
 	static const uint16_t BITS_PER_PART = INT_CHROMOSOME_BITS;
 
-	const Rcpp::stats::UnifGenerator__0__1 unifGen;
 	const Control &ctrl;
-	
+	const TruncatedGeomGenerator tgeom;
+	const Rcpp::stats::UnifGenerator__0__1 unifGen;
+
 	VariablePositionPopulation &varPosPop;
+
+	void shuffle(std::vector<uint16_t>& pop, const uint16_t fillLength, const uint16_t shuffleLength) const;
 
 	/*
 	 * Init the internal used chromosome parts completely random taking
@@ -61,7 +65,6 @@ private:
 	 */
 	void initChromosomeParts();
 
-	
 	/*
 	 * R's RNG only returns between 25 and 32 random bits
 	 * so two random numbers must be "glued" together to form
@@ -69,15 +72,17 @@ private:
 	 */
 	IntChromosome runif() const;
 
-	std::ostream& printBits(std::ostream &os, IntChromosome &bits, uint16_t leaveOut = 0) const;
+	std::ostream& printBits(std::ostream &os, IntChromosome bits, uint16_t leaveOut = 0) const;
 	
 	uint16_t popcount() const;
 	
 	uint16_t numParts;
 	uint16_t unusedBits;
 	
-	IntChromosome* chromosomeParts;
+	std::vector<IntChromosome> chromosomeParts;
 	double fitness;
+
+	
 };
 
 #endif

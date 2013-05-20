@@ -36,17 +36,18 @@ BEGIN_RCPP
 				 as<uint16_t>(control["elitism"]),
 				 as<uint16_t>(control["minVariables"]),
 				 as<uint16_t>(control["maxVariables"]),
+				 as<double>(control["mutationProb"]),
 				 (VerbosityLevel) as<int>(control["verbosity"]));
 	//as<double>(control["mutationProb"])
-
+	
 	useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
 	if(useUserFunction) {
 		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
 	} else {
 		Rcpp::NumericMatrix XMat(SX);
 		Rcpp::NumericMatrix YMat(Sy);
-		arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false, true);
-		arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false, true);
+		arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
+		arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 		PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
 
 		pls = PLS::getInstance(method, X, Y, false);
@@ -56,7 +57,7 @@ BEGIN_RCPP
 	}
 	toFree |= 1; // eval has to be freed
 
-	if(ctrl.verbosity == MORE_VERBOSE) {
+	if(ctrl.verbosity >= MORE_VERBOSE) {
 		Rcout << ctrl << std::endl;		
 	}
 	

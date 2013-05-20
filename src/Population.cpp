@@ -37,7 +37,7 @@ Population::~Population() {
 //	this->cleanCurrentGeneration();
 }
 
-Chromosome Population::getChromosomeFromFitnessMap(double rand) const {
+Chromosome& Population::getChromosomeFromFitnessMap(double rand) {
 	int imin = 0, imax = this->ctrl.populationSize;
 	int imid = 0;
 	bool found = false;
@@ -66,11 +66,11 @@ inline void Population::addChromosomeToElite(Chromosome& ch) {
 			this->elite.erase(this->elite.begin());
 		}
 
-		this->elite.insert(Chromosome(ch));
+		this->elite.insert(ch); // The insert copies the chromosome!
 
 		this->minEliteFitness = this->elite.begin()->getFitness();
 		
-		if(this->ctrl.verbosity == MORE_VERBOSE) {
+		if(this->ctrl.verbosity >= MORE_VERBOSE) {
 			Rcout << "Adding chromosome to elite. New minimum fitness for elite is " << this->minEliteFitness << std::endl;
 		}
 	}
@@ -87,7 +87,6 @@ void Population::run() {
 //	Chromosome tmpChromosome1, tmpChromosome2;
 	std::vector<double> newFitnessMap;
 	std::vector<Chromosome> newGeneration;
-	std::vector<Chromosome> children;
 	std::vector<double>::iterator fitnessMapIt;
 	Rcpp::stats::UnifGenerator__0__1 unifGen;
 	
@@ -106,7 +105,7 @@ void Population::run() {
 			minFitness = tmpChromosome1.getFitness();
 		}
 				
-		if(this->ctrl.verbosity == MORE_VERBOSE) {
+		if(this->ctrl.verbosity >= MORE_VERBOSE) {
 			this->printChromosomeFitness(Rcout, tmpChromosome1);
 		}
 		this->addChromosomeToElite(tmpChromosome1);
@@ -129,7 +128,11 @@ void Population::run() {
 		}
 #endif
 	}
-
+#ifdef ENABLE_DEBUG_VERBOSITY
+	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+		Rcout << std::endl;
+	}
+#endif
 
 	for(i = this->ctrl.numGenerations; i > 0; --i) {
 		if(this->ctrl.verbosity > OFF) {
@@ -145,13 +148,13 @@ void Population::run() {
 
 #ifdef ENABLE_DEBUG_VERBOSITY
 			if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-				Rcout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and" << std::endl
-				<< *tmpChromosome2 << std::endl;
+				Rcout << "Mating chromosomes " << std::endl << tmpChromosome1 << " and" << std::endl
+				<< tmpChromosome2 << std::endl;
 			}
 #endif
 			
-			children = tmpChromosome1.copulateWith(tmpChromosome2);
-
+			std::vector<Chromosome> children = tmpChromosome1.copulateWith(tmpChromosome2);
+			
 			children[0].mutate();
 			children[1].mutate();
 						
@@ -166,7 +169,7 @@ void Population::run() {
 				minFitness = children[1].getFitness();
 			}
 
-			if(this->ctrl.verbosity == MORE_VERBOSE) {
+			if(this->ctrl.verbosity >= MORE_VERBOSE) {
 				this->printChromosomeFitness(Rcout, children[0]);
 				this->printChromosomeFitness(Rcout, children[1]);
 			}
@@ -196,6 +199,11 @@ void Population::run() {
 			}
 #endif
 		}
+#ifdef ENABLE_DEBUG_VERBOSITY
+		if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+			Rcout << std::endl;
+		}
+#endif
 		
 		// Housekeeping
 		// first delete old chromsomes

@@ -12,20 +12,21 @@
 
 VariablePositionPopulation::VariablePositionPopulation(const uint16_t size) : size(size), unifGen() {
 	uint16_t i = 0, j = 1;
+	this->variablePositionPopulation.reserve(this->size);
 	for(; j < this->size; i += 2, j += 2) {
-		this->variablePositionPopulation[i] = i;
-		this->variablePositionPopulation[j] = j;
+		this->variablePositionPopulation.push_back(i);
+		this->variablePositionPopulation.push_back(j);
 	}
 	if(i < this->size) {
-		this->variablePositionPopulation[i] = i;
+		this->variablePositionPopulation.push_back(i);
 	}
 }
 
-VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(uint16_t length) {
+VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(const uint16_t length, const uint16_t shift) {
 	uint16_t randPos = 0;
 	
 	if(length > this->size) {
-		throw Rcpp::exception("Can not get a random sample with more elements than the population size", __FILE__, __LINE__);
+		throw Rcpp::exception("Can not get a random sample with more elements than elements in the population", __FILE__, __LINE__);
 	}
 	
 	for(uint16_t i = 0; i < length; ++i) {
@@ -33,13 +34,11 @@ VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(u
 		std::swap(this->variablePositionPopulation[i], this->variablePositionPopulation[randPos]);
 	}
 	
-	return const_iterator(*this, length);
+	return const_iterator(*this, length, shift);
 }
 
-// VariablePositionPopulation::iterator::iterator(const VariablePositionPopulation &obj, const uint16_t length) : obj(obj), length(length) {}
-
 VariablePositionPopulation::const_iterator & VariablePositionPopulation::const_iterator::operator++() {
-	if(++this->curPos > this->length) {
+	if(++this->curPos >= this->length) {
 		this->curPos = this->obj.variablePositionPopulation.size();
 	}
 	

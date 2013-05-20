@@ -19,6 +19,12 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	arma::uvec rowNumbers = this->initRowNumbers();
 	arma::uword rep = 0;
 	sumSSD.zeros();
+	
+#ifdef ENABLE_DEBUG_VERBOSITY
+	if(this->verbosity == DEBUG_VERBOSE) {
+		Rcpp::Rcout << "EVALUATOR: Testing model with variables" << std::endl << columnSubset.t() << std::endl;
+	}
+#endif
 
 	for(rep = 0; rep < this->numReplications; ++rep) {
 		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
@@ -127,14 +133,8 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;
 		}
 #endif
-		try {
 		leftOutX = this->pls->getX().submat(segment, columnSubset);
 		leftOutY = this->pls->getY().rows(segment);
-		} catch (std::logic_error le) {
-			Rcpp::Rcout << "Column subset: " << columnSubset.t() << std::endl << std::endl;
-			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;
-			throw le;
-		}
 		this->pls->setSubmatrixView(notSegment, columnSubset);
 		
 		if(--completeSegments == 0) {

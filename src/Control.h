@@ -24,15 +24,15 @@ enum VerbosityLevel {
 class Control {
 
 public:
-	Control(const uint16_t chromosomeSize, const uint16_t popSize, const uint16_t numGenerations, const uint16_t elitism, const uint16_t minVariables, const uint16_t maxVariables, const enum VerbosityLevel verbosity);
+	Control(const uint16_t chromosomeSize, const uint16_t popSize, const uint16_t numGenerations, const uint16_t elitism, const uint16_t minVariables, const uint16_t maxVariables, const double mutationProbability, const enum VerbosityLevel verbosity);
 	const uint16_t chromosomeSize;
 	const uint16_t populationSize;
 	const uint16_t numGenerations;
 	const uint16_t elitism;
 	const uint16_t minVariables;
 	const uint16_t maxVariables;
+	const double mutationProbability;
 	const enum VerbosityLevel verbosity;
-	const double mutationProbability = 0.2;
 	
 	/*
 	 * The values in this vector may be shuffled but the size must not be changed!

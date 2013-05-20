@@ -118,7 +118,13 @@ genAlg <- function(y, X, control = genAlgControl(populationSize = floor(sqrt(nco
 	ctrlArg <- c(control, evalControl);
 	ctrlArg$chromosomeSize = ncol(X);
 
-	print(str(ctrlArg));
+	if(ctrlArg$minVariables >= ctrlArg$chromosomeSize) {
+		stop("The minimum number of variables must be strictly less than the number of available variables");
+	}
+
+	if(ctrlArg$maxVariables > ctrlArg$chromosomeSize) {
+		stop("The maximum number of variables must be less or equal than the number of available variables");
+	}
 
 	if(ctrlArg$useUserSuppliedFunction == TRUE) {
 		return(.Call("genAlg", ctrlArg, NULL, NULL, PACKAGE = "GenAlgPLS"));

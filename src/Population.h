@@ -43,7 +43,7 @@ private:
 	double minEliteFitness;
 	
 //	double evaluateFitness(Chromosome* ch);
-	Chromosome getChromosomeFromFitnessMap(double rand) const;
+	Chromosome &getChromosomeFromFitnessMap(double rand);
 	void addChromosomeToElite(Chromosome &ch);
 	
 	std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch);

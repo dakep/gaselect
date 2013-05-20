@@ -69,8 +69,8 @@ public:
 	const arma::mat & getX() const { return this->X; }
 	const arma::mat & getY() const { return this->Y; }
 protected:
-	const arma::mat & X;
-	const arma::mat & Y;
+	const arma::mat X;
+	const arma::mat Y;
 	const bool fitValues;
 	
 	bool validResultState;
