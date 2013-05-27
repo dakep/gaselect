@@ -82,10 +82,7 @@ inline void Chromosome::initChromosomeParts() {
 	for(; setPosIter != this->varPosPop.end(); ++setPosIter) {
 		part = (*setPosIter) / Chromosome::BITS_PER_PART;
 		offset = (*setPosIter) % Chromosome::BITS_PER_PART;
-		
-		if(part == 0)
-			
-			this->chromosomeParts[part] |= (((IntChromosome) 1) << offset);
+		this->chromosomeParts[part] |= (((IntChromosome) 1) << offset);
 	}
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
