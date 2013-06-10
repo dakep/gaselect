@@ -12,7 +12,7 @@
 #include <RcppArmadillo.h>
 #include <inttypes.h>
 
-#include <Rcpp/stats/random/runif.h>
+#include "UnifGenerator__0__1.h"
 
 class TruncatedGeomGenerator : public Rcpp::Generator<uint16_t> {
 public:

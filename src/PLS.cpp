@@ -26,7 +26,7 @@ void PLS::setSubmatrixView(const arma::uvec &rows, const arma::uvec &columns) {
 
 	this->viewX = arma::mat(this->X.submat(rows, columns));
 	this->viewY = arma::mat(this->Y.rows(rows));
-	
+
 	this->subviewChanged();
 }
 
@@ -45,10 +45,10 @@ void PLS::setSubmatrixViewRows(const arma::uvec &rows) {
 	// As usually the submatrices are used alot and the columns and rows
 	// are generally not consequtive, it is faster to create a copy of the
 	// submatrix and work with the copy than to always access the submatrix view
-	
+
 	this->viewX = arma::mat(this->X.rows(rows));
 	this->viewY = arma::mat(this->Y.rows(rows));
-	
+
 	this->subviewChanged();
 }
 
@@ -71,7 +71,7 @@ arma::cube PLS::predict(arma::mat newX) const {
 		pred.slice(i) = newX * coefs.slice(i);
 		pred.slice(i).each_row() += intercepts.row(i);
 	}
-	
+
 	return pred;
 }
 
@@ -82,7 +82,7 @@ PLS* PLS::getInstance(PLSMethod method, const arma::mat &X, const arma::mat &Y, 
 			ret = new PLSSimpls(X, Y, fitValues);
 			break;
 	}
-	
+
 	return ret;
 }
 

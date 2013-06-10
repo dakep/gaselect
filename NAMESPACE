@@ -1,2 +1,4 @@
+export(genAlg)
+export(genAlgControl)
+export(genAlgEvalControl)
 useDynLib(GenAlgPLS)
-exportPattern("^[[:alpha:]]+")

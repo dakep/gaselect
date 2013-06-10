@@ -19,9 +19,9 @@ class UserFunEvaluator : public Evaluator {
 public:
 	UserFunEvaluator(Rcpp::Function const &userFun, const VerbosityLevel &verbosity) : Evaluator(verbosity), userFun(userFun) {};
 //	~UserFunEvaluator();
-	
+
 	double evaluate(Chromosome &ch) const;
-	
+
 private:
 	const Rcpp::Function userFun;
 };

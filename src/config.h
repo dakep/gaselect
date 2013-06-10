@@ -25,9 +25,7 @@
 #define INT_RNG_MAX 4294967296 // 2^RNG_MAX_BITS
 
 typedef uint64_t IntChromosome;
-#define INT_CHROMOSOME_BITS 64
 #define INT_CHROMOSOME_MAX UINT64_MAX
-#define RANDS_PER_INT_CHROMOSOME 2
 
 
 // Mutation algorithm

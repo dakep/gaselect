@@ -41,8 +41,8 @@
  */
 RcppExport SEXP genAlg(SEXP control, SEXP X, SEXP y);
 
-RcppExport SEXP simpls(SEXP X, SEXP Y, SEXP ncomp, SEXP newX);
-
-RcppExport SEXP evalTest(SEXP X, SEXP Y, SEXP numReplications, SEXP numSegments);
+// RcppExport SEXP simpls(SEXP X, SEXP Y, SEXP ncomp, SEXP newX);
+//
+// RcppExport SEXP evalTest(SEXP X, SEXP Y, SEXP numReplications, SEXP numSegments);
 
 #endif

@@ -17,7 +17,7 @@ class Evaluator {
 public:
 	Evaluator(const VerbosityLevel verbosity) : verbosity(verbosity) {}
 	virtual ~Evaluator() {};
-	
+
 	virtual double evaluate(Chromosome &ch) const = 0;
 protected:
 	const VerbosityLevel verbosity;

@@ -13,7 +13,7 @@
 #include <vector>
 #include <inttypes.h>
 #include <RcppArmadillo.h>
-#include <Rcpp/stats/random/runif.h>
+#include "UnifGenerator__0__1.h"
 
 class VariablePositionPopulation;
 
@@ -21,7 +21,7 @@ class VariablePositionPopulation
 {
 public:
 	VariablePositionPopulation(const uint16_t size);
-		
+
 	class const_iterator : public std::iterator<std::input_iterator_tag, uint16_t> {
 	public:
 		const_iterator(const VariablePositionPopulation &obj, const uint16_t length, const uint16_t shift, const uint16_t pos = 0) : obj(obj), length(length), shift(shift), curPos(pos) {};
@@ -29,16 +29,16 @@ public:
 		const_iterator & operator++();
 		bool operator==(const const_iterator & iter) const { return (this->curPos == iter.curPos); }
 		bool operator!=(const const_iterator & iter) const { return !(*this == iter); }
-		
+
 	private:
 		const VariablePositionPopulation &obj;
 		const uint16_t length;
 		const uint16_t shift;
 		uint16_t curPos;
 	};
-	
+
 	typedef VariablePositionPopulation::const_iterator const_iterator;
-	
+
 	/**
 	 * Convenience method to shuffle the variable-position population
 	 * optionally only the first `length` positions in the population
@@ -48,9 +48,9 @@ public:
 	 * positions are shifted.
 	 */
 	const_iterator shuffle(const uint16_t length, const uint16_t shift);
-	
+
 	const_iterator end() { return const_iterator(*this, 0, 0, this->variablePositionPopulation.size()); };
-	
+
 private:
 	const uint16_t size;
 	const Rcpp::stats::UnifGenerator__0__1 unifGen;

@@ -12,7 +12,7 @@
 #include "config.h"
 
 #include <RcppArmadillo.h>
-#include <Rcpp/stats/random/runif.h>
+#include "UnifGenerator__0__1.h"
 #include <inttypes.h>
 
 #include "Evaluator.h"
@@ -41,7 +41,7 @@ private:
 	const arma::uword nrows;
 	const arma::uword segmentLength; // The length of the incomplete segments
 	const uint16_t completeSegments; // The number of segments with `segmentLength` + 1 elements. If 0, all segments have `segmentLength` elements
-	
+
 	PLS *pls;
 
 	/**
@@ -50,7 +50,7 @@ private:
 	 * SEP = SSD / sqrt(n - 1)
 	 */
 	arma::vec calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::uvec &rowNumbers) const;
-	
+
 	arma::uvec initRowNumbers() const;
 };
 

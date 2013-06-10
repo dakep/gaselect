@@ -38,8 +38,7 @@ BEGIN_RCPP
 				 as<uint16_t>(control["maxVariables"]),
 				 as<double>(control["mutationProb"]),
 				 (VerbosityLevel) as<int>(control["verbosity"]));
-	//as<double>(control["mutationProb"])
-	
+
 	useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
 	if(useUserFunction) {
 		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
@@ -52,15 +51,15 @@ BEGIN_RCPP
 
 		pls = PLS::getInstance(method, X, Y, false);
 		toFree |= 2; // pls has to be freed
-		
+
 		eval = new PLSEvaluator(*pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity);
 	}
 	toFree |= 1; // eval has to be freed
 
 	if(ctrl.verbosity >= MORE_VERBOSE) {
-		Rcout << ctrl << std::endl;		
+		Rcout << ctrl << std::endl;
 	}
-	
+
 	Population pop(ctrl, *eval);
 	pop.run();
 
@@ -69,7 +68,7 @@ BEGIN_RCPP
 	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());
 	Rcpp::NumericVector retFitnesses((const int) result.size());
 	uint16_t i = (uint16_t) result.size() - 1;
-	
+
 	for(SortedChromosomes::iterator it = result.begin(); it != result.end(); ++it, --i) {
 		retFitnesses[i] = it->getFitness();
 		retMatrix.column(i) = it->toLogicalVector();
@@ -79,7 +78,7 @@ BEGIN_RCPP
 	if((toFree & 2) > 0) {
 		delete pls;
 	}
-	
+
 	return Rcpp::List::create(Rcpp::Named("subsets") = retMatrix,
 							  Rcpp::Named("fitness") = retFitnesses);
 VOID_END_RCPP
@@ -89,47 +88,47 @@ VOID_END_RCPP
 	if((toFree & 2) > 0) {
 		delete pls;
 	}
-	
+
 	return R_NilValue;
 }
 
-SEXP simpls(SEXP Xs, SEXP Ys, SEXP numOfComp, SEXP newXs) {
-BEGIN_RCPP	
-	Rcpp::NumericMatrix XMat(Xs);
-	Rcpp::NumericMatrix YMat(Ys);
-	Rcpp::NumericMatrix newXMat(newXs);
-	uint16_t ncomp = Rcpp::as<uint16_t>(numOfComp);
-	
-	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
-	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
-	arma::mat newX(newXMat.begin(), newXMat.nrow(), newXMat.ncol(), false);
-
-	PLSSimpls simpls(X, Y, true);
-	simpls.fit(ncomp);
-
-	return Rcpp::List::create(Rcpp::Named("coefficients") = simpls.getCoefficients(),
-							  Rcpp::Named("fitted.values") = simpls.getFittedValues(),
-							  Rcpp::Named("predicted") = simpls.predict(newX));
-END_RCPP
-}
-
-
-RcppExport SEXP evalTest(SEXP Xs, SEXP Ys, SEXP numReplications, SEXP numSegments) {
-BEGIN_RCPP
-	Rcpp::NumericMatrix XMat(Xs);
-	Rcpp::NumericMatrix YMat(Ys);
-	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
-	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
-	PLSSimpls pls(X, Y, false);
-	PLSEvaluator eval(pls, Rcpp::as<uint16_t>(numReplications), Rcpp::as<uint16_t>(numSegments), DEBUG_VERBOSE);
-
-	arma::uvec colSubset(X.n_cols);
-	
-	for(uint16_t i = 0; i < X.n_cols; ++i) {
-		colSubset[i] = i;
-	}
-	
-	return Rcpp::wrap(eval.evaluate(colSubset));
-END_RCPP
-}
-
+// SEXP simpls(SEXP Xs, SEXP Ys, SEXP numOfComp, SEXP newXs) {
+// BEGIN_RCPP
+// 	Rcpp::NumericMatrix XMat(Xs);
+// 	Rcpp::NumericMatrix YMat(Ys);
+// 	Rcpp::NumericMatrix newXMat(newXs);
+// 	uint16_t ncomp = Rcpp::as<uint16_t>(numOfComp);
+//
+// 	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
+// 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
+// 	arma::mat newX(newXMat.begin(), newXMat.nrow(), newXMat.ncol(), false);
+//
+// 	PLSSimpls simpls(X, Y, true);
+// 	simpls.fit(ncomp);
+//
+// 	return Rcpp::List::create(Rcpp::Named("coefficients") = simpls.getCoefficients(),
+// 							  Rcpp::Named("fitted.values") = simpls.getFittedValues(),
+// 							  Rcpp::Named("predicted") = simpls.predict(newX));
+// END_RCPP
+// }
+//
+//
+// RcppExport SEXP evalTest(SEXP Xs, SEXP Ys, SEXP numReplications, SEXP numSegments) {
+// BEGIN_RCPP
+// 	Rcpp::NumericMatrix XMat(Xs);
+// 	Rcpp::NumericMatrix YMat(Ys);
+// 	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
+// 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
+// 	PLSSimpls pls(X, Y, false);
+// 	PLSEvaluator eval(pls, Rcpp::as<uint16_t>(numReplications), Rcpp::as<uint16_t>(numSegments), DEBUG_VERBOSE);
+//
+// 	arma::uvec colSubset(X.n_cols);
+//
+// 	for(uint16_t i = 0; i < X.n_cols; ++i) {
+// 		colSubset[i] = i;
+// 	}
+//
+// 	return Rcpp::wrap(eval.evaluate(colSubset));
+// END_RCPP
+// }
+//

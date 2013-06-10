@@ -1,6 +1,6 @@
 //
 //  Control.h
-//  
+//
 //
 
 #ifndef GenAlgPLS_Control_h
@@ -12,7 +12,7 @@
 #include <vector>
 #include <inttypes.h>
 #include <RcppArmadillo.h>
-#include <Rcpp/stats/random/runif.h>
+#include "UnifGenerator__0__1.h"
 
 enum VerbosityLevel {
 	OFF = 0,
@@ -33,14 +33,14 @@ public:
 	const uint16_t maxVariables;
 	const double mutationProbability;
 	const enum VerbosityLevel verbosity;
-	
+
 	/*
 	 * The values in this vector may be shuffled but the size must not be changed!
 	 */
 	std::vector<uint16_t> variablePositionPopulation;
-	
+
 	friend std::ostream& operator<<(std::ostream &os, const Control &ctrl);
-	
+
 	/**
 	 * Convenience method to shuffle the variable-position population
 	 * optionally only the first `length` positions in the population

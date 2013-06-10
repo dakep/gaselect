@@ -23,14 +23,14 @@ public:
 	arma::cube getCoefficients() const { return this->coef; }
 	arma::mat getIntercepts() const { return this->intercepts; };
 	arma::cube getFittedValues() const { return this->fittedValues; }
-	
+
 //	arma::mat getScores() { return this->TT; }
 //	arma::mat getYLoadings() { return this->tQ.t(); }
 //	arma::mat getProjection() { return this->R; }
 
 protected:
 	void subviewChanged();
-	
+
 private:
 	arma::cube fittedValues;
 	arma::cube coef; // Cube with coefficients

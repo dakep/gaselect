@@ -19,9 +19,9 @@ class PLS {
 public:
 	PLS(const arma::mat &X, const arma::mat &Y, const bool fitValues = true);
 	virtual ~PLS();
-	
+
 	static PLS* getInstance(PLSMethod method, const arma::mat &X, const arma::mat &Y, const bool fitValues = true);
-	
+
 	virtual void setSubmatrixView(const arma::uvec &rows, const arma::uvec &columns);
 	virtual void setSubmatrixViewColumns(const arma::uvec &columns);
 	virtual void setSubmatrixViewRows(const arma::uvec &rows);
@@ -31,20 +31,20 @@ public:
 	 * with up to ncomp components
 	 */
 	virtual void fit(uint16_t ncomp = 0) =0;
-	
+
 	/**
 	 * Get the coefficients of the last fit (i.e. coefficients
 	 * that are obtained with ncomp specified in the last call
 	 * to PLS::fit.
 	 */
 	virtual arma::cube getCoefficients() const = 0;
-	
+
 	/**
 	 * Returns the intercept term for every number of components
 	 * i.e. ncomp x nresp matrix
 	 */
 	virtual arma::mat getIntercepts() const = 0;
-	
+
 	/**
 	 * Check whether the results returned by the other methods (e.g. getCoefficients, getIntercepts, ...)
 	 * are valid.
@@ -61,7 +61,7 @@ public:
 	 * Returns the number components the last fit was performed with
 	 */
 	uint16_t getResultNComp() const { return this->resultNComp; }
-	
+
 	// ncomp should be zero based
 	arma::mat predict(arma::mat newX, uint16_t ncomp) const;
 	arma::cube predict(arma::mat newX) const;
@@ -72,7 +72,7 @@ protected:
 	const arma::mat X;
 	const arma::mat Y;
 	const bool fitValues;
-	
+
 	bool validResultState;
 	uint16_t resultNComp;
 

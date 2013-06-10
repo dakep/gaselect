@@ -19,7 +19,7 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	arma::uvec rowNumbers = this->initRowNumbers();
 	arma::uword rep = 0;
 	sumSSD.zeros();
-	
+
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->verbosity == DEBUG_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Testing model with variables" << std::endl << columnSubset.t() << std::endl;
@@ -29,7 +29,7 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	for(rep = 0; rep < this->numReplications; ++rep) {
 		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
 	}
-	
+
 	double bestFitness = -sumSSD.min();
 	ch.setFitness(bestFitness);
 
@@ -47,11 +47,11 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
 	arma::uvec rowNumbers = this->initRowNumbers();
 	arma::uword rep = 0;
 	sumSSD.zeros();
-		
+
 	for(rep = 0; rep < this->numReplications; ++rep) {
 		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
 	}
-	
+
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->verbosity == DEBUG_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSSD << std::endl;
@@ -64,7 +64,7 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
 inline arma::uvec PLSEvaluator::initRowNumbers() const {
 	arma::uword i = 0, j = 1;
 	arma::uvec rowNumbers(this->nrows);
-	
+
 	for(; j < this->nrows; i += 2, j += 2) {
 		rowNumbers[i] = i;
 		rowNumbers[j] = j;
@@ -72,7 +72,7 @@ inline arma::uvec PLSEvaluator::initRowNumbers() const {
 	if(i < this->nrows) {
 		rowNumbers[i] = i;
 	}
-	
+
 	return rowNumbers;
 }
 
@@ -92,13 +92,13 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 	int32_t completeSegments = this->completeSegments;
 	arma::uvec segment;
 	arma::uvec notSegment;
-		
+
 	arma::mat residuals;
 	arma::mat leftOutX;
 	arma::mat leftOutY;
-	
+
 	residM2n.zeros();
-	
+
 	if(this->completeSegments > 0) {
 		++segmentLength;
 	}
@@ -120,14 +120,14 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 				// anyway. Substracting a very small number may result in negative results, but the
 				// integer is unsigned so it can not get smaller than 0
 				randPos = n + i + (arma::uword) (this->unifGen() * (this->nrows - n - i));
-								
+
 				std::swap(rowNumbers[n + i], rowNumbers[randPos]);
 				std::swap(rowNumbers[i], rowNumbers[n + i]);
 			}
 			segment = rowNumbers.rows(0, segmentLength - 1);
 			notSegment = rowNumbers.rows(segmentLength, this->nrows - 1);
 		}
-		
+
 #ifdef ENABLE_DEBUG_VERBOSITY
 		if(this->verbosity == DEBUG_VERBOSE) {
 			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;
@@ -136,12 +136,12 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 		leftOutX = this->pls->getX().submat(segment, columnSubset);
 		leftOutY = this->pls->getY().rows(segment);
 		this->pls->setSubmatrixView(notSegment, columnSubset);
-		
+
 		if(--completeSegments == 0) {
 			--segmentLength;
 		}
-		
-		
+
+
 		this->pls->fit(ncomp);
 
 		// Calculate the standard error for observations not present in this segment
@@ -155,17 +155,17 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 				residM2n[comp] = residM2n[comp] + delta * (residuals[nSeg] - residMeans[comp]);
 			}
 		}
-		
+
 		n += nSeg;
 	}
-	
-	
+
+
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->verbosity == DEBUG_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Resulting M2n:" << std::endl << arma::sqrt(residM2n) << std::endl;
 	}
 #endif
-	
+
 //	Altough the square root doesn't change the order of the values,
 //	it may be necessary to accurately reflect the "distance" between two values
 	return arma::sqrt(residM2n);

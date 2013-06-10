@@ -1,6 +1,6 @@
 //
 //  Control.cpp
-//  
+//
 //
 
 #include "config.h"
@@ -13,7 +13,7 @@ Control::Control(const uint16_t chromosomeSize, const uint16_t popSize, const ui
 	mutationProbability(mutationProbability), verbosity(verbosity) {
 
 		this->variablePositionPopulation.reserve(this->chromosomeSize);
-		
+
 		uint16_t i = 0, j = 1;
 		for(; j < this->chromosomeSize; i += 2, j += 2) {
 			this->variablePositionPopulation[i] = i;
@@ -27,11 +27,11 @@ Control::Control(const uint16_t chromosomeSize, const uint16_t popSize, const ui
 void Control::shuffleVariablePositionPopulation(uint16_t length) {
 	uint16_t randPos = 0;
 	uint16_t popSize = this->variablePositionPopulation.size();
-	
+
 	if(length > popSize) {
 		length = popSize;
 	}
-	
+
 	for(uint16_t i = 0; i < length; ++i) {
 		randPos = i + this->unifGen() * popSize--;
 		std::swap(this->variablePositionPopulation[randPos], this->variablePositionPopulation[i]);
