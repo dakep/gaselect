@@ -39,7 +39,7 @@
  *	X ... A numeric matrix with dimensions n x p (optional - only needed if using internal evaluation methods)
  *	y ... A numeric vector with length n (optional - only needed if using internal evaluation methods)
  */
-RcppExport SEXP genAlg(SEXP control, SEXP X, SEXP y);
+RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y);
 
 // RcppExport SEXP simpls(SEXP X, SEXP Y, SEXP ncomp, SEXP newX);
 //

@@ -1,2 +1,5 @@
 *.so
 *.o
+config.log
+.Rapp.history
+autoconfig.h

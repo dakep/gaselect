@@ -27,7 +27,7 @@
 }
 \details{
   The evaluation of variable subsets is crucial for the
-  performance of the genAlg method. The user can use the
+  performance of the genAlgPLS method. The user can use the
   built-in evaluation method or an user-supplied function.
 
   The built-in method uses PLS with cross-validation (using

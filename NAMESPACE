@@ -1,4 +1,4 @@
-export(genAlg)
 export(genAlgControl)
 export(genAlgEvalControl)
+export(genAlgPLS)
 useDynLib(GenAlgPLS)

@@ -6,7 +6,7 @@ Version: 1.0
 Date: 2013-03-24
 Author: David Kepplinger
 Maintainer: David Kepplinger <david@dkepplinger.org>
-Description:
+Description: 
 License: LICENSE?
 Depends:
     Rcpp (>= 0.9.10),
@@ -14,4 +14,4 @@ Depends:
 LinkingTo: Rcpp, RcppArmadillo
 Collate:
     'control.R'
-    'genAlg.R'
+    'genAlgPLS.R'

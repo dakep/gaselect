@@ -19,7 +19,7 @@
 
 using namespace Rcpp;
 
-SEXP genAlg(SEXP Scontrol, SEXP SX, SEXP Sy) {
+SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy) {
 	::Evaluator *eval;
 	PLS *pls;
 	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls

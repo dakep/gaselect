@@ -20,7 +20,7 @@
 #' 		\item{\code{fitness}}{numeric vector with the fitness of the corresponding variable subset}
 #' @export
 #' @useDynLib GenAlgPLS
-genAlg <- function(y, X, control = genAlgControl(populationSize = floor(sqrt(ncol(X))), numGenerations = 100L), evalControl = genAlgEvalControl()) {
+genAlgPLS <- function(y, X, control = genAlgControl(populationSize = floor(sqrt(ncol(X))), numGenerations = 100L), evalControl = genAlgEvalControl()) {
 	if(!is.numeric(y) || !(is.vector(y) || is.matrix(y) && ncol(y) == 1)) {
 		stop("y must be a numeric vector or numeric matrix with 1 column");
 	}
@@ -55,9 +55,9 @@ genAlg <- function(y, X, control = genAlgControl(populationSize = floor(sqrt(nco
 	}
 
 	if(ctrlArg$useUserSuppliedFunction == TRUE) {
-		return(.Call("genAlg", ctrlArg, NULL, NULL, PACKAGE = "GenAlgPLS"));
+		return(.Call("genAlgPLS", ctrlArg, NULL, NULL, PACKAGE = "GenAlgPLS"));
 	} else {
-		return(.Call("genAlg", ctrlArg, X, y, PACKAGE = "GenAlgPLS"));
+		return(.Call("genAlgPLS", ctrlArg, X, y, PACKAGE = "GenAlgPLS"));
 	}
 }
 
