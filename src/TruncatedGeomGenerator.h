@@ -10,11 +10,14 @@
 #define GenAlgPLS_TruncatedGeomGenerator_h
 
 #include <RcppArmadillo.h>
-#include <inttypes.h>
 
 #include "UnifGenerator__0__1.h"
 
+#if RCPP_VERSION < Rcpp_Version(0, 10, 1)
+class TruncatedGeomGenerator : public Rcpp::Generator<false, uint16_t> {
+#else
 class TruncatedGeomGenerator : public Rcpp::Generator<uint16_t> {
+#endif
 public:
 	TruncatedGeomGenerator(const double p) : prob(p), commonDenominator(log1p(-p)) {
 	}

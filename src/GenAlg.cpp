@@ -7,7 +7,6 @@
 
 #include <RcppArmadillo.h>
 #include <set>
-#include <inttypes.h>
 
 #include "Chromosome.h"
 #include "Population.h"

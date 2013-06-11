@@ -8,7 +8,6 @@
 #include "config.h"
 
 #include <RcppArmadillo.h>
-#include <inttypes.h>
 
 enum PLSMethod {
 	SIMPLS = 0

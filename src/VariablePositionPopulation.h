@@ -11,7 +11,6 @@
 
 #include <iterator>
 #include <vector>
-#include <inttypes.h>
 #include <RcppArmadillo.h>
 #include "UnifGenerator__0__1.h"
 

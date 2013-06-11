@@ -1,0 +1,6 @@
+#!/bin/bash
+
+rm config.log
+rm src/autoconfig.h
+rm src/*.o
+rm src/*.so

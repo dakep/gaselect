@@ -14,6 +14,17 @@
 
 using namespace Rcpp;
 
+/*
+ * R user interrupt handling helpers
+ */
+static inline void check_interrupt_impl(void* /*dummy*/) {
+	R_CheckUserInterrupt();
+}
+
+inline bool check_interrupt() {
+	return (R_ToplevelExec(check_interrupt_impl, NULL) == FALSE);
+}
+
 Population::Population(const Control &ctrl, const ::Evaluator &evaluator) : ctrl(ctrl), evaluator(&evaluator) {
 	// Initialize a vector of doubles that is used to
 	// map a 0-1 uniform random variable to the appropriate
@@ -110,6 +121,10 @@ void Population::run() {
 		}
 		this->addChromosomeToElite(tmpChromosome1);
 		this->currentGeneration.push_back(tmpChromosome1);
+		
+		if(check_interrupt()) {
+			throw InterruptException();
+		}
 	}
 
 #ifdef ENABLE_DEBUG_VERBOSITY
@@ -179,6 +194,10 @@ void Population::run() {
 
 			newGeneration.push_back(children[0]);
 			newGeneration.push_back(children[1]);
+			
+			if(check_interrupt()) {
+				throw InterruptException();
+			}
 		}
 
 #ifdef ENABLE_DEBUG_VERBOSITY

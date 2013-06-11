@@ -9,7 +9,15 @@
 #ifndef GenAlgPLS_config_h
 #define GenAlgPLS_config_h
 
+#include "autoconfig.h"
+
+#ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
+#endif
+
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
 // #define ENABLE_DEBUG_VERBOSITY
 
@@ -24,8 +32,16 @@
 #define RNG_MAX_BITS 32
 #define INT_RNG_MAX 4294967296 // 2^RNG_MAX_BITS
 
-typedef uint64_t IntChromosome;
-#define INT_CHROMOSOME_MAX UINT64_MAX
+
+#ifdef HAVE_UINT64_MAX
+	typedef uint64_t IntChromosome;
+	#define INT_CHROMOSOME_MAX UINT64_MAX
+#elif defined HAVE_UINT32_MAX
+	typedef uint32_t IntChromosome;
+	#define INT_CHROMOSOME_MAX UINT32_MAX
+#else
+#error "No suitable integral type supported"
+#endif
 
 
 // Mutation algorithm

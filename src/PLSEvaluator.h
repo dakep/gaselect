@@ -13,7 +13,6 @@
 
 #include <RcppArmadillo.h>
 #include "UnifGenerator__0__1.h"
-#include <inttypes.h>
 
 #include "Evaluator.h"
 #include "Chromosome.h"

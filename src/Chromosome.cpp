@@ -5,7 +5,6 @@
 
 #include "config.h"
 
-#include <inttypes.h>
 #include <algorithm>
 #include <vector>
 #include <iostream>
@@ -16,18 +15,16 @@
 #include "Chromosome.h"
 #include "GenAlg.h"
 
-#if defined FFS_LIBC
+#if defined HAVE_STRINGS_H
 #include <strings.h>
-#elif defined FFS_VS2005
-#include <intrin.h>
-#pragma intrinsic(_BitScanForward)
+//#elif defined FFS_VS2005
+//#include <intrin.h>
+//#pragma intrinsic(_BitScanForward)
 #endif
 
-using namespace Rcpp;
+#include <sys/time.h>
 
-InvalidCopulationException::InvalidCopulationException(const char *file, const int line) :
-	Rcpp::exception("The two chromosomes are not compatible for mating", file, line) {
-}
+using namespace Rcpp;
 
 Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop) : ctrl(ctrl), tgeom(ctrl.mutationProbability), varPosPop(varPosPop) {
 	// Determine the number of IntChromosome bit values that are
@@ -174,16 +171,6 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other) {
 }
 
 void Chromosome::mutate() {
-#ifdef TIMING_BENCHMARK
-	timeval start, end;
-
-	gettimeofday(&start, NULL);
-#endif
-	// The algorithm first randomly picks the number of bits that will be unset and the
-	// number of bits that will be set according to a truncated geometric distribution
-	// Then the positions for (un)setting the bits are drawn and finally these bits
-	// are flipped.
-
 	static std::vector<uint16_t> positionPopulation(this->ctrl.chromosomeSize);
 
 	uint16_t currentlySetBits = this->popcount();
@@ -216,182 +203,66 @@ void Chromosome::mutate() {
 		return;
 	}
 
-	uint16_t randPos = 0;
+	this->shuffle(positionPopulation, currentlyUnsetBits, numAddBits);
+	std::vector<uint16_t> addBitsPos(positionPopulation.begin(), positionPopulation.begin() + numAddBits);
 
-	// Choose the fastest way to mutate the chromosome based
-	// on the number of set/unset bits and the number of bits
-	// to add/remove
+	this->shuffle(positionPopulation, currentlySetBits, numRemoveBits);
+	std::vector<uint16_t> removeBitsPos(positionPopulation.begin(), positionPopulation.begin() + numRemoveBits);
 
-	if(numRemoveBits == 0) {
-		// Bits only have to be added
+	std::sort(addBitsPos.begin(), addBitsPos.end());
+	std::sort(removeBitsPos.begin(), removeBitsPos.end());
 
-		if(numAddBits == 1 && currentlyUnsetBits * RATIO_RANDOM_SEARCH > currentlySetBits) {
-			// If the number of bits to be added is 1 and the majority of the bits is 0, a random search may be faster than the method below
-			uint16_t part = 0;
-			IntChromosome mask = 0;
-			do {
-				randPos = this->unusedBits + this->unifGen() * this->ctrl.chromosomeSize;
-				part = randPos / Chromosome::BITS_PER_PART;
-				mask = (((IntChromosome) 1) << (randPos % Chromosome::BITS_PER_PART));
-			} while ((this->chromosomeParts[part] & mask) > 0); // Exit if the bit at the random position is not yet 1
+	std::vector<uint16_t>::iterator addBitsPosIt = addBitsPos.begin();
+	std::vector<uint16_t>::iterator removeBitsPosIt = removeBitsPos.begin();
 
-			this->chromosomeParts[part] |= mask;
-		} else {
-			// Same algorithm as for general case but removed all code for removing bits
-			this->shuffle(positionPopulation, currentlyUnsetBits, numAddBits);
-			std::vector<uint16_t> addBitsPos(positionPopulation.begin(), positionPopulation.begin() + numAddBits);
-			std::sort(addBitsPos.begin(), addBitsPos.end());
-			std::vector<uint16_t>::iterator addBitsPosIt = addBitsPos.begin();
-			IntChromosome mask = ((IntChromosome) 1) << this->unusedBits;
-			uint16_t zerosCount = 0;
+	IntChromosome mask = 0;
+	IntChromosome tmp;
+	int8_t totalShift = this->unusedBits - 1; // 0 based -- position 0 is the least significant bit
+	int8_t trailingZeros = totalShift; // 1 based -- the value 1 means 1 trailing zero
 
-			for(uint16_t i = 0; i < this->numParts && addBitsPosIt != addBitsPos.end(); ++i) {
-				do {
-					if((this->chromosomeParts[i] & mask) == 0) { // bit is 0
-						if(addBitsPosIt != addBitsPos.end() && zerosCount++ == (*addBitsPosIt)) {
-							this->chromosomeParts[i] ^= mask;
-							++addBitsPosIt;
-						}
-					}
+	uint16_t onesCount = 0, zerosCount = 0;
 
-					mask <<= 1;
-				} while (mask > 0 && addBitsPosIt != addBitsPos.end());
-				mask = (IntChromosome) 1;
+	for(uint16_t i = 0; i < this->numParts && (addBitsPosIt != addBitsPos.end() || removeBitsPosIt != removeBitsPos.end()); ++i) {
+		tmp = this->chromosomeParts[i];
+		do {
+			tmp >>= trailingZeros + 1;
+			
+			trailingZeros = this->ctz(tmp); // get number of 0's before the first 1 (starting with least significant bit)
+			
+			if(trailingZeros >= Chromosome::BITS_PER_PART - totalShift - 1) {
+				trailingZeros = Chromosome::BITS_PER_PART - totalShift - 1;
 			}
+			
+			totalShift += trailingZeros + 1;
 
-		}
-	} else if(numAddBits == 0) {
-		// Bits only have to be removed
-		if(numRemoveBits == 1 && currentlySetBits * RATIO_RANDOM_SEARCH > currentlyUnsetBits) {
-			// If the number of bits to be removed is small and the majority of the bits is 1, a random search may be faster than the method below
-			uint16_t part = 0;
-			IntChromosome mask = 0;
-			do {
-				randPos = this->unusedBits + this->unifGen() * this->ctrl.chromosomeSize;
-				part = randPos / Chromosome::BITS_PER_PART;
-				mask = (((IntChromosome) 1) << (randPos % Chromosome::BITS_PER_PART));
-			} while ((this->chromosomeParts[part] & mask) == 0); // Exit if the bit at the random position is not yet 0
-
-			this->chromosomeParts[part] &= ~mask; // Remove only the bit at the random position
-
-		} else {
-			this->shuffle(positionPopulation, currentlySetBits, numRemoveBits);
-			std::vector<uint16_t> removeBitsPos(positionPopulation.begin(), positionPopulation.begin() + numRemoveBits);
-			std::sort(removeBitsPos.begin(), removeBitsPos.end());
-			std::vector<uint16_t>::iterator removeBitsPosIt = removeBitsPos.begin();
-			IntChromosome mask = ((IntChromosome) 1) << this->unusedBits;
-			uint16_t onesCount = 0;
-
-			for(uint16_t i = 0; i < this->numParts && removeBitsPosIt != removeBitsPos.end(); ++i) {
-				do {
-					if((this->chromosomeParts[i] & mask) > 0) { // bit is 1
-						if(removeBitsPosIt != removeBitsPos.end() && onesCount++ == (*removeBitsPosIt)) {
-							this->chromosomeParts[i] ^= mask;
-							++removeBitsPosIt;
-						}
-					}
-
-					mask <<= 1;
-				} while (mask > 0 && removeBitsPosIt != removeBitsPos.end());
-				mask = (IntChromosome) 1;
+			// There are trailingZeros 0-bits between the last found 1 and this 1
+			// Some of them may be toggled
+			zerosCount += trailingZeros;
+			while(addBitsPosIt != addBitsPos.end() && zerosCount > (*addBitsPosIt)) {
+				mask |= (((IntChromosome) 1) << ((*addBitsPosIt) + onesCount + this->unusedBits) - i * Chromosome::BITS_PER_PART);
+				++addBitsPosIt;
 			}
-		}
-	} else {
-		// General case
-
-		this->shuffle(positionPopulation, currentlyUnsetBits, numAddBits);
-		std::vector<uint16_t> addBitsPos(positionPopulation.begin(), positionPopulation.begin() + numAddBits);
-
-		this->shuffle(positionPopulation, currentlySetBits, numRemoveBits);
-		std::vector<uint16_t> removeBitsPos(positionPopulation.begin(), positionPopulation.begin() + numRemoveBits);
-
-		std::sort(addBitsPos.begin(), addBitsPos.end());
-		std::sort(removeBitsPos.begin(), removeBitsPos.end());
-
-		std::vector<uint16_t>::iterator addBitsPosIt = addBitsPos.begin();
-		std::vector<uint16_t>::iterator removeBitsPosIt = removeBitsPos.begin();
-
-//		IntChromosome mask = 0;
-//		IntChromosome tmp;
-//		uint8_t bitPos = this->unusedBits;
-//		uint8_t trailingZeros = 0;
-//
-//		uint16_t onesCount = 0, zerosCount = 0;
-//
-//		for(uint16_t i = 0; i < this->numParts && (addBitsPosIt != addBitsPos.end() || removeBitsPosIt != removeBitsPos.end()); ++i) {
-//			tmp = this->chromosomeParts[i];
-//			do {
-//				tmp <<= bitPos;
-//				
-//				trailingZeros = this->ctz(tmp); // get number of 0's before the first 1 (starting with least significant bit)
-//				bitPos += trailingZeros;
-//			
-//				// 0100 0110 0000 0010
-//				// set: 5 12
-//				// unset 2, 3
-//				
-//				// trailingZeros = 1 --> zerosCount = 1, onesCount = 1
-//				
-//				// There are next1Pos 0-bits between the last found 1 and this 1
-//				// Some of them may be toggled
-//				zerosCount += trailingZeros;
-//				while(addBitsPosIt != addBitsPos.end() && zerosCount >= (*addBitsPosIt)) {
-//					// set bits
-//					// addBitPos + onesCount = absolute position to toggle bit
-//					// (addBitPos + onesCount) - i * Chromosome::BITS_PER_PART ... position in current part to toggle
-//					// total postion = zerosCount + onesCount
-//					// total position - bitPos = beginning of current part
-//					//
-//					mask |= (((IntChromosome) 1) << ((*addBitsPosIt) + onesCount) - i * Chromosome::BITS_PER_PART);
-//					++addBitsPosIt;
-//				}
-//				
-//				if(trailingZeros < Chromosome::BITS_PER_PART) {
-//					if(removeBitsPosIt != removeBitsPos.end() && onesCount++ == (*removeBitsPosIt)) {
-//						//unset bit
-//						mask |= ((IntChromosome) 1) << trailingZeros;
-//						++removeBitsPosIt;
-//					}
-//				}
-//				
-//				this->chromosomeParts[i] ^= mask; // toggle all bits set in the mask
-//			} while(bitPos < Chromosome::BITS_PER_PART);
-//		}
-
-		IntChromosome mask = ((IntChromosome) 1) << this->unusedBits;
-		
-		uint16_t onesCount = 0, zerosCount = 0;
-		
-		for(uint16_t i = 0; i < this->numParts && (addBitsPosIt != addBitsPos.end() || removeBitsPosIt != removeBitsPos.end()); ++i) {
-			do {
-				if((this->chromosomeParts[i] & mask) > 0) { // bit is 1
-					if(removeBitsPosIt != removeBitsPos.end() && onesCount++ == (*removeBitsPosIt)) {
-						this->chromosomeParts[i] ^= mask;
-						++removeBitsPosIt;
-					}
-				} else { // bit is 0
-					if(addBitsPosIt != addBitsPos.end() && zerosCount++ == (*addBitsPosIt)) {
-						this->chromosomeParts[i] ^= mask;
-						++addBitsPosIt;
-					}
+			
+			if(totalShift < Chromosome::BITS_PER_PART) {
+				if(removeBitsPosIt != removeBitsPos.end() && onesCount == (*removeBitsPosIt)) {
+					//unset bit
+					mask |= ((IntChromosome) 1) << totalShift;
+					++removeBitsPosIt;
 				}
-				
-				mask <<= 1;
-			} while (mask > 0 && (addBitsPosIt != addBitsPos.end() || removeBitsPosIt != removeBitsPos.end()));
-			mask = (IntChromosome) 1;
-		}
+				++onesCount; // increment after comparision because the position is 0 based
+			}
+		} while(totalShift < Chromosome::BITS_PER_PART);
+		
+		this->chromosomeParts[i] ^= mask; // toggle all bits set in the mask
+		
+		totalShift = -1;
+		trailingZeros = -1;
+		mask = 0;
 	}
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
 		Rcout << "After mutation: " << *this << std::endl;
 	}
-#endif
-
-#ifdef TIMING_BENCHMARK
-
-	gettimeofday(&end, NULL);
-	Rcout << "Mutation took " << (end.tv_sec * 1000.0 + (end.tv_usec / 1000.0)) - (start.tv_sec * 1000.0 + (start.tv_usec / 1000.0)) << " milliseconds" << std::endl;
-
 #endif
 }
 
@@ -498,7 +369,7 @@ Chromosome Chromosome::operator=(const Chromosome &ch) const {
 inline uint16_t Chromosome::popcount() const {
 	uint16_t count = 0;
 
-#ifdef USE_BUILTIN_POPCOUNT
+#ifdef HAVE_BUILTIN_POPCOUNT
 	for(uint16_t i = 0; i < this->numParts; ++i) {
 		count += __builtin_popcountl(this->chromosomeParts[i]);
 	}
@@ -528,54 +399,54 @@ inline uint16_t Chromosome::ctz(IntChromosome mask) const {
 		return Chromosome::BITS_PER_PART;
 	}
 	
-#if defined FFS_GCC
+#if defined HAVE_GCC_CTZ
 	if(sizeof(IntChromosome) == sizeof(unsigned int)) {
 		return  __builtin_ctz(mask);
 	} else if(sizeof(IntChromosome) == sizeof(unsigned long)) {
 		return  __builtin_ctzl(mask);
-	} else if(sizeof(IntChromosome) == sizeof(unsigned long long)) {
+	} /*else if(sizeof(IntChromosome) == sizeof(unsigned long long)) {
 		return  __builtin_ctzll(mask);
-	}
+	}*/
 	return Chromosome::BITS_PER_PART;
-#elif defined FFS_LIBC
+#elif defined HAVE_FFSL
 	if(sizeof(IntChromosome) == sizeof(unsigned int)) {
 		return  ffs(mask) - 1;
 	} else if(sizeof(IntChromosome) == sizeof(unsigned long)) {
 		return  ffsl(mask) - 1;
 	}
 	return Chromosome::BITS_PER_PART;
-#elif FFS_VS2005
-	unsigned long index;
-	unsigned char isNull = ((sizeof(mask) == 4) ? _BitScanForward(&index, mask) : _BitScanForward64(&index, mask));
-	return ((isNull == 0) ? (Chromosome::BITS_PER_PART) : (index - 1));
+//#elif FFS_VS2005
+//	unsigned long index;
+//	unsigned char isNull = ((sizeof(mask) == 4) ? _BitScanForward(&index, mask) : _BitScanForward64(&index, mask));
+//	return ((isNull == 0) ? (Chromosome::BITS_PER_PART) : (index - 1));
 #else
 	// Simple implementation of the "find first set" problem without loop	
 	uint16_t index = 0;
 
 	if (sizeof(mask) == 8) {
-		if(mask & 0x00000000FFFFFFFF) {
+		if((mask & 0x00000000FFFFFFFF) == 0) {
 			index += 32;
 			mask >>= 32;
 		}
 	}
 
-	if(mask & 0x0000FFFF) {
+	if((mask & 0x0000FFFF) == 0) {
 		index += 16;
 		mask >>= 16;
 	}
-	if(mask & 0x000000FF) {
+	if((mask & 0x000000FF) == 0) {
 		index += 8;
 		mask >>= 8;
 	}
-	if(mask & 0x0000000F) {
+	if((mask & 0x0000000F) == 0) {
 		index += 4;
 		mask >>= 4;
 	}
-	if(mask & 0x00000003) {
+	if((mask & 0x00000003) == 0) {
 		index += 2;
 		mask >>= 2;
 	}
-	if(mask & 0x00000001) {
+	if((mask & 0x00000001) == 0) {
 		index += 1;
 	}
 	

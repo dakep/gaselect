@@ -29,6 +29,16 @@ public:
 			return rhs.isFitterThan(lhs);
 		}
 	};
+	
+	class InterruptException : public std::exception {
+		
+	public:
+		InterruptException() {};
+		virtual ~InterruptException() throw() {};
+		virtual const char* what() const throw() {
+			return "Interrupted";
+		}
+	};
 
 	/**
 	 * Returns the last generation and the elite (if any)

@@ -3,7 +3,6 @@
 
 #include "config.h"
 
-#include <inttypes.h>
 #include <vector>
 #include <exception>
 #include <iostream>
@@ -17,7 +16,7 @@
 class InvalidCopulationException : public Rcpp::exception {
 
 public:
-		InvalidCopulationException(const char *file, const int line);
+	InvalidCopulationException(const char *file, const int line) : Rcpp::exception("The two chromosomes are not compatible for mating", file, line) {};
 };
 
 class Chromosome {
@@ -83,6 +82,8 @@ private:
 	uint16_t numParts;
 	uint16_t unusedBits;
 
+	// Array with the chromosome parts
+	// If not all bits are used, the k least significant bits of the 1st(!) part are not used (k = this->unusedBits)
 	std::vector<IntChromosome> chromosomeParts;
 	double fitness;
 
