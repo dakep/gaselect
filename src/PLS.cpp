@@ -24,8 +24,9 @@ void PLS::setSubmatrixView(const arma::uvec &rows, const arma::uvec &columns) {
 	// are generally not consequtive, it is faster to create a copy of the
 	// submatrix and work with the copy than to always access the submatrix view
 
-	this->viewX = arma::mat(this->X.submat(rows, columns));
-	this->viewY = arma::mat(this->Y.rows(rows));
+	this->viewXCol = this->X.cols(columns);
+	this->viewX = this->viewXCol.rows(rows);
+	this->viewY = this->Y.rows(rows);
 
 	this->subviewChanged();
 }
@@ -35,19 +36,23 @@ void PLS::setSubmatrixViewColumns(const arma::uvec &columns) {
 	// are generally not consequtive, it is faster to create a copy of the
 	// submatrix and work with the copy than to always access the submatrix view
 
-	this->viewX = arma::mat(this->X.cols(columns));
+	this->viewX = this->viewXCol = this->X.cols(columns);
 	this->viewY = this->Y;
 
 	this->subviewChanged();
 }
 
-void PLS::setSubmatrixViewRows(const arma::uvec &rows) {
+void PLS::setSubmatrixViewRows(const arma::uvec &rows, bool keepOldColumns) {
 	// As usually the submatrices are used alot and the columns and rows
 	// are generally not consequtive, it is faster to create a copy of the
 	// submatrix and work with the copy than to always access the submatrix view
 
-	this->viewX = arma::mat(this->X.rows(rows));
-	this->viewY = arma::mat(this->Y.rows(rows));
+	if(keepOldColumns == true) {
+		this->viewX = this->viewXCol.rows(rows);
+	} else {
+		this->viewX = this->X.rows(rows);
+	}
+	this->viewY = this->Y.rows(rows);
 
 	this->subviewChanged();
 }

@@ -23,7 +23,7 @@ public:
 
 	virtual void setSubmatrixView(const arma::uvec &rows, const arma::uvec &columns);
 	virtual void setSubmatrixViewColumns(const arma::uvec &columns);
-	virtual void setSubmatrixViewRows(const arma::uvec &rows);
+	virtual void setSubmatrixViewRows(const arma::uvec &rows, bool keepOldColumns = false);
 
 	/**
 	 * Fit a PLS model to the data with the previously set view
@@ -64,7 +64,8 @@ public:
 	// ncomp should be zero based
 	arma::mat predict(arma::mat newX, uint16_t ncomp) const;
 	arma::cube predict(arma::mat newX) const;
-
+	
+	const arma::mat & getXColumnView() const { return this->viewXCol; }
 	const arma::mat & getX() const { return this->X; }
 	const arma::mat & getY() const { return this->Y; }
 protected:
@@ -75,6 +76,7 @@ protected:
 	bool validResultState;
 	uint16_t resultNComp;
 
+	arma::mat viewXCol;
 	arma::mat viewX;
 	arma::mat viewY;
 

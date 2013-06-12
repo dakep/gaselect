@@ -1,13 +1,12 @@
 Package: GenAlgPLS
 Type: Package
-Title: Fast and memory-saving implementation of a genetic algorithm (GA)
-    including validation by prediction performance using PLS models
+Title: Genetic algorithm for variable selection using a PLS criterion
 Version: 1.0
 Date: 2013-03-24
 Author: David Kepplinger
 Maintainer: David Kepplinger <david@dkepplinger.org>
-Description: 
-License: LICENSE?
+Description:
+License: GPL (>= 2)
 Depends:
     Rcpp (>= 0.9.10),
     RcppArmadillo (>= 0.3.4.0)

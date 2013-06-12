@@ -26,6 +26,8 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	}
 #endif
 
+	this->pls->setSubmatrixViewColumns(columnSubset);
+	
 	for(rep = 0; rep < this->numReplications; ++rep) {
 		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
 	}
@@ -48,6 +50,8 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
 	arma::uword rep = 0;
 	sumSSD.zeros();
 
+	this->pls->setSubmatrixViewColumns(columnSubset);
+	
 	for(rep = 0; rep < this->numReplications; ++rep) {
 		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
 	}
@@ -133,9 +137,9 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;
 		}
 #endif
-		leftOutX = this->pls->getX().submat(segment, columnSubset);
+		leftOutX = this->pls->getXColumnView().rows(segment);
 		leftOutY = this->pls->getY().rows(segment);
-		this->pls->setSubmatrixView(notSegment, columnSubset);
+		this->pls->setSubmatrixViewRows(notSegment, true);
 
 		if(--completeSegments == 0) {
 			--segmentLength;
