@@ -1,6 +1,6 @@
 //
 //  config.h
-//  GenAlgTest
+//  GenAlgPLS
 //
 //  Created by David Kepplinger on 08.05.2013.
 //

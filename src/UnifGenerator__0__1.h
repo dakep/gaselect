@@ -5,8 +5,10 @@
 //
 //
 
-#ifndef GenAlgTest_UnifGenerator__0__1_h
-#define GenAlgTest_UnifGenerator__0__1_h
+#ifndef GenAlgPLS_UnifGenerator__0__1_h
+#define GenAlgPLS_UnifGenerator__0__1_h
+
+#include "config.h"
 
 #include <RcppArmadillo.h>
 #include <Rcpp/stats/random/runif.h>

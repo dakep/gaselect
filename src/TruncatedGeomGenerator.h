@@ -1,6 +1,6 @@
 //
 //  TruncatedGeomGenerator.h
-//  GenAlgTest
+//  GenAlgPLS
 //
 //  Created by David Kepplinger on 18.05.2013.
 //
@@ -8,6 +8,8 @@
 
 #ifndef GenAlgPLS_TruncatedGeomGenerator_h
 #define GenAlgPLS_TruncatedGeomGenerator_h
+
+#include "config.h"
 
 #include <RcppArmadillo.h>
 

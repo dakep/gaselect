@@ -1,6 +1,6 @@
 //
 //  VariablePositionPopulation.h
-//  GenAlgTest
+//  GenAlgPLS
 //
 //  Created by David Kepplinger on 12.05.2013.
 //
@@ -9,9 +9,12 @@
 #ifndef GenAlgPLS_VariablePositionPopulation_h
 #define GenAlgPLS_VariablePositionPopulation_h
 
+#include "config.h"
+
 #include <iterator>
 #include <vector>
 #include <RcppArmadillo.h>
+
 #include "UnifGenerator__0__1.h"
 
 class VariablePositionPopulation;

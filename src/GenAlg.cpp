@@ -1,6 +1,6 @@
 //
 //  GenAlg.cpp
-//  GenAlgTest
+//  GenAlgPLS
 //
 
 #include "config.h"

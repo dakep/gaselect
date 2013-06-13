@@ -1,10 +1,12 @@
 //
 //  VariablePositionPopulation.cpp
-//  GenAlgTest
+//  GenAlgPLS
 //
 //  Created by David Kepplinger on 12.05.2013.
 //
 //
+
+#include "config.h"
 
 #include "VariablePositionPopulation.h"
 

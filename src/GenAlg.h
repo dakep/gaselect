@@ -1,6 +1,6 @@
 //
 //  GenAlg.h
-//  GenAlgTest
+//  GenAlgPLS
 //
 //  Created by David Kepplinger on 05.04.2013.
 //  Copyright (c) 2013 __MyCompanyName__. All rights reserved.

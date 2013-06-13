@@ -1,6 +1,6 @@
 //
 //  PLSSimpls.cpp
-//  GenAlgTest
+//  GenAlgPLS
 //
 //  Created by David Kepplinger on 16.04.2013.
 //  Copyright (c) 2013 __MyCompanyName__. All rights reserved.

@@ -1,6 +1,6 @@
 //
 //  UserFunEvaluator.h
-//  GenAlgTest
+//  GenAlgPLS
 //
 //  Created by David Kepplinger on 03.05.2013.
 //

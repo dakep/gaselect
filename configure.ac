@@ -19,7 +19,7 @@ if test "$ac_cv_header_stdint_h" == yes; then
 		AC_DEFINE_UNQUOTED(HAVE_UINT64_MAX)
 		suitable_integer=yes
 	],
-	[AC_MSG_RESULT([uint64_t is not available in stdint.h])],
+	[AC_MSG_RESULT([uint64_t is not available in stdint.h])]
 	)
 fi
 if test "$ac_cv_header_inttypes_h" == yes; then
@@ -31,11 +31,11 @@ if test "$ac_cv_header_inttypes_h" == yes; then
 		AC_DEFINE_UNQUOTED(HAVE_UINT64_MAX)
 		suitable_integer=yes
 	],
-	[AC_MSG_RESULT([uint64_t is not available in inttypes.h])],
+	[AC_MSG_RESULT([uint64_t is not available in inttypes.h])]
 	)
 fi
 
-# Check if support for uint64_t is complete
+# Check if support for uint32_t is complete
 if test "$ac_cv_header_stdint_h" == yes; then
 	AC_COMPILE_IFELSE([
 		AC_LANG_SOURCE([[#include <stdint.h> int main() {  uint32_t x = UINT32_MAX; return 0; }]])
@@ -45,7 +45,7 @@ if test "$ac_cv_header_stdint_h" == yes; then
 		AC_DEFINE_UNQUOTED(HAVE_UINT32_MAX)
 		suitable_integer=yes
 	],
-	[AC_MSG_RESULT([uint32_t is not available in stdint.h])],
+	[AC_MSG_RESULT([uint32_t is not available in stdint.h])]
 	)
 fi
 if test "$ac_cv_header_inttypes_h" == yes; then
@@ -53,11 +53,37 @@ if test "$ac_cv_header_inttypes_h" == yes; then
 		AC_LANG_SOURCE([[#include <inttypes.h> int main() {  uint32_t x = UINT32_MAX; return 0; }]])
 	],
 	[
-		AC_MSG_RESULT([uint32_t is available in stdint.h])
+		AC_MSG_RESULT([uint32_t is available in inttypes.h])
 		AC_DEFINE_UNQUOTED(HAVE_UINT32_MAX)
 		suitable_integer=yes
 	],
-	[AC_MSG_RESULT([uint32_t is not available in inttypes.h])],
+	[AC_MSG_RESULT([uint32_t is not available in inttypes.h])]
+	)
+fi
+
+# Check if support for uint16_t and uint8_t is complete
+if test "$ac_cv_header_stdint_h" == yes; then
+	AC_COMPILE_IFELSE([
+		AC_LANG_SOURCE([[#include <stdint.h> int main() {  uint16_t x = UINT16_MAX; uint8_t y = UINT8_MAX; return 0; }]])
+	],
+	[
+		AC_MSG_RESULT([uint16_t and unit8_t are available in stdint.h])
+		AC_DEFINE_UNQUOTED(HAVE_UINT8_16_MAX)
+		suitable_integer=yes
+	],
+	[AC_MSG_RESULT([uint16_t and uint8_t are not available in stdint.h])]
+	)
+fi
+if test "$ac_cv_header_inttypes_h" == yes; then
+	AC_COMPILE_IFELSE([
+		AC_LANG_SOURCE([[#include <inttypes.h> int main() {  uint16_t x = UINT16_MAX; uint8_t y = UINT8_MAX; return 0; }]])
+	],
+	[
+		AC_MSG_RESULT([uint16_t and unit8_t are available in inttypes.h])
+		AC_DEFINE_UNQUOTED(HAVE_UINT8_16_MAX)
+		suitable_integer=yes
+	],
+	[AC_MSG_RESULT([uint16_t and uint8_t are not available in inttypes.h])]
 	)
 fi
 
