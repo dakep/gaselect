@@ -14,7 +14,7 @@
 double PLSEvaluator::evaluate(Chromosome &ch) const {
 	arma::uvec columnSubset = ch.toColumnSubset();
 	// -2 because if the segmentLength would not be an exact integer some segments are one longer than others
-	uint16_t maxNComp = ((columnSubset.n_elem < this->nrows) ? columnSubset.n_elem : this->nrows - this->segmentLength - 2);
+	uint16_t maxNComp = ((columnSubset.n_elem < (this->nrows - this->segmentLength - 2)) ? columnSubset.n_elem : this->nrows - this->segmentLength - 2);
 	arma::vec sumSSD(maxNComp);
 	arma::uvec rowNumbers = this->initRowNumbers();
 	arma::uword rep = 0;
@@ -44,7 +44,7 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 }
 
 double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
-	uint16_t maxNComp = ((columnSubset.n_elem < this->nrows) ? columnSubset.n_elem : this->nrows - this->segmentLength - 2);
+	uint16_t maxNComp = ((columnSubset.n_elem < (this->nrows - this->segmentLength - 2)) ? columnSubset.n_elem : this->nrows - this->segmentLength - 2);
 	arma::vec sumSSD(maxNComp);
 	arma::uvec rowNumbers = this->initRowNumbers();
 	arma::uword rep = 0;
