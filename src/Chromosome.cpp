@@ -82,8 +82,6 @@ inline void Chromosome::initChromosomeParts() {
 
 	uint16_t part = 0;
 	uint16_t offset = 0;
-
-	
 	
 	for(; setPosIter != this->varPosPop.end(); ++setPosIter) {
 		part = (*setPosIter) / Chromosome::BITS_PER_PART;
@@ -239,7 +237,7 @@ void Chromosome::mutate() {
 			// Some of them may be toggled
 			zerosCount += trailingZeros;
 			while(addBitsPosIt != addBitsPos.end() && zerosCount > (*addBitsPosIt)) {
-				mask |= (((IntChromosome) 1) << ((*addBitsPosIt) + onesCount + this->unusedBits) - i * Chromosome::BITS_PER_PART);
+				mask |= (((IntChromosome) 1) << (((*addBitsPosIt) + onesCount + this->unusedBits) - i * Chromosome::BITS_PER_PART));
 				++addBitsPosIt;
 			}
 			

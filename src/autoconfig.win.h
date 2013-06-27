@@ -21,7 +21,3 @@
 #define HAVE_UINT32_MAX 1
 #define HAVE_UINT8_16_MAX 1
 #define HAVE_UINT8_16_MAX 1
-#define HAVE_GCC_CTZ 1
-#define HAVE_FFS 1
-#define HAVE_FFSL 1
-#define HAVE_BUILTIN_POPCOUNT 1
