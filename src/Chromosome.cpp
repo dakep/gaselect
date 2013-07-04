@@ -26,7 +26,7 @@
 
 using namespace Rcpp;
 
-Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop) : ctrl(ctrl), tgeom(ctrl.mutationProbability), varPosPop(varPosPop) {
+Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop) : ctrl(ctrl), tgeom(1. - ctrl.mutationProbability), varPosPop(varPosPop) {
 	// Determine the number of IntChromosome bit values that are
 	// needed to represent all genes
 	this->numParts = (uint16_t) this->ctrl.chromosomeSize / Chromosome::BITS_PER_PART;
