@@ -35,6 +35,7 @@ BEGIN_RCPP
 				 as<uint16_t>(control["elitism"]),
 				 as<uint16_t>(control["minVariables"]),
 				 as<uint16_t>(control["maxVariables"]),
+				 as<uint16_t>(control["maxMatingTries"]),
 				 as<double>(control["mutationProb"]),
 				 (VerbosityLevel) as<int>(control["verbosity"]));
 

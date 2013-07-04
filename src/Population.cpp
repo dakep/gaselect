@@ -12,6 +12,10 @@
 
 #include "Population.h"
 
+#ifdef HAVE_PTHREADS
+#include <pthread.h>
+#endif
+
 using namespace Rcpp;
 
 /*
@@ -160,16 +164,56 @@ void Population::run() {
 		for(j = 0; j < popSizeHalf; ++j) {
 			Chromosome tmpChromosome1 = this->getChromosomeFromFitnessMap(unifGen() * sumFitness);
 			Chromosome tmpChromosome2 = this->getChromosomeFromFitnessMap(unifGen() * sumFitness);
+			std::vector<Chromosome> children = tmpChromosome1.mateWith(tmpChromosome2);
+			uint8_t cnt = 0;
+			double minParentFitness = ((tmpChromosome1.getFitness() > tmpChromosome2.getFitness()) ? tmpChromosome1.getFitness() : tmpChromosome2.getFitness());
+			
+			this->evaluator->evaluate(children[0]);
+			this->evaluator->evaluate(children[1]);
+			// Make sure the first child is "better" than the second child
+			if(children[0].getFitness() < children[1].getFitness()) {
+				std::swap(children[1], children[0]);
+			}
 
+			
 #ifdef ENABLE_DEBUG_VERBOSITY
 			if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-				Rcout << "Mating chromosomes " << std::endl << tmpChromosome1 << " and" << std::endl
-				<< tmpChromosome2 << std::endl;
+				Rcout << "Mating chromosomes " << std::endl << tmpChromosome1 << " and" << std::endl << tmpChromosome2 << std::endl
+				<< "with minimal fitness " << minParentFitness << std::endl
+				<< "First two proposals have fitness " << children[0].getFitness() << " / " << children[2].getFitness() << std::endl;
 			}
 #endif
+			
+			// At least the first child should be better than the worse parent
+			while((children[0].getFitness() < minParentFitness) && (++cnt < this->ctrl.maxMatingTries)) {
+				std::vector<Chromosome> proposalChildren = tmpChromosome1.mateWith(tmpChromosome2);
+				if(this->evaluator->evaluate(proposalChildren[0]) > children[1].getFitness()) { // better as 2nd child
+					if(proposalChildren[0].getFitness() > children[0].getFitness()) { // even better as 1st child
+						children[1] = children[0];
+						children[0] = proposalChildren[0];
+					} else {
+						children[1] = proposalChildren[0];
+					}
+				}
 
-			std::vector<Chromosome> children = tmpChromosome1.mateWith(tmpChromosome2);
-
+				// Check 2nd new child
+				if(this->evaluator->evaluate(proposalChildren[1]) > children[1].getFitness()) { // better as 2nd child
+					if(proposalChildren[1].getFitness() > children[0].getFitness()) { // even better as 1st child
+						children[1] = children[0];
+						children[0] = proposalChildren[1];
+					} else {
+						children[1] = proposalChildren[1];
+					}
+				}
+				
+#ifdef ENABLE_DEBUG_VERBOSITY
+				if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+					Rcout << "Proposed children have fitness: " << proposalChildren[0].getFitness() << " / " << proposalChildren[1].getFitness() << std::endl
+					<< "Currently selected children have fitness: " << children[0].getFitness() << " / " << children[1].getFitness() << std::endl;
+				}
+#endif
+			}
+			
 			children[0].mutate();
 			children[1].mutate();
 

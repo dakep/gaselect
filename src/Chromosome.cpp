@@ -48,10 +48,14 @@ Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPo
 }
 
 Chromosome::Chromosome(const Chromosome &other, bool copyChromosomeParts) : ctrl(other.ctrl), tgeom(other.tgeom), varPosPop(other.varPosPop) {
+	this->copyFrom(other, copyChromosomeParts);
+}
+
+void Chromosome::copyFrom(const Chromosome &other, bool copyChromosomeParts) {
 	this->fitness = other.fitness;
 	this->numParts = other.numParts;
 	this->unusedBits = other.unusedBits;
-
+	
 	// Copy chromosome parts
 	if(copyChromosomeParts) {
 		this->chromosomeParts = other.chromosomeParts;
@@ -356,8 +360,9 @@ bool Chromosome::isFitterThan(const Chromosome &ch) const {
 	return (this->popcount() < ch.popcount());
 }
 
-Chromosome Chromosome::operator=(const Chromosome &ch) const {
-	return Chromosome(ch);
+Chromosome& Chromosome::operator=(const Chromosome &ch) {
+	this->copyFrom(ch, true);
+	return *this;
 }
 
 /**

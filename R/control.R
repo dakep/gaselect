@@ -71,12 +71,14 @@ genAlgEvalControl <- function(numReplications = 2L, numSegments = 4L, plsMethod 
 #' @param numGenerations The number of generations to produce (between 1 and 2^16)
 #' @param minVariables The minimum number of variables in the variable subset (between 0 and p - 1 where p is the total number of variables)
 #' @param maxVariables The maximum number of variables in the variable subset (between 1 and p, and greater than \code{minVariables})
+#' @param maxMatingTries The maximum number of children that are generated. If the value is less than or equal 0, the first two children will be used. Otherwise
+#'						 children are generated as long as they are not fitter than one parent or \code{maxMatingTries} children have been generated.
 #' @param elitism The number of absolute best chromosomes to keep across all generations (between 1 and min(\code{populationSize} * \code{numGenerations}, 2^16))
 #' @param mutationProbability The probability of mutation (between 0 and 1)
 #' @param verbosity The level of verbosity. 0 means no output at all, 3 is very verbose.
 #' @export
 #' @seealso See \code{\link{genAlgEvalControl}} for controlling the evaluation step during the GA
-genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, elitism = 10L, mutationProbability = 0.01, verbosity = 0L) {
+genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, maxMatingTries = 5L, elitism = 10L, mutationProbability = 0.01, verbosity = 0L) {
 	MAXUINT16 <- 2^16; # Internal unsigned 16bit integers are used (uint16_t)
 
 	## Type checks:
@@ -103,11 +105,18 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 		maxVariables <- 0L;
 	}
 
+	if(maxMatingTries < 0L) {
+		maxMatingTries <- 0L;
+	} else if(maxMatingTries > MAXUINT16) {
+		stop("The maximum number of mating tries must not be greater than ", MAXUINT16);
+	}
+
 	populationSize  <- as.integer(populationSize);
 	numGenerations  <- as.integer(numGenerations);
 	elitism <- as.integer(elitism);
 	minVariables <- as.integer(minVariables);
 	maxVariables <- as.integer(maxVariables);
+	maxMatingTries <- as.integer(maxMatingTries);
 
 	## Sanity checks:
 
@@ -139,6 +148,7 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 		"numGenerations" = numGenerations,
 		"minVariables" = minVariables,
 		"maxVariables" = maxVariables,
+		"maxMatingTries" = maxMatingTries,
 		"elitism" = elitism,
 		"mutationProb" = mutationProbability,
 		"verbosity" = as.integer(verbosity)

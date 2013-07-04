@@ -39,7 +39,7 @@ public:
 
 	bool operator==(const Chromosome &ch) const;
 	bool operator!=(const Chromosome &ch) const;
-	Chromosome operator=(const Chromosome &ch) const;
+	Chromosome& operator=(const Chromosome &ch);
 
 	friend std::ostream& operator<<(std::ostream &os, const Chromosome &ch);
 private:
@@ -79,6 +79,8 @@ private:
 	 */
 	uint16_t ctz(IntChromosome mask) const;
 
+	void copyFrom(const Chromosome& ch, bool copyChromosomeParts);
+	
 	uint16_t numParts;
 	uint16_t unusedBits;
 
