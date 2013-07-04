@@ -109,7 +109,7 @@ void Population::run() {
 	newFitnessMap.reserve(this->ctrl.populationSize);
 
 	if(this->ctrl.verbosity > OFF) {
-		Rcout << "Generating initial population:" << std::endl;
+		Rcout << "Generating initial population" << std::endl;
 	}
 
 	for(i = this->ctrl.populationSize; i > 0; --i) {
