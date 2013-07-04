@@ -3,8 +3,9 @@
 \title{Set control arguments for the genetic algorithm}
 \usage{
   genAlgControl(populationSize, numGenerations,
-    minVariables, maxVariables, elitism = 10L,
-    mutationProbability = 0.01, verbosity = 0L)
+    minVariables, maxVariables, maxMatingTries = 5L,
+    elitism = 10L, mutationProbability = 0.01,
+    verbosity = 0L)
 }
 \arguments{
   \item{populationSize}{The number of "chromosomes" in the
@@ -20,6 +21,12 @@
   \item{maxVariables}{The maximum number of variables in
   the variable subset (between 1 and p, and greater than
   \code{minVariables})}
+
+  \item{maxMatingTries}{The maximum number of children that
+  are generated. If the value is less than or equal 0, the
+  first two children will be used. Otherwise children are
+  generated as long as they are not fitter than one parent
+  or \code{maxMatingTries} children have been generated.}
 
   \item{elitism}{The number of absolute best chromosomes to
   keep across all generations (between 1 and

@@ -26,7 +26,10 @@ public:
 	Chromosome(const Chromosome &other, bool copyChromosomeParts = true);
 //	~Chromosome();
 
-	void mutate();
+	/**
+	 * @return bool Returns true if mutation occurred, false otherwise
+	 */
+	bool mutate();
 	std::vector<Chromosome> mateWith(const Chromosome &other);
 
 	void setFitness(double fitness) { this->fitness = fitness; };

@@ -180,7 +180,7 @@ void Population::run() {
 			if(this->ctrl.verbosity == DEBUG_VERBOSE) {
 				Rcout << "Mating chromosomes " << std::endl << tmpChromosome1 << " and" << std::endl << tmpChromosome2 << std::endl
 				<< "with minimal fitness " << minParentFitness << std::endl
-				<< "First two proposals have fitness " << children[0].getFitness() << " / " << children[2].getFitness() << std::endl;
+				<< "First two proposals have fitness " << children[0].getFitness() << " / " << children[1].getFitness() << std::endl;
 			}
 #endif
 			
@@ -214,11 +214,15 @@ void Population::run() {
 #endif
 			}
 			
-			children[0].mutate();
-			children[1].mutate();
+			if(children[0].mutate() == true) {
+				this->evaluator->evaluate(children[0]);
+			}
+			if(children[1].mutate() == true) {
+				this->evaluator->evaluate(children[1]);
+			}
 
-			newFitnessMap.push_back(this->evaluator->evaluate(children[0]));
-			newFitnessMap.push_back(this->evaluator->evaluate(children[1]));
+			newFitnessMap.push_back(children[0].getFitness());
+			newFitnessMap.push_back(children[1].getFitness());
 
 			if(children[0].getFitness() < minFitness) {
 				minFitness = children[0].getFitness();

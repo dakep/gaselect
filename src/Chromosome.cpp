@@ -172,100 +172,158 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other) {
 	return children;
 }
 
-void Chromosome::mutate() {
+bool Chromosome::mutate() {
 	static std::vector<uint16_t> positionPopulation(this->ctrl.chromosomeSize);
 
 	uint16_t currentlySetBits = this->popcount();
 	uint16_t currentlyUnsetBits = this->ctrl.chromosomeSize - currentlySetBits;
 
-	uint16_t numAddBits = 0, numRemoveBits = 0;
+	int32_t numChangeBits = 0; // a negative value means unsetting bits and a positive value means setting new bits
 
-	if(this->ctrl.minVariables - currentlySetBits > 0) { // Too few bits are set -- we MUST add some
-		numAddBits = (this->ctrl.minVariables - currentlySetBits);
-	} else if(currentlySetBits - this->ctrl.maxVariables > 0) {
-		numRemoveBits = currentlySetBits - this->ctrl.maxVariables;
+	if((this->ctrl.minVariables - currentlySetBits) > 0) { // Too few bits are set -- we MUST add some
+		numChangeBits = (this->ctrl.minVariables - currentlySetBits);		
+	} else if((this->ctrl.maxVariables - currentlySetBits) < 0) { // Too many bits are set -- we MUST unset some
+		numChangeBits = (this->ctrl.maxVariables - currentlySetBits);
 	}
 
+	// Now set a random number of bits and unset a random number of bits
+	numChangeBits += this->tgeom(this->ctrl.maxVariables - currentlySetBits) - this->tgeom(currentlySetBits - this->ctrl.minVariables);
 
-	if(this->ctrl.maxVariables - currentlySetBits > 0) { // We may add some bits
-		numAddBits += this->tgeom(this->ctrl.maxVariables - currentlySetBits - numAddBits);
+	if(this->ctrl.maxVariables - currentlySetBits > 0) {
+		/*
+		 * We may set some additional bits
+		 * numChangeBits is 0 if the number of currently set bits is in the predefined range
+		 * or *positive* if too few bits are set
+		 */
+		numChangeBits += this->tgeom(this->ctrl.maxVariables - currentlySetBits - numChangeBits);
 	}
 
-	if(currentlySetBits - this->ctrl.minVariables > 0) { // We may remove some bits
-		numRemoveBits += this->tgeom(currentlySetBits - this->ctrl.minVariables - numRemoveBits);
+	if(currentlySetBits - this->ctrl.minVariables > 0) {
+		/*
+		 * We may unset some bits
+		 * numChangeBits is 0 if the number of currently set bits is in the predefined range
+		 * or *negative* if too many bits are set
+		 */
+		numChangeBits -= this->tgeom(currentlySetBits - this->ctrl.minVariables + numChangeBits);
 	}
 
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-		Rcout << "Adding " << numAddBits << " variables and removing " << numRemoveBits << " variables" << std::endl;
+		if(numChangeBits != 0) {
+			Rcout << "###########################" << std::endl
+			<< "Changing " << numChangeBits << " bits" << std::endl
+			<< "###########################" << std::endl
+			<< "Before mutation:" << *this << std::endl;
+		} else {
+			Rcout << "Changing " << numChangeBits << " bits" << std::endl;
+		}
+		
 	}
 #endif
 
-	if(numAddBits == 0 && numRemoveBits == 0) {
-		return;
-	}
+	if(numChangeBits == 0) {
+		return false;
+	} else if(numChangeBits < 0) {
+		/*
+		 * We have to unset -numChangeBits bits, i.e. flip from 1 to 0
+		 */
+		this->shuffle(positionPopulation, currentlySetBits, -numChangeBits);
+		std::vector<uint16_t> removeBitsPos(positionPopulation.begin(), positionPopulation.begin() - numChangeBits);
+		std::sort(removeBitsPos.begin(), removeBitsPos.end());
+		std::vector<uint16_t>::iterator removeBitsPosIt = removeBitsPos.begin();
 
-	this->shuffle(positionPopulation, currentlyUnsetBits, numAddBits);
-	std::vector<uint16_t> addBitsPos(positionPopulation.begin(), positionPopulation.begin() + numAddBits);
-
-	this->shuffle(positionPopulation, currentlySetBits, numRemoveBits);
-	std::vector<uint16_t> removeBitsPos(positionPopulation.begin(), positionPopulation.begin() + numRemoveBits);
-
-	std::sort(addBitsPos.begin(), addBitsPos.end());
-	std::sort(removeBitsPos.begin(), removeBitsPos.end());
-
-	std::vector<uint16_t>::iterator addBitsPosIt = addBitsPos.begin();
-	std::vector<uint16_t>::iterator removeBitsPosIt = removeBitsPos.begin();
-
-	IntChromosome mask = 0;
-	IntChromosome tmp;
-	int8_t totalShift = this->unusedBits - 1; // 0 based -- position 0 is the least significant bit
-	int8_t trailingZeros = totalShift; // 1 based -- the value 1 means 1 trailing zero
-
-	uint16_t onesCount = 0, zerosCount = 0;
-
-	for(uint16_t i = 0; i < this->numParts && (addBitsPosIt != addBitsPos.end() || removeBitsPosIt != removeBitsPos.end()); ++i) {
-		tmp = this->chromosomeParts[i];
-		do {
-			tmp >>= trailingZeros + 1;
-			
-			trailingZeros = this->ctz(tmp); // get number of 0's before the first 1 (starting with least significant bit)
-			
-			if(trailingZeros >= Chromosome::BITS_PER_PART - totalShift - 1) {
-				trailingZeros = Chromosome::BITS_PER_PART - totalShift - 1;
-			}
-			
-			totalShift += trailingZeros + 1;
-
-			// There are trailingZeros 0-bits between the last found 1 and this 1
-			// Some of them may be toggled
-			zerosCount += trailingZeros;
-			while(addBitsPosIt != addBitsPos.end() && zerosCount > (*addBitsPosIt)) {
-				mask |= (((IntChromosome) 1) << (((*addBitsPosIt) + onesCount + this->unusedBits) - i * Chromosome::BITS_PER_PART));
-				++addBitsPosIt;
-			}
-			
-			if(totalShift < Chromosome::BITS_PER_PART) {
-				if(removeBitsPosIt != removeBitsPos.end() && onesCount == (*removeBitsPosIt)) {
-					//unset bit
-					mask |= ((IntChromosome) 1) << totalShift;
-					++removeBitsPosIt;
+		IntChromosome mask = 0;
+		IntChromosome tmp;
+		int8_t totalShift = this->unusedBits - 1; // 0 based -- position 0 is the least significant bit
+		int8_t trailingZeros = totalShift; // 1 based -- the value 1 means 1 trailing zero
+		
+		uint16_t onesCount = 0;
+		
+		for(uint16_t i = 0; (i < this->numParts) && (removeBitsPosIt != removeBitsPos.end()); ++i) {
+			tmp = this->chromosomeParts[i];
+			do {
+				tmp >>= trailingZeros + 1;
+				
+				trailingZeros = this->ctz(tmp); // get number of 0's before the first 1 (starting with least significant bit)
+				
+				if(trailingZeros >= Chromosome::BITS_PER_PART - totalShift - 1) {
+					trailingZeros = Chromosome::BITS_PER_PART - totalShift - 1;
 				}
-				++onesCount; // increment after comparision because the position is 0 based
-			}
-		} while(totalShift < Chromosome::BITS_PER_PART);
+				
+				totalShift += trailingZeros + 1;
+				
+				if(totalShift < Chromosome::BITS_PER_PART) {
+					if(onesCount == (*removeBitsPosIt)) {
+						//unset bit
+						mask |= ((IntChromosome) 1) << totalShift;
+						++removeBitsPosIt;
+					}
+					++onesCount; // increment after comparision because the position is 0 based
+				}
+			} while(totalShift < Chromosome::BITS_PER_PART);
+			
+			this->chromosomeParts[i] ^= mask; // toggle all bits set in the mask
+			
+			totalShift = -1;
+			trailingZeros = -1;
+			mask = 0;
+		}
+	} else { // (numChangeBits > 0)
+		/*
+		 * We have to set numChangeBits bits, i.e. flip from 0 to 1
+		 */
+		this->shuffle(positionPopulation, currentlyUnsetBits, numChangeBits);
+		std::vector<uint16_t> addBitsPos(positionPopulation.begin(), positionPopulation.begin() + numChangeBits);
+		std::sort(addBitsPos.begin(), addBitsPos.end());
+		std::vector<uint16_t>::iterator addBitsPosIt = addBitsPos.begin();
+
+		IntChromosome mask = 0;
+		IntChromosome tmp;
+		int8_t totalShift = this->unusedBits - 1; // 0 based -- position 0 is the least significant bit
+		int8_t trailingZeros = totalShift; // 1 based -- the value 1 means 1 trailing zero
 		
-		this->chromosomeParts[i] ^= mask; // toggle all bits set in the mask
+		uint16_t onesCount = 0, zerosCount = 0;
 		
-		totalShift = -1;
-		trailingZeros = -1;
-		mask = 0;
+		for(uint16_t i = 0; (i < this->numParts) && (addBitsPosIt != addBitsPos.end()); ++i) {
+			tmp = this->chromosomeParts[i];
+			do {
+				tmp >>= trailingZeros + 1;
+				
+				trailingZeros = this->ctz(tmp); // get number of 0's before the first 1 (starting with least significant bit)
+				
+				if(trailingZeros >= Chromosome::BITS_PER_PART - totalShift - 1) {
+					trailingZeros = Chromosome::BITS_PER_PART - totalShift - 1;
+				}
+				
+				totalShift += trailingZeros + 1;
+				
+				// There are trailingZeros 0-bits between the last found 1 and this 1
+				// Some of them may be toggled
+				zerosCount += trailingZeros;
+				while(addBitsPosIt != addBitsPos.end() && zerosCount > (*addBitsPosIt)) {
+					mask |= (((IntChromosome) 1) << (((*addBitsPosIt) + onesCount + this->unusedBits) - i * Chromosome::BITS_PER_PART));
+					++addBitsPosIt;
+				}
+				
+				if(totalShift < Chromosome::BITS_PER_PART) {
+					++onesCount;
+				}
+			} while(totalShift < Chromosome::BITS_PER_PART);
+			
+			this->chromosomeParts[i] ^= mask; // toggle all bits set in the mask
+			
+			totalShift = -1;
+			trailingZeros = -1;
+			mask = 0;
+		}
 	}
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
 		Rcout << "After mutation: " << *this << std::endl;
 	}
 #endif
+	
+	return true;
 }
 
 
