@@ -3,6 +3,12 @@
 
 #include "config.h"
 
+#ifdef HAVE_CLIMITS
+#include <climits>
+#elif HAVE_LIMITS_H
+#include <limits.h>
+#endif
+
 #include <vector>
 #include <exception>
 #include <iostream>
@@ -48,13 +54,21 @@ public:
 
 	friend std::ostream& operator<<(std::ostream &os, const Chromosome &ch);
 private:
-#ifndef HAVE_BUILTIN_POPCOUNT
-	static const uint64_t M1 = 0x5555555555555555; // binary: 010101010101... (1 zero, 1 one)
-	static const uint64_t M2 = 0x3333333333333333; // binary: 001100110011... (2 zeros, 2 ones)
-	static const uint64_t M4 = 0x0f0f0f0f0f0f0f0f; // binary: 000011110000... (4 zeros, 4 ones)
-	static const uint64_t H01 = 0x0101010101010101; // the sum of 256 to the power of 0,1,2,3...
+#if !(defined HAVE_BUILTIN_POPCOUNTLL | defined HAVE_BUILTIN_POPCOUNTL)
+	static const IntChromosome M1 = 0x5555555555555555; // binary: 010101010101... (1 zero, 1 one)
+	static const IntChromosome M2 = 0x3333333333333333; // binary: 001100110011... (2 zeros, 2 ones)
+	static const IntChromosome M4 = 0x0f0f0f0f0f0f0f0f; // binary: 000011110000... (4 zeros, 4 ones)
+	static const IntChromosome H01 = 0x0101010101010101; // the sum of 256 to the power of 0,1,2,3...
 #endif
 	static const uint8_t BITS_PER_PART = sizeof(IntChromosome) * BITS_PER_BYTE;
+
+#ifdef INT_CHROMOSOME_MAX_VAL
+	static const IntChromosome INT_CHROMOSOME_MAX = INT_CHROMOSOME_MAX_VAL;
+#elif
+	static IntChromosome INT_CHROMOSOME_MAX;
+	static IntChromosome getIntChromosomeMax();
+#endif
+	
 
 	const Control &ctrl;
 	const TruncatedGeomGenerator tgeom;
@@ -87,7 +101,7 @@ private:
 
 	void copyFrom(const Chromosome& ch, bool copyChromosomeParts);
 
-#ifndef HAVE_BUILTIN_POPCOUNT
+#if !(defined HAVE_BUILTIN_POPCOUNTLL | defined HAVE_BUILTIN_POPCOUNTL)
 	uint16_t popcount(IntChromosome x) const {
 		x -= (x >> 1) & Chromosome::M1;								// put count of each 2 bits into those 2 bits
 		x = (x & Chromosome::M2) + ((x >> 2) & Chromosome::M2);	// put count of each 4 bits into those 4 bits

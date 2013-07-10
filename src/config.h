@@ -19,6 +19,7 @@
 #include <stdint.h>
 #endif
 
+
 // #define ENABLE_DEBUG_VERBOSITY
 
 //#define TIMING_BENCHMARK
@@ -32,17 +33,19 @@
 #define RNG_MAX_BITS 32
 #define INT_RNG_MAX 4294967296 // 2^RNG_MAX_BITS
 
-
-#ifdef HAVE_UINT64_MAX
-	typedef uint64_t IntChromosome;
-	#define INT_CHROMOSOME_MAX UINT64_MAX
-#elif defined HAVE_UINT32_MAX
-	typedef uint32_t IntChromosome;
-	#define INT_CHROMOSOME_MAX UINT32_MAX
-#else
-#error "No suitable integral type supported"
+#ifdef HAVE_UNSIGNED_LONG_LONG
+	typedef unsigned long long IntChromosome;
+#elif
+	typedef unsigned long IntChromosome;
 #endif
 
+#if (defined HAVE_CLIMITS || defined HAVE_LIMITS_H) 
+	#ifdef HAVE_UNSIGNED_LONG_LONG
+		#define INT_CHROMOSOME_MAX_VAL ULLONG_MAX
+	#else
+		#define INT_CHROMOSOME_MAX_VAL ULONG_MAX
+	#endif
+#endif
 
 // Mutation algorithm
 // If the ratio of set to unset bits is greater than this number, a random position
