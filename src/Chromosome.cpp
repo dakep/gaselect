@@ -94,7 +94,7 @@ inline void Chromosome::initChromosomeParts() {
 	}
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-		Rcout << "Initialized chromosome with " << this->popcount() << " bits set" << std::endl;
+		Rcout << "Initialized chromosome with " << this->getVariableCount() << " bits set" << std::endl;
 	}
 #endif
 #ifdef TIMING_BENCHMARK
@@ -175,7 +175,7 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other) {
 bool Chromosome::mutate() {
 	static std::vector<uint16_t> positionPopulation(this->ctrl.chromosomeSize);
 
-	uint16_t currentlySetBits = this->popcount();
+	uint16_t currentlySetBits = this->getVariableCount();
 	uint16_t currentlyUnsetBits = this->ctrl.chromosomeSize - currentlySetBits;
 
 	int32_t numChangeBits = 0; // a negative value means unsetting bits and a positive value means setting new bits
@@ -370,7 +370,7 @@ Rcpp::LogicalVector Chromosome::toLogicalVector() const {
 }
 
 arma::uvec Chromosome::toColumnSubset() const {
-	arma::uvec columnSubset(this->popcount());
+	arma::uvec columnSubset(this->getVariableCount());
 	IntChromosome mask = ((IntChromosome) 1) << this->unusedBits;
 	uint16_t csIndex = 0;
 	arma::uword truePos = 0;
@@ -415,7 +415,7 @@ bool Chromosome::isFitterThan(const Chromosome &ch) const {
 
 	// Both chromosomes have (almost) same fitness
 	// so check if this chormosome has less bits set than the other chromosome
-	return (this->popcount() < ch.popcount());
+	return (this->getVariableCount() < ch.getVariableCount());
 }
 
 Chromosome& Chromosome::operator=(const Chromosome &ch) {
@@ -427,35 +427,40 @@ Chromosome& Chromosome::operator=(const Chromosome &ch) {
  * Calculate the number of set bits in the chromosome
  * see the Wikipedia entry for "Hamming Weight"
  */
-inline uint16_t Chromosome::popcount() const {
+inline uint16_t Chromosome::getVariableCount() const {
 	uint16_t count = 0;
 
 #ifdef HAVE_BUILTIN_POPCOUNT
-	for(uint16_t i = 0; i < this->numParts; ++i) {
-		count += __builtin_popcountl(this->chromosomeParts[i]);
+	static uint16_t ulBits = sizeof(unsigned long) * BITS_PER_BYTE;
+	static uint16_t longsPerPart = sizeof(IntChromosome) / sizeof(unsigned long);
+	if(longsPerPart > 1) {
+		uint16_t j = 0;
+		for(uint16_t i = 0; i < this->numParts; ++i) {
+			for(j = 0; j < longsPerPart; ++j) {
+				count += __builtin_popcountl((this->chromosomeParts[i] >> (j * ulBits)));
+			}
+		}
+	} else {
+		for(uint16_t i = 0; i < this->numParts; ++i) {
+			count += __builtin_popcountl(this->chromosomeParts[i]);
+		}
 	}
 #else
 	uint16_t i = 1;
-	IntChromosome tmp = this->chromosomeParts[0] & ( INT_CHROMOSOME_MAX << this->unusedBits ); // "remove" first unused bits
-
-	do {
-		tmp -= (tmp >> 1) & Chromosome::M1;								// put count of each 2 bits into those 2 bits
-		tmp = (tmp & Chromosome::M2) + ((tmp >> 2) & Chromosome::M2);	// put count of each 4 bits into those 4 bits
-		tmp = (tmp + (tmp >> 4)) & Chromosome::M4;						// put count of each 8 bits into those 8 bits
-
-		count += (tmp * Chromosome::H01) >> 56;							// adds left 8 bits of tmp + (tmp << 8) + (tmp << 16) + (tmp << 24) + ...
-
-		tmp = this->chromosomeParts[i];
-	} while(i++ < this->numParts);
+	IntChromosome tmp =  
+	count = this->popcount(this->chromosomeParts[0] & ( INT_CHROMOSOME_MAX << this->unusedBits )); // "remove" first unused bits
+	for(uint16_t i = 1; i < this->numParts; ++i) {
+		count += this->popcount(this->chromosomeParts[i]);
+	};
 #endif
 
 	return count;
 }
 
+
 // returns BITS_PER_PART if no bit is set in mask
 // positions start at 0
 inline uint16_t Chromosome::ctz(IntChromosome mask) const {
-// Only handle the case of 32 and 64 bit integers -- otherwise undefined behaviour
 	if(mask == 0) {
 		return Chromosome::BITS_PER_PART;
 	}
@@ -465,17 +470,43 @@ inline uint16_t Chromosome::ctz(IntChromosome mask) const {
 		return  __builtin_ctz(mask);
 	} else if(sizeof(IntChromosome) == sizeof(unsigned long)) {
 		return  __builtin_ctzl(mask);
-	} /*else if(sizeof(IntChromosome) == sizeof(unsigned long long)) {
-		return  __builtin_ctzll(mask);
-	}*/
-	return Chromosome::BITS_PER_PART;
+	}
+
+	static uint16_t ulBits = sizeof(unsigned long) * BITS_PER_BYTE;
+	static uint16_t longsPerPart = sizeof(IntChromosome) / sizeof(unsigned long);
+	uint16_t count = 0;
+
+	for(uint16_t j = 0; j < longsPerPart; ++j) {
+		mask >>= ulBits;
+		if(((unsigned long) mask) > 0) {
+			count += __builtin_ctzl(mask);
+		} else {
+			count += Chromosome::BITS_PER_PART;
+		}
+	}
+
+	return count;
 #elif defined HAVE_FFSL
 	if(sizeof(IntChromosome) == sizeof(unsigned int)) {
 		return  ffs(mask) - 1;
 	} else if(sizeof(IntChromosome) == sizeof(unsigned long)) {
 		return  ffsl(mask) - 1;
 	}
-	return Chromosome::BITS_PER_PART;
+	
+	static uint16_t ulBits = sizeof(unsigned long) * BITS_PER_BYTE;
+	static uint16_t longsPerPart = sizeof(IntChromosome) / sizeof(unsigned long);
+	uint16_t count = 0;
+	
+	for(uint16_t j = 0; j < longsPerPart; ++j) {
+		mask >>= ulBits;
+		if(((unsigned long) mask) > 0) {
+			count += ffsl(mask) - 1;
+		} else {
+			count += Chromosome::BITS_PER_PART;
+		}
+	}
+	
+	return count;
 //#elif FFS_VS2005
 //	unsigned long index;
 //	unsigned char isNull = ((sizeof(mask) == 4) ? _BitScanForward(&index, mask) : _BitScanForward64(&index, mask));
