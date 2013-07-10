@@ -29,15 +29,14 @@ inline bool check_interrupt() {
 	return (R_ToplevelExec(check_interrupt_impl, NULL) == FALSE);
 }
 
-Population::Population(const Control &ctrl, const ::Evaluator &evaluator) : ctrl(ctrl), evaluator(&evaluator) {
-	// Initialize a vector of doubles that is used to
-	// map a 0-1 uniform random variable to the appropriate
-	// chromosome.
-	this->fitnessMap.reserve(this->ctrl.populationSize);
-
+Population::Population(const Control &ctrl, const ::Evaluator &evaluator) : unifGen(), ctrl(ctrl), evaluator(&evaluator) {
 	// initialize original population (generation 0) totally randomly
 	this->currentGeneration.reserve(this->ctrl.populationSize);
+	this->nextGeneration.reserve(this->ctrl.populationSize);
+	this->currentGenFitnessMap.reserve(this->ctrl.populationSize);
+	this->nextGenFitnessMap.reserve(this->ctrl.populationSize);
 
+	this->minCurrentGenFitness = 0.0;
 	this->minEliteFitness = 0.0;
 }
 
@@ -52,22 +51,21 @@ Population::~Population() {
 //	this->cleanCurrentGeneration();
 }
 
-Chromosome& Population::getChromosomeFromFitnessMap(double rand) {
-	int imin = 0, imax = this->ctrl.populationSize;
+inline Chromosome& Population::drawChromosomeFromCurrentGeneration() {
+	int imin = 0, imax = this->ctrl.populationSize - 1;
 	int imid = 0;
-	bool found = false;
+	
+	// Draw a random number between 0 and cumulative sum of all fitness values
+	double rand = this->unifGen() * this->sumCurrentGenFitness;
 
-	while(imax > imin && !found) {
-		imid = imin + ((imax - imin) / 2);
+	// Search for the chromosome whose fitness range surrounds the random number
+	while(imin <= imax) {
+		imid = (imax + imin) / 2;
 
-		if(this->fitnessMap[imid] < rand) {
+		if(this->currentGenFitnessMap[imid] > rand) {
+			imax = imid - 1;
+		} else {
 			imin = imid + 1;
-		} else if (this->fitnessMap[imid] >= rand) {
-			if(imid > 0 && this->fitnessMap[imid - 1] >= rand) {
-				imax = imid - 1;
-			} else {
-				imax = imin; // break loop
-			}
 		}
 	}
 
@@ -91,59 +89,22 @@ inline void Population::addChromosomeToElite(Chromosome& ch) {
 	}
 }
 
-void Population::run() {
-	int i = 0, j = 0;
-	int popSizeHalf = this->ctrl.populationSize / 2;
-	VariablePositionPopulation varPosPop(this->ctrl.chromosomeSize);
-
-	double sumFitness = 0.0;
-	double minFitness = 0.0;
-
-//	Chromosome tmpChromosome1, tmpChromosome2;
-	std::vector<double> newFitnessMap;
-	std::vector<Chromosome> newGeneration;
+inline void Population::transformCurrentGenFitnessMap() {
+	this->sumCurrentGenFitness = 0.0;
 	std::vector<double>::iterator fitnessMapIt;
-	Rcpp::stats::UnifGenerator__0__1 unifGen;
-
-	newGeneration.reserve(this->ctrl.populationSize);
-	newFitnessMap.reserve(this->ctrl.populationSize);
-
-	if(this->ctrl.verbosity > OFF) {
-		Rcout << "Generating initial population" << std::endl;
-	}
-
-	for(i = this->ctrl.populationSize; i > 0; --i) {
-		Chromosome tmpChromosome1(this->ctrl, varPosPop);
-
-		this->fitnessMap.push_back(this->evaluator->evaluate(tmpChromosome1));
-		if(tmpChromosome1.getFitness() < minFitness) {
-			minFitness = tmpChromosome1.getFitness();
-		}
-
-		if(this->ctrl.verbosity >= MORE_VERBOSE) {
-			this->printChromosomeFitness(Rcout, tmpChromosome1);
-		}
-		this->addChromosomeToElite(tmpChromosome1);
-		this->currentGeneration.push_back(tmpChromosome1);
-		
-		if(check_interrupt()) {
-			throw InterruptException();
-		}
-	}
-
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
 		Rcout << "Fitness map: ";
 	}
 #endif
-
-	for(fitnessMapIt = this->fitnessMap.begin(); fitnessMapIt != this->fitnessMap.end(); ++fitnessMapIt) {
-		sumFitness += (*fitnessMapIt) - minFitness;
-		(*fitnessMapIt) = sumFitness;
-
+	
+	for(fitnessMapIt = this->currentGenFitnessMap.begin(); fitnessMapIt != this->currentGenFitnessMap.end(); ++fitnessMapIt) {
+		this->sumCurrentGenFitness += (*fitnessMapIt) - this->minCurrentGenFitness;
+		(*fitnessMapIt) = this->sumCurrentGenFitness;
+		
 #ifdef ENABLE_DEBUG_VERBOSITY
 		if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-			Rcout << sumFitness << " | ";
+			Rcout << this->sumCurrentGenFitness << " | ";
 		}
 #endif
 	}
@@ -152,134 +113,167 @@ void Population::run() {
 		Rcout << std::endl;
 	}
 #endif
+}
 
+
+inline void Population::mate(uint16_t numMatingCouples) {
+	for(; numMatingCouples != 0; --numMatingCouples) {
+		Chromosome tmpChromosome1 = this->drawChromosomeFromCurrentGeneration();
+		Chromosome tmpChromosome2 = this->drawChromosomeFromCurrentGeneration();
+		
+		std::vector<Chromosome> children = tmpChromosome1.mateWith(tmpChromosome2);
+		uint16_t matingTries = 0;
+		double minParentFitness = ((tmpChromosome1.getFitness() > tmpChromosome2.getFitness()) ? tmpChromosome1.getFitness() : tmpChromosome2.getFitness());
+		
+		this->evaluator->evaluate(children[0]);
+		this->evaluator->evaluate(children[1]);
+		// Make sure the first child is "better" than the second child
+		if(children[0].getFitness() < children[1].getFitness()) {
+			std::swap(children[1], children[0]);
+		}
+		
+		
+#ifdef ENABLE_DEBUG_VERBOSITY
+		if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+			Rcout << "Mating chromosomes " << std::endl << tmpChromosome1 << " and" << std::endl << tmpChromosome2 << std::endl
+			<< "with minimal fitness " << minParentFitness << std::endl
+			<< "First two proposals have fitness " << children[0].getFitness() << " / " << children[1].getFitness() << std::endl;
+		}
+#endif
+		
+		// At least the first child should be better than the worse parent
+		while((children[0].getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
+			std::vector<Chromosome> proposalChildren = tmpChromosome1.mateWith(tmpChromosome2);
+			
+			/*
+			 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
+			 * greater than 0, otherwise the evaluation step would fail
+			 */			
+			if((proposalChildren[0].getVariableCount() > 0) && (this->evaluator->evaluate(proposalChildren[0]) > children[1].getFitness())) { // better as 2nd child
+				if(proposalChildren[0].getFitness() > children[0].getFitness()) { // even better as 1st child
+					children[1] = children[0];
+					children[0] = proposalChildren[0];
+				} else {
+					children[1] = proposalChildren[0];
+				}
+			}
+			
+			// Check 2nd new child
+			if((proposalChildren[1].getVariableCount() > 0) && (this->evaluator->evaluate(proposalChildren[1]) > children[1].getFitness())) { // better as 2nd child
+				if(proposalChildren[1].getFitness() > children[0].getFitness()) { // even better as 1st child
+					children[1] = children[0];
+					children[0] = proposalChildren[1];
+				} else {
+					children[1] = proposalChildren[1];
+				}
+			}
+			
+#ifdef ENABLE_DEBUG_VERBOSITY
+			if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+				Rcout << "Proposed children have fitness: " << proposalChildren[0].getFitness() << " / " << proposalChildren[1].getFitness() << std::endl
+				<< "Currently selected children have fitness: " << children[0].getFitness() << " / " << children[1].getFitness() << std::endl;
+			}
+#endif
+		}
+		
+		if(children[0].mutate() == true) {
+			this->evaluator->evaluate(children[0]);
+		}
+		if(children[1].mutate() == true) {
+			this->evaluator->evaluate(children[1]);
+		}
+		
+		this->nextGenFitnessMap.push_back(children[0].getFitness());
+		this->nextGenFitnessMap.push_back(children[1].getFitness());
+		
+		if(children[0].getFitness() < this->minCurrentGenFitness) {
+			this->minCurrentGenFitness = children[0].getFitness();
+		}
+		
+		if(children[1].getFitness() < this->minCurrentGenFitness) {
+			this->minCurrentGenFitness = children[1].getFitness();
+		}
+		
+		if(this->ctrl.verbosity >= MORE_VERBOSE) {
+			this->printChromosomeFitness(Rcout, children[0]);
+			this->printChromosomeFitness(Rcout, children[1]);
+		}
+		
+		this->addChromosomeToElite(children[0]);
+		this->addChromosomeToElite(children[1]);
+		
+		this->nextGeneration.push_back(children[0]);
+		this->nextGeneration.push_back(children[1]);
+		
+		if(check_interrupt()) {
+			throw InterruptException();
+		}
+	}
+}
+
+void Population::run() {
+	int i = 0;
+	int popSizeHalf = this->ctrl.populationSize / 2;
+	VariablePositionPopulation varPosPop(this->ctrl.chromosomeSize);
+
+	if(this->ctrl.verbosity > OFF) {
+		Rcout << "Generating initial population" << std::endl;
+	}
+
+	for(i = this->ctrl.populationSize; i > 0; --i) {
+		Chromosome tmpChromosome(this->ctrl, varPosPop);
+
+		this->currentGenFitnessMap.push_back(this->evaluator->evaluate(tmpChromosome));
+		if(tmpChromosome.getFitness() < this->minCurrentGenFitness) {
+			this->minCurrentGenFitness = tmpChromosome.getFitness();
+		}
+
+		if(this->ctrl.verbosity >= MORE_VERBOSE) {
+			this->printChromosomeFitness(Rcout, tmpChromosome);
+		}
+		this->addChromosomeToElite(tmpChromosome);
+		this->currentGeneration.push_back(tmpChromosome);
+		
+		if(check_interrupt()) {
+			throw InterruptException();
+		}
+	}
+
+#ifdef HAVE_PTHREADS
+	/*
+	 * init mutex for "queue" synch
+	 * init mutex for printing
+	 * create numThreads threads pthread_create(&tid[i], NULL, Population::runMating, this)
+	 *
+	 */
+#endif
+	
 	for(i = this->ctrl.numGenerations; i > 0; --i) {
 		if(this->ctrl.verbosity > OFF) {
 			Rcout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
 
-		minFitness = 0.0;
-
-		// Copulate and mutate
-		for(j = 0; j < popSizeHalf; ++j) {
-			Chromosome tmpChromosome1 = this->getChromosomeFromFitnessMap(unifGen() * sumFitness);
-			Chromosome tmpChromosome2 = this->getChromosomeFromFitnessMap(unifGen() * sumFitness);
-			std::vector<Chromosome> children = tmpChromosome1.mateWith(tmpChromosome2);
-			uint8_t cnt = 0;
-			double minParentFitness = ((tmpChromosome1.getFitness() > tmpChromosome2.getFitness()) ? tmpChromosome1.getFitness() : tmpChromosome2.getFitness());
-			
-			this->evaluator->evaluate(children[0]);
-			this->evaluator->evaluate(children[1]);
-			// Make sure the first child is "better" than the second child
-			if(children[0].getFitness() < children[1].getFitness()) {
-				std::swap(children[1], children[0]);
-			}
-
-			
-#ifdef ENABLE_DEBUG_VERBOSITY
-			if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-				Rcout << "Mating chromosomes " << std::endl << tmpChromosome1 << " and" << std::endl << tmpChromosome2 << std::endl
-				<< "with minimal fitness " << minParentFitness << std::endl
-				<< "First two proposals have fitness " << children[0].getFitness() << " / " << children[1].getFitness() << std::endl;
-			}
-#endif
-			
-			// At least the first child should be better than the worse parent
-			while((children[0].getFitness() < minParentFitness) && (++cnt < this->ctrl.maxMatingTries)) {
-				std::vector<Chromosome> proposalChildren = tmpChromosome1.mateWith(tmpChromosome2);
-				if(this->evaluator->evaluate(proposalChildren[0]) > children[1].getFitness()) { // better as 2nd child
-					if(proposalChildren[0].getFitness() > children[0].getFitness()) { // even better as 1st child
-						children[1] = children[0];
-						children[0] = proposalChildren[0];
-					} else {
-						children[1] = proposalChildren[0];
-					}
-				}
-
-				// Check 2nd new child
-				if(this->evaluator->evaluate(proposalChildren[1]) > children[1].getFitness()) { // better as 2nd child
-					if(proposalChildren[1].getFitness() > children[0].getFitness()) { // even better as 1st child
-						children[1] = children[0];
-						children[0] = proposalChildren[1];
-					} else {
-						children[1] = proposalChildren[1];
-					}
-				}
-				
-#ifdef ENABLE_DEBUG_VERBOSITY
-				if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-					Rcout << "Proposed children have fitness: " << proposalChildren[0].getFitness() << " / " << proposalChildren[1].getFitness() << std::endl
-					<< "Currently selected children have fitness: " << children[0].getFitness() << " / " << children[1].getFitness() << std::endl;
-				}
-#endif
-			}
-			
-			if(children[0].mutate() == true) {
-				this->evaluator->evaluate(children[0]);
-			}
-			if(children[1].mutate() == true) {
-				this->evaluator->evaluate(children[1]);
-			}
-
-			newFitnessMap.push_back(children[0].getFitness());
-			newFitnessMap.push_back(children[1].getFitness());
-
-			if(children[0].getFitness() < minFitness) {
-				minFitness = children[0].getFitness();
-			}
-
-			if(children[1].getFitness() < minFitness) {
-				minFitness = children[1].getFitness();
-			}
-
-			if(this->ctrl.verbosity >= MORE_VERBOSE) {
-				this->printChromosomeFitness(Rcout, children[0]);
-				this->printChromosomeFitness(Rcout, children[1]);
-			}
-
-			this->addChromosomeToElite(children[0]);
-			this->addChromosomeToElite(children[1]);
-
-			newGeneration.push_back(children[0]);
-			newGeneration.push_back(children[1]);
-			
-			if(check_interrupt()) {
-				throw InterruptException();
-			}
-		}
-
-#ifdef ENABLE_DEBUG_VERBOSITY
-		if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-			Rcout << "Fitness map: ";
-		}
-#endif
-
-		sumFitness = 0.0;
-
-		for(fitnessMapIt = newFitnessMap.begin(); fitnessMapIt != newFitnessMap.end(); ++fitnessMapIt) {
-			sumFitness += (*fitnessMapIt) - minFitness;
-			(*fitnessMapIt) = sumFitness;
-
-#ifdef ENABLE_DEBUG_VERBOSITY
-			if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-				Rcout << sumFitness << " | ";
-			}
-#endif
-		}
-#ifdef ENABLE_DEBUG_VERBOSITY
-		if(this->ctrl.verbosity == DEBUG_VERBOSE) {
-			Rcout << std::endl;
-		}
-#endif
+		/*
+		 * Transform the fitness map of the current generation to start at 0
+		 * and have cumulative values
+		 */
+		this->transformCurrentGenFitnessMap();
+		this->minCurrentGenFitness = 0.0;
+		
+		/*
+		 * Mate two chromosomes to generate two children that are eventually mutated
+		 * To get the same population size, a total of popSize / 2 mating pairs have
+		 * to generate 2 children
+		 *
+		 */
+		this->mate(popSizeHalf);
 
 		// Housekeeping
-		// first delete old chromsomes
-//		this->cleanCurrentGeneration();
-		this->currentGeneration = newGeneration;
-		newGeneration.clear();
+		this->currentGeneration = this->nextGeneration;
+		this->nextGeneration.clear();
 
-		this->fitnessMap = newFitnessMap;
-		newFitnessMap.clear();
+		this->currentGenFitnessMap = this->nextGenFitnessMap;
+		this->nextGenFitnessMap.clear();
 	}
 }
 
@@ -299,13 +293,3 @@ inline std::ostream& Population::printChromosomeFitness(std::ostream &os, Chromo
 
 	return os;
 }
-
-
-//inline void Population::cleanCurrentGeneration() {
-//	std::vector<Chromosome>::iterator rmGenerationIter = this->currentGeneration.begin();
-//
-//	// Delete all chromosomes from the last generation from stack
-//	for(; rmGenerationIter != this->currentGeneration.end(); ++rmGenerationIter) {
-//		delete (*rmGenerationIter);
-//	}
-//}

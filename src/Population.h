@@ -49,14 +49,30 @@ public:
 private:
 	std::multiset<Chromosome, Population::ChromosomeComparator> elite;
 	std::vector<Chromosome> currentGeneration;
-	std::vector<double> fitnessMap;
+	std::vector<Chromosome> nextGeneration;
+	std::vector<double> currentGenFitnessMap;
+	std::vector<double> nextGenFitnessMap;
+	double sumCurrentGenFitness;
+	double minCurrentGenFitness; // Minimum fitness value in the current generation
 	double minEliteFitness;
+	Rcpp::stats::UnifGenerator__0__1 unifGen;
 
-//	double evaluateFitness(Chromosome* ch);
-	Chromosome &getChromosomeFromFitnessMap(double rand);
+	/**
+	 * Pick a chromosome from the current generation at random
+	 * where the probability to pick a chromosome is taken from
+	 * the currentGenFitnessMap
+	 */
+	Chromosome &drawChromosomeFromCurrentGeneration();
 	void addChromosomeToElite(Chromosome &ch);
 
 	std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch);
+	
+	void mate(uint16_t numMatingCouples);
+	
+	/**
+	 * Transform the given fitness map to start at 0 and only have positive values
+	 */
+	void transformCurrentGenFitnessMap();
 
 //	void cleanCurrentGeneration();
 
