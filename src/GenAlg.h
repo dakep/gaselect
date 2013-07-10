@@ -26,9 +26,12 @@
  *		uint16_t chromosomeSize ... The size of the chromosome (most times equal to the number of columns of X) (> 0)
  *		uint16_t populationSize ... Number of indivudual chromosomes in the population (i.e. per generation) (> 0)
  *		uint16_t numGenerations ... The number of generations to generate (> 0)
+ *		uint16_t minVariables ... The minimum number of variables in a subset
+ *		uint16_t maxVariables ... The maximum number of variables in a subset
+ *		uint16_t maxMatingTries ... The maximum number of tries to get better children than parents
  *		uint16_t elitism ... The number of "elite" chromosomes to keep accross all generations (>= 0)
  *		double mutationProb ... The probability of using a new variable (0 <= onesRatio < 1)
- *		double onesRatio ... The approximate ratio of 1's in the chromosome (is actually distributed binomial with parameter onesRatio) (0 < onesRatio < 1)
+ *		uint16_t numThreads ... The maximum number of threads to spawn
  *		VerbosityLevel verbosity ... Level of verbosity
  *
  *		bool useUserSuppliedFunction ... If true, a user specified function is used to evaluate the fitness of a chromosome

@@ -27,6 +27,15 @@ SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy) {
 BEGIN_RCPP
 
 	List control = List(Scontrol);
+	uint16_t numThreads = as<uint16_t>(control["numThreads"]);
+	
+#ifndef HAVE_PTHREADS
+	if(numThreads > 0) {
+		Rcerr << "Warning: Threads are not supported on this system" << std::endl;
+		numThreads = 0;
+	}
+#endif
+	
 	// All checks are disabled and must be performed in the R code calling this script
 	// Otherwise unexpected behaviour
 	Control ctrl(as<uint16_t>(control["chromosomeSize"]),
@@ -37,8 +46,9 @@ BEGIN_RCPP
 				 as<uint16_t>(control["maxVariables"]),
 				 as<uint16_t>(control["maxMatingTries"]),
 				 as<double>(control["mutationProb"]),
+				 numThreads,
 				 (VerbosityLevel) as<int>(control["verbosity"]));
-
+	
 	useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
 	if(useUserFunction) {
 		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
