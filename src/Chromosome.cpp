@@ -5,6 +5,7 @@
 
 #include "config.h"
 
+#include <exception>
 #include <algorithm>
 #include <vector>
 #include <iostream>
@@ -17,18 +18,33 @@
 
 #if defined HAVE_STRINGS_H
 #include <strings.h>
-//#elif defined FFS_VS2005
-//#include <intrin.h>
-//#pragma intrinsic(_BitScanForward)
 #endif
 
 #include <sys/time.h>
 
 using namespace Rcpp;
 
+#ifndef INT_CHROMOSOME_MAX_VAL
+IntChromosome Chromosome::getIntChromosomeMax() {
+	IntChromosome max = 0xFF; // has at least 1 byte!
+	size_t remainingBytes = sizeof(IntChromosome) - 1;
+
+	for(size_t i = 0; i < remainingBytes; ++i) {
+		max <<= 8; // shift 8 bits (1 byte) to the left
+		max += 0xFF; // set first byte
+	}
+	
+	return max;
+}
+
+IntChromosome Chromosome::INT_CHROMOSOME_MAX = Chromosome::getIntChromosomeMax();
+#endif
+
+
 Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop) : ctrl(ctrl), tgeom(1. - ctrl.mutationProbability), varPosPop(varPosPop) {
 	// Determine the number of IntChromosome bit values that are
 	// needed to represent all genes
+	
 	this->numParts = (uint16_t) this->ctrl.chromosomeSize / Chromosome::BITS_PER_PART;
 
 	int rest = this->ctrl.chromosomeSize % Chromosome::BITS_PER_PART;
@@ -430,25 +446,20 @@ Chromosome& Chromosome::operator=(const Chromosome &ch) {
 inline uint16_t Chromosome::getVariableCount() const {
 	uint16_t count = 0;
 
-#ifdef HAVE_BUILTIN_POPCOUNT
-	static uint16_t ulBits = sizeof(unsigned long) * BITS_PER_BYTE;
-	static uint16_t longsPerPart = sizeof(IntChromosome) / sizeof(unsigned long);
-	if(longsPerPart > 1) {
-		uint16_t j = 0;
-		for(uint16_t i = 0; i < this->numParts; ++i) {
-			for(j = 0; j < longsPerPart; ++j) {
-				count += __builtin_popcountl((this->chromosomeParts[i] >> (j * ulBits)));
-			}
-		}
-	} else {
-		for(uint16_t i = 0; i < this->numParts; ++i) {
-			count += __builtin_popcountl(this->chromosomeParts[i]);
-		}
+#ifdef HAVE_BUILTIN_POPCOUNTLL
+	for(uint16_t i = 0; i < this->numParts; ++i) {
+		count += __builtin_popcountll(this->chromosomeParts[i]);
+	}
+#elif defined #ifdef HAVE_BUILTIN_POPCOUNTL
+	for(uint16_t i = 0; i < this->numParts; ++i) {
+		count += __builtin_popcountl(this->chromosomeParts[i]);
 	}
 #else
-	uint16_t i = 1;
-	IntChromosome tmp =  
-	count = this->popcount(this->chromosomeParts[0] & ( INT_CHROMOSOME_MAX << this->unusedBits )); // "remove" first unused bits
+	if(sizeof(mask) > 8) {
+		throw std::overflow_error("The 'popcount' fallback algorithm can not handle integers with more than 8 bytes");
+	}
+	
+	IntChromosome count = this->popcount(this->chromosomeParts[0] & (Chromsome::INT_CHROMOSOME_MAX << this->unusedBits )); // "remove" first unused bits
 	for(uint16_t i = 1; i < this->numParts; ++i) {
 		count += this->popcount(this->chromosomeParts[i]);
 	};
@@ -457,62 +468,30 @@ inline uint16_t Chromosome::getVariableCount() const {
 	return count;
 }
 
-
-// returns BITS_PER_PART if no bit is set in mask
-// positions start at 0
+/**
+ * returns BITS_PER_PART if no bit is set in mask
+ * positions start at 0
+ */
 inline uint16_t Chromosome::ctz(IntChromosome mask) const {
 	if(mask == 0) {
 		return Chromosome::BITS_PER_PART;
 	}
-	
-#if defined HAVE_GCC_CTZ
-	if(sizeof(IntChromosome) == sizeof(unsigned int)) {
-		return  __builtin_ctz(mask);
-	} else if(sizeof(IntChromosome) == sizeof(unsigned long)) {
-		return  __builtin_ctzl(mask);
-	}
 
-	static uint16_t ulBits = sizeof(unsigned long) * BITS_PER_BYTE;
-	static uint16_t longsPerPart = sizeof(IntChromosome) / sizeof(unsigned long);
-	uint16_t count = 0;
-
-	for(uint16_t j = 0; j < longsPerPart; ++j) {
-		mask >>= ulBits;
-		if(((unsigned long) mask) > 0) {
-			count += __builtin_ctzl(mask);
-		} else {
-			count += Chromosome::BITS_PER_PART;
-		}
-	}
-
-	return count;
+#if defined HAVE_GCC_CTZLL
+	return __builtin_ctzll(mask);
+#elif defined HAVE_FFSLL
+	return  ffsll(mask) - 1;
+#elif defined HAVE_GCC_CTZL
+	return __builtin_ctzl(mask);
 #elif defined HAVE_FFSL
-	if(sizeof(IntChromosome) == sizeof(unsigned int)) {
-		return  ffs(mask) - 1;
-	} else if(sizeof(IntChromosome) == sizeof(unsigned long)) {
-		return  ffsl(mask) - 1;
-	}
-	
-	static uint16_t ulBits = sizeof(unsigned long) * BITS_PER_BYTE;
-	static uint16_t longsPerPart = sizeof(IntChromosome) / sizeof(unsigned long);
-	uint16_t count = 0;
-	
-	for(uint16_t j = 0; j < longsPerPart; ++j) {
-		mask >>= ulBits;
-		if(((unsigned long) mask) > 0) {
-			count += ffsl(mask) - 1;
-		} else {
-			count += Chromosome::BITS_PER_PART;
-		}
-	}
-	
-	return count;
-//#elif FFS_VS2005
-//	unsigned long index;
-//	unsigned char isNull = ((sizeof(mask) == 4) ? _BitScanForward(&index, mask) : _BitScanForward64(&index, mask));
-//	return ((isNull == 0) ? (Chromosome::BITS_PER_PART) : (index - 1));
+	return  ffsl(mask) - 1;
 #else
-	// Simple implementation of the "find first set" problem without loop	
+	// Simple implementation of the "find first set" problem without loop
+	// Only valid for IntChromosome with a maximum of 64 bits!
+	if(sizeof(mask) > 8) {
+		throw std::overflow_error("The 'count trailing zeros' fallback algorithm can not handle integers with more than 8 bytes");
+	}
+	
 	uint16_t index = 0;
 
 	if (sizeof(mask) == 8) {
@@ -560,7 +539,7 @@ inline IntChromosome Chromosome::runif() const {
 
 		return rand;
 	} else {
-		return (IntChromosome) (INT_CHROMOSOME_MAX * this->unifGen());
+		return (IntChromosome) (Chromosome::INT_CHROMOSOME_MAX * this->unifGen());
 	}
 }
 
