@@ -75,40 +75,47 @@ genAlgEvalControl <- function(numReplications = 2L, numSegments = 4L, plsMethod 
 #'						 children are generated as long as they are not fitter than one parent or \code{maxMatingTries} children have been generated.
 #' @param elitism The number of absolute best chromosomes to keep across all generations (between 1 and min(\code{populationSize} * \code{numGenerations}, 2^16))
 #' @param mutationProbability The probability of mutation (between 0 and 1)
+#' @param numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads)
 #' @param verbosity The level of verbosity. 0 means no output at all, 3 is very verbose.
 #' @export
 #' @seealso See \code{\link{genAlgEvalControl}} for controlling the evaluation step during the GA
-genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, maxMatingTries = 5L, elitism = 10L, mutationProbability = 0.01, verbosity = 0L) {
+genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, maxMatingTries = 5L, elitism = 10L, numThreads = NULL, mutationProbability = 0.01, verbosity = 0L) {
 	MAXUINT16 <- 2^16; # Internal unsigned 16bit integers are used (uint16_t)
 
 	## Type checks:
-	if(populationSize < 0L || populationSize > MAXUINT16) {
+	if(!is.numeric(populationSize) || populationSize < 0L || populationSize > MAXUINT16) {
 		stop("The population size must be between 0 and ", MAXUINT16);
 	}
 
-	if(numGenerations < 0L || numGenerations > MAXUINT16) {
+	if(!is.numeric(numGenerations) || numGenerations < 0L || numGenerations > MAXUINT16) {
 		stop("The number of generations must be between 0 and ", MAXUINT16);
 	}
 
-	if(elitism < 0L || elitism > MAXUINT16) {
+	if(!is.numeric(elitism) || elitism < 0L || elitism > MAXUINT16) {
 		warning("Not storing best solutions from all generations. 'elitism' should be between 0 and ", MAXUINT16);
 		elitism <- 0L;
 	}
 
-	if(minVariables < 0L || minVariables > MAXUINT16) {
+	if(!is.numeric(minVariables) || minVariables < 0L || minVariables > MAXUINT16) {
 		stop("The minimal number of variables must be between 0 and ", MAXUINT16);
 		minVariables <- 0L;
 	}
 
-	if(maxVariables < 0L || maxVariables > MAXUINT16) {
+	if(!is.numeric(maxVariables) || maxVariables < 0L || maxVariables > MAXUINT16) {
 		stop("The maximum number of variables must be strictly larger than the minimum number of variables and between 0 and ", MAXUINT16);
 		maxVariables <- 0L;
 	}
 
-	if(maxMatingTries < 0L) {
+	if(!is.numeric(maxMatingTries) || maxMatingTries < 0L) {
 		maxMatingTries <- 0L;
 	} else if(maxMatingTries > MAXUINT16) {
 		stop("The maximum number of mating tries must not be greater than ", MAXUINT16);
+	}
+
+	if(!is.numeric(numThreads) || numThreads < 1L) {
+		numThreads = 0L;
+	} else if(numThreads > MAXUINT16) {
+		stop("The maximum number of threads must be less than ", MAXUINT16);
 	}
 
 	populationSize  <- as.integer(populationSize);
@@ -116,7 +123,6 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 	elitism <- as.integer(elitism);
 	minVariables <- as.integer(minVariables);
 	maxVariables <- as.integer(maxVariables);
-	maxMatingTries <- as.integer(maxMatingTries);
 
 	## Sanity checks:
 
@@ -148,9 +154,10 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 		"numGenerations" = numGenerations,
 		"minVariables" = minVariables,
 		"maxVariables" = maxVariables,
-		"maxMatingTries" = maxMatingTries,
+		"maxMatingTries" = as.integer(maxMatingTries),
 		"elitism" = elitism,
 		"mutationProb" = mutationProbability,
+		"numThreads" = as.integer(numThreads),
 		"verbosity" = as.integer(verbosity)
 	);
 
