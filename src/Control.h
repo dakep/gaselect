@@ -11,13 +11,14 @@
 #include <iostream>
 #include <vector>
 #include <RcppArmadillo.h>
-#include "UnifGenerator__0__1.h"
+#include "SynchronizedUnifGenerator__0__1.h"
 
 enum VerbosityLevel {
 	OFF = 0,
 	ON,
 	MORE_VERBOSE,
-	DEBUG_VERBOSE
+	DEBUG_VERBOSE,
+	FULLY_VERBOSE
 };
 
 class Control {
@@ -50,7 +51,7 @@ public:
 	void shuffleVariablePositionPopulation(uint16_t length = 0);
 
 private:
-	const Rcpp::stats::UnifGenerator__0__1 unifGen;
+	const SynchronizedUnifGenerator__0__1 unifGen;
 };
 
 #endif

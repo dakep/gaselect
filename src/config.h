@@ -52,4 +52,15 @@
 // is likely to result in a bit with the desired state
 #define RATIO_RANDOM_SEARCH 0.2
 
+#ifndef _REENTRANT
+#undef HAVE_PTHREAD_H
+#endif
+
+#ifdef ENABLE_DEBUG_VERBOSITY
+#define CHECK_PTHREAD_RETURN_CODE(rc) if((rc) != 0) { Rcpp::Rcerr << "Warning: Call to pthread function failed with error code " << (rc) << " in " << __FILE__ << ":" << __LINE__ << std::endl; }
+
+#else
+#define CHECK_PTHREAD_RETURN_CODE(rc)
+#endif
+
 #endif

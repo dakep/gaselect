@@ -98,4 +98,11 @@ AC_COMPILE_IFELSE([
 	[AC_MSG_RESULT([No builtin popcount method (for unsigned long long)])]
 )
 
+# Check for pthreads support
+oldCFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -pthread"
+AC_CHECK_HEADERS(pthread.h)
+
+CFLAGS="$oldCFLAGS"
+
 cp confdefs.h src/autoconfig.h

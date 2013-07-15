@@ -16,11 +16,17 @@
 #include "Chromosome.h"
 #include "GenAlg.h"
 
-#if defined HAVE_STRINGS_H
+#ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
 
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+
+#ifdef TIMING_BENCHMARK
 #include <sys/time.h>
+#endif
 
 using namespace Rcpp;
 
@@ -40,6 +46,7 @@ IntChromosome Chromosome::getIntChromosomeMax() {
 IntChromosome Chromosome::INT_CHROMOSOME_MAX = Chromosome::getIntChromosomeMax();
 #endif
 
+SynchronizedUnifGenerator__0__1 Chromosome::unifGen;
 
 Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop) : ctrl(ctrl), tgeom(1. - ctrl.mutationProbability), varPosPop(varPosPop) {
 	// Determine the number of IntChromosome bit values that are
@@ -89,10 +96,10 @@ inline void Chromosome::initChromosomeParts() {
 
 	gettimeofday(&start, NULL);
 #endif
-	uint16_t bitsToSet = this->ctrl.minVariables + this->unifGen() * (this->ctrl.maxVariables - this->ctrl.minVariables);
+	uint16_t bitsToSet = this->ctrl.minVariables + Chromosome::unifGen() * (this->ctrl.maxVariables - this->ctrl.minVariables);
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+	if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
 		Rcout << "Init chromosome with " << bitsToSet << " bits set" << std::endl;
 		Rcout << "First part before initializing: " << this->chromosomeParts[0] << std::endl;
 	}
@@ -109,7 +116,7 @@ inline void Chromosome::initChromosomeParts() {
 		this->chromosomeParts[part] |= (((IntChromosome) 1) << offset);
 	}
 #ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+	if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
 		Rcout << "Initialized chromosome with " << this->getVariableCount() << " bits set" << std::endl;
 	}
 #endif
@@ -162,7 +169,7 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other) {
 			child2.chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-			if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+			if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
 				Rcout << "Mask for part " << i << ": ";
 				this->printBits(Rcout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
 
@@ -224,7 +231,7 @@ bool Chromosome::mutate() {
 	}
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+	if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
 		if(numChangeBits != 0) {
 			Rcout << "###########################" << std::endl
 			<< "Changing " << numChangeBits << " bits" << std::endl
@@ -334,7 +341,7 @@ bool Chromosome::mutate() {
 		}
 	}
 #ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->ctrl.verbosity == DEBUG_VERBOSE) {
+	if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
 		Rcout << "After mutation: " << *this << std::endl;
 	}
 #endif
@@ -435,7 +442,9 @@ bool Chromosome::isFitterThan(const Chromosome &ch) const {
 }
 
 Chromosome& Chromosome::operator=(const Chromosome &ch) {
-	this->copyFrom(ch, true);
+	if(this != &ch) {
+		this->copyFrom(ch, true);
+	}
 	return *this;
 }
 
@@ -443,14 +452,14 @@ Chromosome& Chromosome::operator=(const Chromosome &ch) {
  * Calculate the number of set bits in the chromosome
  * see the Wikipedia entry for "Hamming Weight"
  */
-inline uint16_t Chromosome::getVariableCount() const {
+uint16_t Chromosome::getVariableCount() const {
 	uint16_t count = 0;
 
 #ifdef HAVE_BUILTIN_POPCOUNTLL
 	for(uint16_t i = 0; i < this->numParts; ++i) {
 		count += __builtin_popcountll(this->chromosomeParts[i]);
 	}
-#elif defined #ifdef HAVE_BUILTIN_POPCOUNTL
+#elif (defined HAVE_BUILTIN_POPCOUNTL && !(defined HAVE_UNSIGNED_LONG_LONG))
 	for(uint16_t i = 0; i < this->numParts; ++i) {
 		count += __builtin_popcountl(this->chromosomeParts[i]);
 	}
@@ -481,9 +490,9 @@ inline uint16_t Chromosome::ctz(IntChromosome mask) const {
 	return __builtin_ctzll(mask);
 #elif defined HAVE_FFSLL
 	return  ffsll(mask) - 1;
-#elif defined HAVE_GCC_CTZL
+#elif (defined HAVE_GCC_CTZL && !(defined HAVE_UNSIGNED_LONG_LONG))
 	return __builtin_ctzl(mask);
-#elif defined HAVE_FFSL
+#elif (defined HAVE_FFSL && !(defined HAVE_UNSIGNED_LONG_LONG))
 	return  ffsl(mask) - 1;
 #else
 	// Simple implementation of the "find first set" problem without loop
@@ -534,20 +543,19 @@ inline IntChromosome Chromosome::runif() const {
 		IntChromosome rand = 0;
 
 		for(int8_t i = partsPerRand; i >= 0; --i) {
-			rand |= (((IntChromosome) (INT_RNG_MAX * this->unifGen())) << (i * RNG_MAX_BITS));
+			rand |= (((IntChromosome) (INT_RNG_MAX * Chromosome::unifGen())) << (i * RNG_MAX_BITS));
 		}
 
 		return rand;
 	} else {
-		return (IntChromosome) (Chromosome::INT_CHROMOSOME_MAX * this->unifGen());
+		return (IntChromosome) (Chromosome::INT_CHROMOSOME_MAX * Chromosome::unifGen());
 	}
 }
-
 
 inline void Chromosome::shuffle(std::vector<uint16_t>& pop, uint16_t fillLength, uint16_t shuffleLength) const {
 	// Fill population with correct values
 	if(shuffleLength == 1) {
-		pop[0] = this->unifGen() * fillLength;
+		pop[0] = Chromosome::unifGen() * fillLength;
 	} else {
 		uint16_t i = 0;
 		for(; i < fillLength; ++i) {
@@ -557,7 +565,7 @@ inline void Chromosome::shuffle(std::vector<uint16_t>& pop, uint16_t fillLength,
 		uint16_t randPos = 0;
 		// Now shuffle population
 		for(i = 0; i < shuffleLength; ++i) {
-			randPos = i + this->unifGen() * (fillLength - i);
+			randPos = i + Chromosome::unifGen() * (fillLength - i);
 			std::swap(pop[i], pop[randPos]);
 		}
 	}

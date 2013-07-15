@@ -12,7 +12,9 @@
 
 #include <algorithm>
 
-VariablePositionPopulation::VariablePositionPopulation(const uint16_t size) : size(size), unifGen() {
+SynchronizedUnifGenerator__0__1 VariablePositionPopulation::unifGen;
+
+VariablePositionPopulation::VariablePositionPopulation(const uint16_t size) : size(size) {
 	uint16_t i = 0, j = 1;
 	this->variablePositionPopulation.reserve(this->size);
 	for(; j < this->size; i += 2, j += 2) {
@@ -32,7 +34,7 @@ VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(c
 	}
 
 	for(uint16_t i = 0; i < length; ++i) {
-		randPos = i + this->unifGen() * (this->size - i);
+		randPos = i + VariablePositionPopulation::unifGen() * (this->size - i);
 		std::swap(this->variablePositionPopulation[i], this->variablePositionPopulation[randPos]);
 	}
 

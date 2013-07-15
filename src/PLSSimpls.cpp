@@ -19,6 +19,24 @@ PLSSimpls::PLSSimpls(const arma::mat &X, const arma::mat &Y, const bool fitValue
 PLSSimpls::~PLSSimpls() {
 }
 
+PLS* PLSSimpls::clone() const {
+	PLSSimpls* clone = new PLSSimpls(arma::mat(this->X), arma::mat(this->Y), this->fitValues);
+	
+	clone->viewX = this->viewX;
+	clone->viewY = this->viewY;
+	clone->viewXCol = this->viewXCol;
+	clone->resultNComp = this->resultNComp;
+	clone->validResultState = this->validResultState;
+
+	clone->fittedValues = this->fittedValues;
+	clone->coef = this->coef;
+	clone->intercepts = this->intercepts;
+	clone->Ymean = this->Ymean;
+	clone->Xmean = this->Xmean;
+	
+	return clone;
+}
+
 void PLSSimpls::subviewChanged() {
 	PLS::subviewChanged();
 

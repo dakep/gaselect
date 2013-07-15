@@ -11,6 +11,8 @@
 #include <algorithm>
 #include "PLSEvaluator.h"
 
+SynchronizedUnifGenerator__0__1 PLSEvaluator::unifGen;
+
 double PLSEvaluator::evaluate(Chromosome &ch) const {
 	arma::uvec columnSubset = ch.toColumnSubset();
 	// -2 because if the segmentLength would not be an exact integer some segments are one longer than others
@@ -21,7 +23,7 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	sumSSD.zeros();
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->verbosity == DEBUG_VERBOSE) {
+	if(this->verbosity >= DEBUG_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Testing model with variables" << std::endl << columnSubset.t() << std::endl;
 	}
 #endif
@@ -29,14 +31,14 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	this->pls->setSubmatrixViewColumns(columnSubset);
 	
 	for(rep = 0; rep < this->numReplications; ++rep) {
-		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
+		sumSSD += this->calcSSD(maxNComp, rowNumbers);
 	}
 
 	double bestFitness = -sumSSD.min();
 	ch.setFitness(bestFitness);
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->verbosity == DEBUG_VERBOSE) {
+	if(this->verbosity >= DEBUG_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSSD.t() << std::endl;
 	}
 #endif
@@ -53,11 +55,11 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
 	this->pls->setSubmatrixViewColumns(columnSubset);
 	
 	for(rep = 0; rep < this->numReplications; ++rep) {
-		sumSSD += this->calcSSD(columnSubset, maxNComp, rowNumbers);
+		sumSSD += this->calcSSD(maxNComp, rowNumbers);
 	}
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->verbosity == DEBUG_VERBOSE) {
+	if(this->verbosity >= DEBUG_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSSD << std::endl;
 	}
 #endif
@@ -80,7 +82,7 @@ inline arma::uvec PLSEvaluator::initRowNumbers() const {
 	return rowNumbers;
 }
 
-arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::uvec &rowNumbers) const {
+arma::vec PLSEvaluator::calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	// (online) Sum of squares of differences from the (current) mean (residMeans)
 	// M_2,n = sum( (x_i - mean_n) ^ 2 )
 	arma::vec residM2n(ncomp);
@@ -123,7 +125,7 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 				// The probability that the uniform generator returns *exactly* 1 is zero, but it might happen
 				// anyway. Substracting a very small number may result in negative results, but the
 				// integer is unsigned so it can not get smaller than 0
-				randPos = n + i + (arma::uword) (this->unifGen() * (this->nrows - n - i));
+				randPos = n + i + (arma::uword) (PLSEvaluator::unifGen() * (this->nrows - n - i));
 
 				std::swap(rowNumbers[n + i], rowNumbers[randPos]);
 				std::swap(rowNumbers[i], rowNumbers[n + i]);
@@ -133,7 +135,7 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 		}
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-		if(this->verbosity == DEBUG_VERBOSE) {
+		if(this->verbosity >= FULLY_VERBOSE) {
 			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;
 		}
 #endif
@@ -165,7 +167,7 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->verbosity == DEBUG_VERBOSE) {
+	if(this->verbosity >= FULLY_VERBOSE) {
 		Rcpp::Rcout << "EVALUATOR: Resulting M2n:" << std::endl << arma::sqrt(residM2n) << std::endl;
 	}
 #endif
@@ -174,5 +176,12 @@ arma::vec PLSEvaluator::calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::
 //	it may be necessary to accurately reflect the "distance" between two values
 	return arma::sqrt(residM2n);
 }
+
+Evaluator* PLSEvaluator::clone() const {
+	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->verbosity);
+	
+	return that;	
+}
+
 
 

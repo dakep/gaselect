@@ -17,7 +17,7 @@
 #include "Control.h"
 #include "TruncatedGeomGenerator.h"
 #include "VariablePositionPopulation.h"
-#include "UnifGenerator__0__1.h"
+#include "SynchronizedUnifGenerator__0__1.h"
 
 class InvalidCopulationException : public Rcpp::exception {
 
@@ -68,11 +68,14 @@ private:
 	static IntChromosome INT_CHROMOSOME_MAX;
 	static IntChromosome getIntChromosomeMax();
 #endif
-	
 
+	/**
+	 * Random number generators
+	 */
+	static SynchronizedUnifGenerator__0__1 unifGen;
+	
 	const Control &ctrl;
 	const TruncatedGeomGenerator tgeom;
-	const Rcpp::stats::UnifGenerator__0__1 unifGen;
 
 	VariablePositionPopulation &varPosPop;
 
@@ -103,6 +106,10 @@ private:
 
 #if !(defined HAVE_BUILTIN_POPCOUNTLL | defined HAVE_BUILTIN_POPCOUNTL)
 	uint16_t popcount(IntChromosome x) const {
+		if(x == 0) {
+			return 0;
+		}
+		
 		x -= (x >> 1) & Chromosome::M1;								// put count of each 2 bits into those 2 bits
 		x = (x & Chromosome::M2) + ((x >> 2) & Chromosome::M2);	// put count of each 4 bits into those 4 bits
 		x = (x + (x >> 4)) & Chromosome::M4;						// put count of each 8 bits into those 8 bits

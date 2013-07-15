@@ -12,7 +12,7 @@
 #include "config.h"
 
 #include <RcppArmadillo.h>
-#include "UnifGenerator__0__1.h"
+#include "SynchronizedUnifGenerator__0__1.h"
 
 #include "Evaluator.h"
 #include "Chromosome.h"
@@ -20,11 +20,12 @@
 
 class PLSEvaluator : public Evaluator {
 public:
-	PLSEvaluator(PLS &pls, const uint16_t numReplications, const uint16_t numSegments, const VerbosityLevel verbosity) : Evaluator(verbosity),
-		numReplications(numReplications), numSegments(numSegments), unifGen(),
-		nrows(pls.getX().n_rows), segmentLength(nrows / numSegments), completeSegments(nrows % numSegments), pls(&pls)
+	PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const VerbosityLevel verbosity) :
+		Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
+		nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
+		completeSegments(nrows % numSegments), pls(pls)
 	{
-		if(pls.getNumberOfResponseVariables() > 1) {
+		if(pls->getNumberOfResponseVariables() > 1) {
 			throw Rcpp::exception("PLS evaluator only available for models with 1 response variable", __FILE__, __LINE__);
 		}
 	};
@@ -32,11 +33,14 @@ public:
 
 	double evaluate(Chromosome &ch) const;
 	double evaluate(arma::uvec &colSubset) const;
+	
+	Evaluator* clone() const;
 
 private:
+	static SynchronizedUnifGenerator__0__1 unifGen;
+	
 	const uint16_t numReplications;
 	const uint16_t numSegments;
-	const Rcpp::stats::UnifGenerator__0__1 unifGen;
 	const arma::uword nrows;
 	const arma::uword segmentLength; // The length of the incomplete segments
 	const uint16_t completeSegments; // The number of segments with `segmentLength` + 1 elements. If 0, all segments have `segmentLength` elements
@@ -48,7 +52,7 @@ private:
 	 * only square root of the sum of squared differences (SSD)
 	 * SEP = SSD / sqrt(n - 1)
 	 */
-	arma::vec calcSSD(arma::uvec &columnSubset, uint16_t ncomp, arma::uvec &rowNumbers) const;
+	arma::vec calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const;
 
 	arma::uvec initRowNumbers() const;
 };

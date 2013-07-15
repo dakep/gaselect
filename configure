@@ -3191,4 +3191,22 @@ $as_echo "No builtin popcount method (for unsigned long long)" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
+# Check for pthreads support
+oldCFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -pthread"
+for ac_header in pthread.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "pthread.h" "ac_cv_header_pthread_h" "$ac_includes_default"
+if test "x$ac_cv_header_pthread_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_PTHREAD_H 1
+_ACEOF
+
+fi
+
+done
+
+
+CFLAGS="$oldCFLAGS"
+
 cp confdefs.h src/autoconfig.h

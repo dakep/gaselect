@@ -66,8 +66,10 @@ public:
 	arma::cube predict(arma::mat newX) const;
 	
 	const arma::mat & getXColumnView() const { return this->viewXCol; }
-	const arma::mat & getX() const { return this->X; }
 	const arma::mat & getY() const { return this->Y; }
+	
+	virtual PLS* clone() const = 0;
+	
 protected:
 	const arma::mat X;
 	const arma::mat Y;

@@ -54,6 +54,11 @@ genAlgPLS <- function(y, X, control = genAlgControl(populationSize = floor(sqrt(
 		stop("The maximum number of variables must be less or equal than the number of available variables");
 	}
 
+	if(ctrlArg$numThreads > 1L && ctrlArg$useUserSuppliedFunction) {
+		warning("Multithreading is not available when using a user supplied function for evaluation");
+		ctrlArg$numThreads <- 1L;
+	}
+
 	if(ctrlArg$useUserSuppliedFunction == TRUE) {
 		return(.Call("genAlgPLS", ctrlArg, NULL, NULL, PACKAGE = "GenAlgPLS"));
 	} else {

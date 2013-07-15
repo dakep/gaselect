@@ -19,6 +19,8 @@ public:
 	virtual ~Evaluator() {};
 
 	virtual double evaluate(Chromosome &ch) const = 0;
+	
+	virtual Evaluator* clone() const = 0;
 protected:
 	const VerbosityLevel verbosity;
 };

@@ -23,18 +23,24 @@ SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy) {
 	::Evaluator *eval;
 	PLS *pls;
 	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls
-	bool useUserFunction = false;
 BEGIN_RCPP
 
 	List control = List(Scontrol);
 	uint16_t numThreads = as<uint16_t>(control["numThreads"]);
+	bool useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
 	
-#ifndef HAVE_PTHREADS
-	if(numThreads > 0) {
+	if(numThreads > 1) {
+#ifdef HAVE_PTHREAD_H
+		if(useUserFunction) {
+			Rcerr << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
+		}
+#else
 		Rcerr << "Warning: Threads are not supported on this system" << std::endl;
-		numThreads = 0;
-	}
+		numThreads = 1;
 #endif
+	} else if(numThreads < 1) {
+		numThreads = 1;
+	}
 	
 	// All checks are disabled and must be performed in the R code calling this script
 	// Otherwise unexpected behaviour
@@ -48,8 +54,7 @@ BEGIN_RCPP
 				 as<double>(control["mutationProb"]),
 				 numThreads,
 				 (VerbosityLevel) as<int>(control["verbosity"]));
-	
-	useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
+
 	if(useUserFunction) {
 		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
 	} else {
@@ -62,7 +67,7 @@ BEGIN_RCPP
 		pls = PLS::getInstance(method, X, Y, false);
 		toFree |= 2; // pls has to be freed
 
-		eval = new PLSEvaluator(*pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity);
+		eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity);
 	}
 	toFree |= 1; // eval has to be freed
 
@@ -71,8 +76,19 @@ BEGIN_RCPP
 	}
 
 	Population pop(ctrl, *eval);
+#ifdef HAVE_PTHREAD_H
+	try {
+#endif
 	pop.run();
-
+#ifdef HAVE_PTHREAD_H
+	} catch(Population::ThreadingError& te) {
+		if(ctrl.verbosity >= DEBUG_VERBOSE) {
+			throw te;
+		} else {
+			throw Rcpp::exception("Multithreading could not be initialized. Set numThreads to 0 to avoid this problem.");
+		}
+	}
+#endif
 	SortedChromosomes result = pop.getResult();
 
 	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());

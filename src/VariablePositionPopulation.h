@@ -15,7 +15,7 @@
 #include <vector>
 #include <RcppArmadillo.h>
 
-#include "UnifGenerator__0__1.h"
+#include "SynchronizedUnifGenerator__0__1.h"
 
 class VariablePositionPopulation;
 
@@ -54,8 +54,8 @@ public:
 	const_iterator end() { return const_iterator(*this, 0, 0, this->variablePositionPopulation.size()); };
 
 private:
+	static SynchronizedUnifGenerator__0__1 unifGen;
 	const uint16_t size;
-	const Rcpp::stats::UnifGenerator__0__1 unifGen;
 
 	std::vector<uint16_t> variablePositionPopulation;
 };

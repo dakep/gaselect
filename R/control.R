@@ -113,7 +113,7 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 	}
 
 	if(!is.numeric(numThreads) || numThreads < 1L) {
-		numThreads = 0L;
+		numThreads = 1L;
 	} else if(numThreads > MAXUINT16) {
 		stop("The maximum number of threads must be less than ", MAXUINT16);
 	}
@@ -144,9 +144,9 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 		warning("The verbosity level can not be less than 0 and thus will be set to 0");
 	}
 
-	if(verbosity > 3) {
-		verbosity <- 3;
-		warning("The verbosity level can not be greater than 3 and will thus be set to 3");
+	if(verbosity > 4) {
+		verbosity <- 4;
+		warning("The verbosity level can not be greater than 4 and will thus be set to 4");
 	}
 
 	ctrl <- list(

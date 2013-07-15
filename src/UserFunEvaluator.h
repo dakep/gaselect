@@ -11,6 +11,7 @@
 
 #include "config.h"
 
+#include <exception>
 #include <RcppArmadillo.h>
 #include "Evaluator.h"
 #include "Chromosome.h"
@@ -22,6 +23,11 @@ public:
 
 	double evaluate(Chromosome &ch) const;
 
+	/**
+	 * The UserFunEvaluator can not be cloned!!
+	 * It throws an std::logic_error if called
+	 */
+	Evaluator* clone() const { throw std::logic_error("A user specified evaluation function can not be cloned!"); }
 private:
 	const Rcpp::Function userFun;
 };

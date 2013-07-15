@@ -28,6 +28,8 @@ public:
 //	arma::mat getYLoadings() { return this->tQ.t(); }
 //	arma::mat getProjection() { return this->R; }
 
+	virtual PLS* clone() const;
+	
 protected:
 	void subviewChanged();
 
