@@ -49,14 +49,12 @@ public:
 	 * The adjustment is added to every index. This is useful if the actual
 	 * positions are shifted.
 	 */
-	const_iterator shuffle(const uint16_t length, const uint16_t shift);
+	const_iterator shuffle(const uint16_t length, const uint16_t shift, SynchronizedUnifGenerator__0__1& unifGen);
 
 	const_iterator end() { return const_iterator(*this, 0, 0, this->variablePositionPopulation.size()); };
 
 private:
-	static SynchronizedUnifGenerator__0__1 unifGen;
 	const uint16_t size;
-
 	std::vector<uint16_t> variablePositionPopulation;
 };
 

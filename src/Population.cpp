@@ -32,9 +32,7 @@ inline bool check_interrupt() {
 	return (R_ToplevelExec(check_interrupt_impl, NULL) == FALSE);
 }
 
-SynchronizedUnifGenerator__0__1 Population::unifGen;
-
-Population::Population(const Control &ctrl, const ::Evaluator &evaluator) : ctrl(ctrl), evaluator(&evaluator) {
+Population::Population(const Control &ctrl, ::Evaluator &evaluator, SynchronizedUnifGenerator__0__1& unifGen) : ctrl(ctrl), evaluator(evaluator), unifGen(unifGen) {
 	// initialize original population (generation 0) totally randomly
 	this->currentGeneration.reserve(this->ctrl.populationSize);
 	this->nextGeneration.reserve(this->ctrl.populationSize);
@@ -97,12 +95,12 @@ Population::~Population() {
 #endif
 }
 
-inline Chromosome& Population::drawChromosomeFromCurrentGeneration() {
+inline Chromosome& Population::drawChromosomeFromCurrentGeneration(SynchronizedUnifGenerator__0__1& unifGen) {
 	int imin = 0, imax = this->ctrl.populationSize - 1;
 	int imid = 0;
 	
 	// Draw a random number between 0 and cumulative sum of all fitness values
-	double rand = Population::unifGen() * this->sumCurrentGenFitness;
+	double rand = unifGen() * this->sumCurrentGenFitness;
 
 	// Search for the chromosome whose fitness range surrounds the random number
 	while(imin <= imax) {
@@ -161,17 +159,16 @@ inline void Population::transformCurrentGenFitnessMap() {
 #endif
 }
 
-
-void Population::mate(uint16_t numMatingCouples, const ::Evaluator* const evaluator, bool checkUserInterrupt) {
+void Population::mate(uint16_t numMatingCouples, ::Evaluator& evaluator, SynchronizedUnifGenerator__0__1& unifGen, bool checkUserInterrupt) {
 #ifdef HAVE_PTHREAD_H
 	int pthreadRC = 1;
 #endif
 
 	for(; numMatingCouples != 0; --numMatingCouples) {
-		Chromosome tmpChromosome1 = this->drawChromosomeFromCurrentGeneration();
-		Chromosome tmpChromosome2 = this->drawChromosomeFromCurrentGeneration();
+		Chromosome tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(unifGen);
+		Chromosome tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(unifGen);
 		
-		std::vector<Chromosome> children = tmpChromosome1.mateWith(tmpChromosome2);
+		std::vector<Chromosome> children = tmpChromosome1.mateWith(tmpChromosome2, unifGen);
 		uint16_t matingTries = 0;
 		double minParentFitness = ((tmpChromosome1.getFitness() > tmpChromosome2.getFitness()) ? tmpChromosome1.getFitness() : tmpChromosome2.getFitness());
 		
@@ -179,7 +176,7 @@ void Population::mate(uint16_t numMatingCouples, const ::Evaluator* const evalua
 		 * If both children have no variables, mate again
 		 */
 		while(children[0].getVariableCount() == 0 && children[1].getVariableCount() == 0) {
-			tmpChromosome1.mateWith(tmpChromosome2);
+			tmpChromosome1.mateWith(tmpChromosome2, unifGen);
 		}
 		
 		if(children[0].getVariableCount() == 0) {
@@ -188,8 +185,8 @@ void Population::mate(uint16_t numMatingCouples, const ::Evaluator* const evalua
 			children[1] = children[0];
 		}
 		
-		evaluator->evaluate(children[0]);
-		evaluator->evaluate(children[1]);
+		evaluator.evaluate(children[0]);
+		evaluator.evaluate(children[1]);
 		// Make sure the first child is "better" than the second child
 		if(children[0].getFitness() < children[1].getFitness()) {
 			std::swap(children[1], children[0]);
@@ -205,14 +202,14 @@ void Population::mate(uint16_t numMatingCouples, const ::Evaluator* const evalua
 		
 		// At least the first child should be better than the worse parent
 		while((children[0].getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
-			std::vector<Chromosome> proposalChildren = tmpChromosome1.mateWith(tmpChromosome2);
+			std::vector<Chromosome> proposalChildren = tmpChromosome1.mateWith(tmpChromosome2, unifGen);
 			
 			/*
 			 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
 			 * greater than 0, otherwise the evaluation step would fail
 			 */
 			if(proposalChildren[0].getVariableCount() > 0) {
-				if(evaluator->evaluate(proposalChildren[0]) > children[1].getFitness()) { // better as 2nd child
+				if(evaluator.evaluate(proposalChildren[0]) > children[1].getFitness()) { // better as 2nd child
 					if(proposalChildren[0].getFitness() > children[0].getFitness()) { // even better as 1st child
 						children[1] = children[0];
 						children[0] = proposalChildren[0];
@@ -224,7 +221,7 @@ void Population::mate(uint16_t numMatingCouples, const ::Evaluator* const evalua
 
 			// Check 2nd new child
 			if(proposalChildren[1].getVariableCount() > 0) {
-				if(evaluator->evaluate(proposalChildren[1]) > children[1].getFitness()) { // better as 2nd child
+				if(evaluator.evaluate(proposalChildren[1]) > children[1].getFitness()) { // better as 2nd child
 					if(proposalChildren[1].getFitness() > children[0].getFitness()) { // even better as 1st child
 						children[1] = children[0];
 						children[0] = proposalChildren[1];
@@ -242,11 +239,11 @@ void Population::mate(uint16_t numMatingCouples, const ::Evaluator* const evalua
 #endif
 		}
 		
-		if(children[0].mutate() == true) {
-			evaluator->evaluate(children[0]);
+		if(children[0].mutate(unifGen) == true) {
+			evaluator.evaluate(children[0]);
 		}
-		if(children[1].mutate() == true) {
-			evaluator->evaluate(children[1]);
+		if(children[1].mutate(unifGen) == true) {
+			evaluator.evaluate(children[1]);
 		}
 		
 		if(this->ctrl.verbosity >= MORE_VERBOSE) {
@@ -261,10 +258,10 @@ void Population::mate(uint16_t numMatingCouples, const ::Evaluator* const evalua
 			CHECK_PTHREAD_RETURN_CODE(pthreadRC)
 #endif
 		}
+
 		/*
 		 * Update fitness map and add children to the generation
-		 */
-		
+		 */		
 #ifdef HAVE_PTHREAD_H
 		pthreadRC = pthread_mutex_lock(&this->updateMutex);
 		CHECK_PTHREAD_RETURN_CODE(pthreadRC)
@@ -308,9 +305,9 @@ void Population::run() {
 	}
 
 	for(i = this->ctrl.populationSize; i > 0; --i) {
-		Chromosome tmpChromosome(this->ctrl, varPosPop);
+		Chromosome tmpChromosome(this->ctrl, varPosPop, this->unifGen);
 
-		this->currentGenFitnessMap.push_back(this->evaluator->evaluate(tmpChromosome));
+		this->currentGenFitnessMap.push_back(this->evaluator.evaluate(tmpChromosome));
 		if(tmpChromosome.getFitness() < this->minCurrentGenFitness) {
 			this->minCurrentGenFitness = tmpChromosome.getFitness();
 		}
@@ -334,7 +331,8 @@ void Population::run() {
 	
 	if(maxThreadsToSpawn > 0) {
 		uint16_t otherThreadsMatingCouples = mainThreadMatingCouples / this->ctrl.numThreads;
-		mainThreadMatingCouples = otherThreadsMatingCouples + (mainThreadMatingCouples % this->ctrl.numThreads);
+		uint16_t remainingMatingCouples = (mainThreadMatingCouples % this->ctrl.numThreads);
+		mainThreadMatingCouples = otherThreadsMatingCouples;
 				
 		threadArgs = new Population::ThreadArgsWrapper[maxThreadsToSpawn];
 		this->threads = new pthread_t[maxThreadsToSpawn];
@@ -348,15 +346,25 @@ void Population::run() {
 		}
 		
 		pthreadRC = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
-		CHECK_PTHREAD_RETURN_CODE(pthreadRC);			
+		CHECK_PTHREAD_RETURN_CODE(pthreadRC);
+				
+		pthreadRC = pthread_attr_setstacksize(&threadAttr, 1024 * 1024 * 1024 * 5);
+		CHECK_PTHREAD_RETURN_CODE(pthreadRC);
+		
 		if(pthreadRC != 0) {
 			throw ThreadingError("Thread attributes could not be modified to make the thread joinable");
 		}
 		
 		for(i = maxThreadsToSpawn - 1; i >= 0; --i) {
 			threadArgs[i].numMatingCouples = otherThreadsMatingCouples;
+			
+			if(remainingMatingCouples-- > 0) {
+				++threadArgs[i].numMatingCouples;
+			}
+			
 			threadArgs[i].popObj= this;
-			threadArgs[i].evalObj = this->evaluator->clone();
+			threadArgs[i].unifGen = new SynchronizedUnifGenerator__0__1(UNIF_GENERATOR_BUFFER_SIZE_THREAD);
+			threadArgs[i].evalObj = this->evaluator.clone();
 			pthreadRC = pthread_create((this->threads + i), &threadAttr, &Population::matingThreadStart, (void *) (threadArgs + i));
 			
 			if(pthreadRC == 0) {
@@ -378,8 +386,10 @@ void Population::run() {
 		
 		pthreadRC = pthread_attr_destroy(&threadAttr);
 		CHECK_PTHREAD_RETURN_CODE(pthreadRC);
-		
-		Rcout << "Spawned " << this->actuallySpawnedThreads << " threads" << std::endl;
+
+		if(this->ctrl.verbosity >= OFF) {
+			Rcout << "Spawned " << this->actuallySpawnedThreads << " threads" << std::endl;
+		}
 	}
 #endif
 
@@ -419,7 +429,7 @@ void Population::run() {
 		 *
 		 */
 		try {
-			this->mate(mainThreadMatingCouples, this->evaluator, true);
+			this->mate(mainThreadMatingCouples, this->evaluator, this->unifGen, true);
 		} catch (InterruptException) {
 			interrupted = true;
 		}
@@ -462,8 +472,11 @@ void Population::run() {
 			pthreadRC = pthread_join(this->threads[i], NULL);
 			CHECK_PTHREAD_RETURN_CODE(pthreadRC)
 			
+			delete threadArgs[i].unifGen;
 			delete threadArgs[i].evalObj;
 		}
+		
+		delete threadArgs;
 	}
 #endif
 	
@@ -493,7 +506,8 @@ inline std::ostream& Population::printChromosomeFitness(std::ostream &os, Chromo
 #ifdef HAVE_PTHREAD_H
 void* Population::matingThreadStart(void* obj) {
 	ThreadArgsWrapper* args = static_cast<ThreadArgsWrapper*>(obj);
-	args->popObj->runMating(args->numMatingCouples, args->evalObj);
+	args->evalObj->setUnifGenerator(args->unifGen);
+	args->popObj->runMating(args->numMatingCouples, *args->evalObj, *(args->unifGen));
 	return NULL;
 }
 
@@ -539,7 +553,7 @@ inline void Population::cancelAllThreads() {
 	this->cleanupPthread();
 }
 
-void Population::runMating(uint16_t numMatingCouples, const ::Evaluator* const evaluator) {
+void Population::runMating(uint16_t numMatingCouples, ::Evaluator& evaluator, SynchronizedUnifGenerator__0__1& unifGen) {
 	int pthreadRC = 1;
 	while(true) {
 		/*
@@ -552,7 +566,7 @@ void Population::runMating(uint16_t numMatingCouples, const ::Evaluator* const e
 			pthreadRC = pthread_cond_wait(&this->startMatingCond, &this->syncMutex);
 			CHECK_PTHREAD_RETURN_CODE(pthreadRC)
 		}
-		
+
 		/*
 		 * Check if the thread is killed
 		 */
@@ -567,7 +581,7 @@ void Population::runMating(uint16_t numMatingCouples, const ::Evaluator* const e
 		/*
 		 * Do actual mating
 		 */
-		this->mate(numMatingCouples, evaluator, false);
+		this->mate(numMatingCouples, evaluator, unifGen, false);
 		
 		/*
 		 * Signal that the thread has finished mating

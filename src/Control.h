@@ -48,10 +48,7 @@ public:
 	 * optionally only the first `length` positions in the population
 	 * are random (though all positions are considered)
 	 */
-	void shuffleVariablePositionPopulation(uint16_t length = 0);
-
-private:
-	const SynchronizedUnifGenerator__0__1 unifGen;
+//	void shuffleVariablePositionPopulation(SynchronizedUnifGenerator__0__1& unifGen, uint16_t length = 0);
 };
 
 #endif

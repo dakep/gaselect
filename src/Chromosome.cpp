@@ -46,9 +46,7 @@ IntChromosome Chromosome::getIntChromosomeMax() {
 IntChromosome Chromosome::INT_CHROMOSOME_MAX = Chromosome::getIntChromosomeMax();
 #endif
 
-SynchronizedUnifGenerator__0__1 Chromosome::unifGen;
-
-Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop) : ctrl(ctrl), tgeom(1. - ctrl.mutationProbability), varPosPop(varPosPop) {
+Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, SynchronizedUnifGenerator__0__1& unifGen) : ctrl(ctrl), rtgeom(1 - ctrl.mutationProbability) {
 	// Determine the number of IntChromosome bit values that are
 	// needed to represent all genes
 	
@@ -67,10 +65,10 @@ Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPo
 
 	// Initialize chromosome parts randomly
 	this->chromosomeParts.resize(this->numParts, 0);
-	this->initChromosomeParts();
+	this->initChromosomeParts(unifGen, varPosPop);
 }
 
-Chromosome::Chromosome(const Chromosome &other, bool copyChromosomeParts) : ctrl(other.ctrl), tgeom(other.tgeom), varPosPop(other.varPosPop) {
+Chromosome::Chromosome(const Chromosome &other, bool copyChromosomeParts) : ctrl(other.ctrl), rtgeom(other.rtgeom) {
 	this->copyFrom(other, copyChromosomeParts);
 }
 
@@ -90,13 +88,13 @@ void Chromosome::copyFrom(const Chromosome &other, bool copyChromosomeParts) {
 //Chromosome::~Chromosome() {
 //}
 
-inline void Chromosome::initChromosomeParts() {
+inline void Chromosome::initChromosomeParts(SynchronizedUnifGenerator__0__1& unifGen, VariablePositionPopulation &varPosPop) {
 #ifdef TIMING_BENCHMARK
 	timeval start, end;
 
 	gettimeofday(&start, NULL);
 #endif
-	uint16_t bitsToSet = this->ctrl.minVariables + Chromosome::unifGen() * (this->ctrl.maxVariables - this->ctrl.minVariables);
+	uint16_t bitsToSet = this->ctrl.minVariables + unifGen() * (this->ctrl.maxVariables - this->ctrl.minVariables);
 
 #ifdef ENABLE_DEBUG_VERBOSITY
 	if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
@@ -105,12 +103,12 @@ inline void Chromosome::initChromosomeParts() {
 	}
 #endif
 
-	VariablePositionPopulation::const_iterator setPosIter = this->varPosPop.shuffle(bitsToSet, this->unusedBits);
+	VariablePositionPopulation::const_iterator setPosIter = varPosPop.shuffle(bitsToSet, this->unusedBits, unifGen);
 
 	uint16_t part = 0;
 	uint16_t offset = 0;
 	
-	for(; setPosIter != this->varPosPop.end(); ++setPosIter) {
+	for(; setPosIter != varPosPop.end(); ++setPosIter) {
 		part = (*setPosIter) / Chromosome::BITS_PER_PART;
 		offset = (*setPosIter) % Chromosome::BITS_PER_PART;
 		this->chromosomeParts[part] |= (((IntChromosome) 1) << offset);
@@ -128,7 +126,7 @@ inline void Chromosome::initChromosomeParts() {
 #endif
 }
 
-std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other) {
+std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other, SynchronizedUnifGenerator__0__1& unifGen) {
 #ifdef TIMING_BENCHMARK
 	timeval start, end;
 
@@ -158,7 +156,7 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other) {
 			// Randomly pick some bits from one chromosome and some bits from the other
 			// chromosome
 			do {
-				randomMask = this->runif();
+				randomMask = this->runif(unifGen);
 				if(i == 0) {
 					randomMask <<= this->unusedBits;
 				}
@@ -195,9 +193,9 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other) {
 	return children;
 }
 
-bool Chromosome::mutate() {
+bool Chromosome::mutate(SynchronizedUnifGenerator__0__1& unifGen) {
 	static std::vector<uint16_t> positionPopulation(this->ctrl.chromosomeSize);
-
+	
 	uint16_t currentlySetBits = this->getVariableCount();
 	uint16_t currentlyUnsetBits = this->ctrl.chromosomeSize - currentlySetBits;
 
@@ -210,7 +208,7 @@ bool Chromosome::mutate() {
 	}
 
 	// Now set a random number of bits and unset a random number of bits
-	numChangeBits += this->tgeom(this->ctrl.maxVariables - currentlySetBits) - this->tgeom(currentlySetBits - this->ctrl.minVariables);
+	numChangeBits += this->rtgeom(this->ctrl.maxVariables - currentlySetBits, unifGen) - this->rtgeom(currentlySetBits - this->ctrl.minVariables, unifGen);
 
 	if(this->ctrl.maxVariables - currentlySetBits > 0) {
 		/*
@@ -218,7 +216,7 @@ bool Chromosome::mutate() {
 		 * numChangeBits is 0 if the number of currently set bits is in the predefined range
 		 * or *positive* if too few bits are set
 		 */
-		numChangeBits += this->tgeom(this->ctrl.maxVariables - currentlySetBits - numChangeBits);
+		numChangeBits += this->rtgeom(this->ctrl.maxVariables - currentlySetBits - numChangeBits, unifGen);
 	}
 
 	if(currentlySetBits - this->ctrl.minVariables > 0) {
@@ -227,7 +225,7 @@ bool Chromosome::mutate() {
 		 * numChangeBits is 0 if the number of currently set bits is in the predefined range
 		 * or *negative* if too many bits are set
 		 */
-		numChangeBits -= this->tgeom(currentlySetBits - this->ctrl.minVariables + numChangeBits);
+		numChangeBits -= this->rtgeom(currentlySetBits - this->ctrl.minVariables + numChangeBits, unifGen);
 	}
 
 #ifdef ENABLE_DEBUG_VERBOSITY
@@ -250,7 +248,7 @@ bool Chromosome::mutate() {
 		/*
 		 * We have to unset -numChangeBits bits, i.e. flip from 1 to 0
 		 */
-		this->shuffle(positionPopulation, currentlySetBits, -numChangeBits);
+		this->shuffle(positionPopulation, currentlySetBits, -numChangeBits, unifGen);
 		std::vector<uint16_t> removeBitsPos(positionPopulation.begin(), positionPopulation.begin() - numChangeBits);
 		std::sort(removeBitsPos.begin(), removeBitsPos.end());
 		std::vector<uint16_t>::iterator removeBitsPosIt = removeBitsPos.begin();
@@ -295,7 +293,7 @@ bool Chromosome::mutate() {
 		/*
 		 * We have to set numChangeBits bits, i.e. flip from 0 to 1
 		 */
-		this->shuffle(positionPopulation, currentlyUnsetBits, numChangeBits);
+		this->shuffle(positionPopulation, currentlyUnsetBits, numChangeBits, unifGen);
 		std::vector<uint16_t> addBitsPos(positionPopulation.begin(), positionPopulation.begin() + numChangeBits);
 		std::sort(addBitsPos.begin(), addBitsPos.end());
 		std::vector<uint16_t>::iterator addBitsPosIt = addBitsPos.begin();
@@ -535,7 +533,7 @@ inline uint16_t Chromosome::ctz(IntChromosome mask) const {
 }
 
 
-inline IntChromosome Chromosome::runif() const {
+inline IntChromosome Chromosome::runif(SynchronizedUnifGenerator__0__1& unifGen) const {
 	// Calculate the number of random numbers to combine for one IntChromosome
 	static int8_t partsPerRand = (sizeof(IntChromosome) * BITS_PER_BYTE / RNG_MAX_BITS);
 	
@@ -543,19 +541,19 @@ inline IntChromosome Chromosome::runif() const {
 		IntChromosome rand = 0;
 
 		for(int8_t i = partsPerRand; i >= 0; --i) {
-			rand |= (((IntChromosome) (INT_RNG_MAX * Chromosome::unifGen())) << (i * RNG_MAX_BITS));
+			rand |= (((IntChromosome) (INT_RNG_MAX * unifGen())) << (i * RNG_MAX_BITS));
 		}
 
 		return rand;
 	} else {
-		return (IntChromosome) (Chromosome::INT_CHROMOSOME_MAX * Chromosome::unifGen());
+		return (IntChromosome) (Chromosome::INT_CHROMOSOME_MAX * unifGen());
 	}
 }
 
-inline void Chromosome::shuffle(std::vector<uint16_t>& pop, uint16_t fillLength, uint16_t shuffleLength) const {
+inline void Chromosome::shuffle(std::vector<uint16_t>& pop, uint16_t fillLength, uint16_t shuffleLength, SynchronizedUnifGenerator__0__1& unifGen) const {
 	// Fill population with correct values
 	if(shuffleLength == 1) {
-		pop[0] = Chromosome::unifGen() * fillLength;
+		pop[0] = unifGen() * fillLength;
 	} else {
 		uint16_t i = 0;
 		for(; i < fillLength; ++i) {
@@ -565,7 +563,7 @@ inline void Chromosome::shuffle(std::vector<uint16_t>& pop, uint16_t fillLength,
 		uint16_t randPos = 0;
 		// Now shuffle population
 		for(i = 0; i < shuffleLength; ++i) {
-			randPos = i + Chromosome::unifGen() * (fillLength - i);
+			randPos = i + unifGen() * (fillLength - i);
 			std::swap(pop[i], pop[randPos]);
 		}
 	}

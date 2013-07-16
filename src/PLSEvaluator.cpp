@@ -11,8 +11,6 @@
 #include <algorithm>
 #include "PLSEvaluator.h"
 
-SynchronizedUnifGenerator__0__1 PLSEvaluator::unifGen;
-
 double PLSEvaluator::evaluate(Chromosome &ch) const {
 	arma::uvec columnSubset = ch.toColumnSubset();
 	// -2 because if the segmentLength would not be an exact integer some segments are one longer than others
@@ -125,7 +123,7 @@ arma::vec PLSEvaluator::calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const {
 				// The probability that the uniform generator returns *exactly* 1 is zero, but it might happen
 				// anyway. Substracting a very small number may result in negative results, but the
 				// integer is unsigned so it can not get smaller than 0
-				randPos = n + i + (arma::uword) (PLSEvaluator::unifGen() * (this->nrows - n - i));
+				randPos = n + i + (arma::uword) ((*this->unifGen)() * (this->nrows - n - i));
 
 				std::swap(rowNumbers[n + i], rowNumbers[randPos]);
 				std::swap(rowNumbers[i], rowNumbers[n + i]);
@@ -178,8 +176,7 @@ arma::vec PLSEvaluator::calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const {
 }
 
 Evaluator* PLSEvaluator::clone() const {
-	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->verbosity);
-	
+	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->verbosity, this->unifGen);
 	return that;	
 }
 

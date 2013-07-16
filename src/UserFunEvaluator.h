@@ -22,7 +22,6 @@ public:
 //	~UserFunEvaluator();
 
 	double evaluate(Chromosome &ch) const;
-
 	/**
 	 * The UserFunEvaluator can not be cloned!!
 	 * It throws an std::logic_error if called

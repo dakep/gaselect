@@ -19,7 +19,7 @@
 class Population {
 
 public:
-	Population(const Control &ctrl, const ::Evaluator &evaluator);
+	Population(const Control &ctrl, ::Evaluator &evaluator, SynchronizedUnifGenerator__0__1& unifGen);
 	~Population();
 
 	void run();
@@ -53,9 +53,7 @@ public:
 	};
 #endif
 	
-private:
-	static SynchronizedUnifGenerator__0__1 unifGen;
-	
+private:	
 	std::multiset<Chromosome, Population::ChromosomeComparator> elite;
 	std::vector<Chromosome> currentGeneration;
 	std::vector<Chromosome> nextGeneration;
@@ -70,12 +68,12 @@ private:
 	 * where the probability to pick a chromosome is taken from
 	 * the currentGenFitnessMap
 	 */
-	Chromosome &drawChromosomeFromCurrentGeneration();
+	Chromosome &drawChromosomeFromCurrentGeneration(SynchronizedUnifGenerator__0__1& unifGen);
 	void addChromosomeToElite(Chromosome &ch);
 
 	std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch);
 	
-	void mate(uint16_t numMatingCouples, const Evaluator* const evaluator, bool checkUserInterrupt = true);
+	void mate(uint16_t numMatingCouples, ::Evaluator& evaluator, SynchronizedUnifGenerator__0__1& unifGen, bool checkUserInterrupt = true);
 	
 	/**
 	 * Transform the given fitness map to start at 0 and only have positive values
@@ -85,18 +83,20 @@ private:
 //	void cleanCurrentGeneration();
 
 	const Control& ctrl;
-	const Evaluator* const evaluator;
+	::Evaluator& evaluator;
+	SynchronizedUnifGenerator__0__1& unifGen;
 
 #ifdef HAVE_PTHREAD_H	
 	struct ThreadArgsWrapper {
 		Population* popObj;
 		Evaluator* evalObj;
+		SynchronizedUnifGenerator__0__1* unifGen;
 		uint16_t numMatingCouples;
 	};
 	
 	static void* matingThreadStart(void* obj);
 	
-	void runMating(uint16_t numMatingCoupls, const Evaluator* const evaluator);
+	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator, SynchronizedUnifGenerator__0__1& unifGen);
 	pthread_t* threads;
 	
 	/*

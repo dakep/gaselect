@@ -28,15 +28,15 @@ public:
 class Chromosome {
 
 public:
-	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop);
+	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, SynchronizedUnifGenerator__0__1& unifGen);
 	Chromosome(const Chromosome &other, bool copyChromosomeParts = true);
 //	~Chromosome();
-
+	
 	/**
 	 * @return bool Returns true if mutation occurred, false otherwise
 	 */
-	bool mutate();
-	std::vector<Chromosome> mateWith(const Chromosome &other);
+	bool mutate(SynchronizedUnifGenerator__0__1& unifGen);
+	std::vector<Chromosome> mateWith(const Chromosome &other, SynchronizedUnifGenerator__0__1& unifGen);
 
 	void setFitness(double fitness) { this->fitness = fitness; };
 	double getFitness() const { return this->fitness; };
@@ -68,32 +68,32 @@ private:
 	static IntChromosome INT_CHROMOSOME_MAX;
 	static IntChromosome getIntChromosomeMax();
 #endif
-
-	/**
-	 * Random number generators
-	 */
-	static SynchronizedUnifGenerator__0__1 unifGen;
-	
 	const Control &ctrl;
-	const TruncatedGeomGenerator tgeom;
+	const TruncatedGeomGenerator rtgeom;
 
-	VariablePositionPopulation &varPosPop;
+	uint16_t numParts;
+	uint16_t unusedBits;
+	
+	// Array with the chromosome parts
+	// If not all bits are used, the k least significant bits of the 1st(!) part are not used (k = this->unusedBits)
+	std::vector<IntChromosome> chromosomeParts;
+	double fitness;
 
-	void shuffle(std::vector<uint16_t>& pop, const uint16_t fillLength, const uint16_t shuffleLength) const;
+	void shuffle(std::vector<uint16_t>& pop, const uint16_t fillLength, const uint16_t shuffleLength, SynchronizedUnifGenerator__0__1& unifGen) const;
 
 	/*
 	 * Init the internal used chromosome parts completely random taking
 	 * the minimum and maximum number of set bits specified by the
 	 * control object into account
 	 */
-	void initChromosomeParts();
+	void initChromosomeParts(SynchronizedUnifGenerator__0__1& unifGen, VariablePositionPopulation &varPosPop);
 
 	/*
 	 * R's RNG only returns between 25 and 32 random bits
 	 * so two random numbers must be "glued" together to form
 	 * a 64bit random number
 	 */
-	IntChromosome runif() const;
+	IntChromosome runif(SynchronizedUnifGenerator__0__1& unifGen) const;
 
 	std::ostream& printBits(std::ostream &os, IntChromosome bits, uint16_t leaveOut = 0) const;
 
@@ -116,13 +116,6 @@ private:
 		return ((x * Chromosome::H01) >> 56);							// adds left 8 bits of tmp + (tmp << 8) + (tmp << 16) + (tmp << 24) + ...
 	}
 #endif
-	uint16_t numParts;
-	uint16_t unusedBits;
-
-	// Array with the chromosome parts
-	// If not all bits are used, the k least significant bits of the 1st(!) part are not used (k = this->unusedBits)
-	std::vector<IntChromosome> chromosomeParts;
-	double fitness;
 
 
 };

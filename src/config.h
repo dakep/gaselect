@@ -56,6 +56,17 @@
 #undef HAVE_PTHREAD_H
 #endif
 
+#define HAVE_PTHREAD_H 1
+
+/**
+ * Define the random numbers buffer size of the different uniform number generator instances
+ */
+#define UNIF_GENERATOR_BUFFER_SIZE_MAIN 8192 // this takes 64kiB on the heap!
+#define UNIF_GENERATOR_BUFFER_SIZE_THREAD 8192 // this takes 64kiB on the heap!
+
+// Buffer 256 (i.e. 2kiB) of random numbers
+#define RANDOM_NUMBER_BUFFER 256
+
 #ifdef ENABLE_DEBUG_VERBOSITY
 #define CHECK_PTHREAD_RETURN_CODE(rc) if((rc) != 0) { Rcpp::Rcerr << "Warning: Call to pthread function failed with error code " << (rc) << " in " << __FILE__ << ":" << __LINE__ << std::endl; }
 

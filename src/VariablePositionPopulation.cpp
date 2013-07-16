@@ -12,8 +12,6 @@
 
 #include <algorithm>
 
-SynchronizedUnifGenerator__0__1 VariablePositionPopulation::unifGen;
-
 VariablePositionPopulation::VariablePositionPopulation(const uint16_t size) : size(size) {
 	uint16_t i = 0, j = 1;
 	this->variablePositionPopulation.reserve(this->size);
@@ -26,7 +24,7 @@ VariablePositionPopulation::VariablePositionPopulation(const uint16_t size) : si
 	}
 }
 
-VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(const uint16_t length, const uint16_t shift) {
+VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(const uint16_t length, const uint16_t shift, SynchronizedUnifGenerator__0__1& unifGen) {
 	uint16_t randPos = 0;
 
 	if(length > this->size) {
@@ -34,7 +32,7 @@ VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(c
 	}
 
 	for(uint16_t i = 0; i < length; ++i) {
-		randPos = i + VariablePositionPopulation::unifGen() * (this->size - i);
+		randPos = i + unifGen() * (this->size - i);
 		std::swap(this->variablePositionPopulation[i], this->variablePositionPopulation[randPos]);
 	}
 

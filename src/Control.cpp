@@ -23,20 +23,20 @@ Control::Control(const uint16_t chromosomeSize, const uint16_t popSize, const ui
 			this->variablePositionPopulation[i] = i;
 		}
 }
-
-void Control::shuffleVariablePositionPopulation(uint16_t length) {
-	uint16_t randPos = 0;
-	uint16_t popSize = this->variablePositionPopulation.size();
-
-	if(length > popSize) {
-		length = popSize;
-	}
-
-	for(uint16_t i = 0; i < length; ++i) {
-		randPos = i + this->unifGen() * popSize--;
-		std::swap(this->variablePositionPopulation[randPos], this->variablePositionPopulation[i]);
-	}
-}
+//
+//void Control::shuffleVariablePositionPopulation(SynchronizedUnifGenerator__0__1& unifGen, uint16_t length) {
+//	uint16_t randPos = 0;
+//	uint16_t popSize = this->variablePositionPopulation.size();
+//
+//	if(length > popSize) {
+//		length = popSize;
+//	}
+//
+//	for(uint16_t i = 0; i < length; ++i) {
+//		randPos = i + unifGen() * popSize--;
+//		std::swap(this->variablePositionPopulation[randPos], this->variablePositionPopulation[i]);
+//	}
+//}
 
 std::ostream& operator<<(std::ostream &os, const Control &ctrl) {
 	os << "Chromosome size: " << ctrl.chromosomeSize << std::endl

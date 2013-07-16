@@ -12,12 +12,14 @@
 #include "config.h"
 #include "Control.h"
 #include "Chromosome.h"
+#include "SynchronizedUnifGenerator__0__1.h"
 
 class Evaluator {
 public:
 	Evaluator(const VerbosityLevel verbosity) : verbosity(verbosity) {}
 	virtual ~Evaluator() {};
 
+	virtual void setUnifGenerator(SynchronizedUnifGenerator__0__1*) {};
 	virtual double evaluate(Chromosome &ch) const = 0;
 	
 	virtual Evaluator* clone() const = 0;

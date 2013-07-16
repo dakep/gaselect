@@ -55,6 +55,8 @@ BEGIN_RCPP
 				 numThreads,
 				 (VerbosityLevel) as<int>(control["verbosity"]));
 
+	SynchronizedUnifGenerator__0__1 globalUnifGen(UNIF_GENERATOR_BUFFER_SIZE_MAIN);
+
 	if(useUserFunction) {
 		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
 	} else {
@@ -67,7 +69,7 @@ BEGIN_RCPP
 		pls = PLS::getInstance(method, X, Y, false);
 		toFree |= 2; // pls has to be freed
 
-		eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity);
+		eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity, &globalUnifGen);
 	}
 	toFree |= 1; // eval has to be freed
 
@@ -75,7 +77,7 @@ BEGIN_RCPP
 		Rcout << ctrl << std::endl;
 	}
 
-	Population pop(ctrl, *eval);
+	Population pop(ctrl, *eval, globalUnifGen);
 #ifdef HAVE_PTHREAD_H
 	try {
 #endif
