@@ -12,7 +12,7 @@
 #include "config.h"
 
 #include <RcppArmadillo.h>
-#include "SynchronizedUnifGenerator__0__1.h"
+#include "UnifGenerator_0_1.h"
 
 #include "Evaluator.h"
 #include "Chromosome.h"
@@ -20,7 +20,7 @@
 
 class PLSEvaluator : public Evaluator {
 public:
-	PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const VerbosityLevel verbosity, SynchronizedUnifGenerator__0__1* unifGen) :
+	PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const VerbosityLevel verbosity, UnifGenerator_0_1* unifGen) :
 	Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
 	nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
 	completeSegments(nrows % numSegments), pls(pls), unifGen(unifGen)
@@ -34,7 +34,7 @@ public:
 	double evaluate(Chromosome &ch) const;
 	double evaluate(arma::uvec &colSubset) const;
 
-	void setUnifGenerator(SynchronizedUnifGenerator__0__1 *unifGen) {
+	void setUnifGenerator(UnifGenerator_0_1 *unifGen) {
 		this->unifGen = unifGen;
 	};
 	
@@ -48,7 +48,7 @@ private:
 	const uint16_t completeSegments; // The number of segments with `segmentLength` + 1 elements. If 0, all segments have `segmentLength` elements
 	
 	PLS *pls;
-	SynchronizedUnifGenerator__0__1 *unifGen;
+	UnifGenerator_0_1 *unifGen;
 
 	/**
 	 * Doesn't calculate the actual SEP but

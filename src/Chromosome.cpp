@@ -30,6 +30,12 @@
 
 using namespace Rcpp;
 
+#ifdef ENABLE_DEBUG_VERBOSITY
+#define IF_DEBUG(expr) if(this->ctrl.verbosity >= DEBUG_VERBOSE) { expr; }
+#else
+#define IF_DEBUG(expr)
+#endif
+
 #ifndef INT_CHROMOSOME_MAX_VAL
 IntChromosome Chromosome::getIntChromosomeMax() {
 	IntChromosome max = 0xFF; // has at least 1 byte!
@@ -46,7 +52,7 @@ IntChromosome Chromosome::getIntChromosomeMax() {
 IntChromosome Chromosome::INT_CHROMOSOME_MAX = Chromosome::getIntChromosomeMax();
 #endif
 
-Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, SynchronizedUnifGenerator__0__1& unifGen) : ctrl(ctrl), rtgeom(1 - ctrl.mutationProbability) {
+Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, UnifGenerator_0_1& unifGen) : ctrl(ctrl), rtgeom(1 - ctrl.mutationProbability) {
 	// Determine the number of IntChromosome bit values that are
 	// needed to represent all genes
 	
@@ -88,20 +94,13 @@ void Chromosome::copyFrom(const Chromosome &other, bool copyChromosomeParts) {
 //Chromosome::~Chromosome() {
 //}
 
-inline void Chromosome::initChromosomeParts(SynchronizedUnifGenerator__0__1& unifGen, VariablePositionPopulation &varPosPop) {
-#ifdef TIMING_BENCHMARK
-	timeval start, end;
-
-	gettimeofday(&start, NULL);
-#endif
+inline void Chromosome::initChromosomeParts(UnifGenerator_0_1& unifGen, VariablePositionPopulation &varPosPop) {
 	uint16_t bitsToSet = this->ctrl.minVariables + unifGen() * (this->ctrl.maxVariables - this->ctrl.minVariables);
 
-#ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
+	IF_DEBUG(
 		Rcout << "Init chromosome with " << bitsToSet << " bits set" << std::endl;
 		Rcout << "First part before initializing: " << this->chromosomeParts[0] << std::endl;
-	}
-#endif
+	)
 
 	VariablePositionPopulation::const_iterator setPosIter = varPosPop.shuffle(bitsToSet, this->unusedBits, unifGen);
 
@@ -113,25 +112,12 @@ inline void Chromosome::initChromosomeParts(SynchronizedUnifGenerator__0__1& uni
 		offset = (*setPosIter) % Chromosome::BITS_PER_PART;
 		this->chromosomeParts[part] |= (((IntChromosome) 1) << offset);
 	}
-#ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
+	IF_DEBUG(
 		Rcout << "Initialized chromosome with " << this->getVariableCount() << " bits set" << std::endl;
-	}
-#endif
-#ifdef TIMING_BENCHMARK
-
-	gettimeofday(&end, NULL);
-	Rcout << "Init chromosome took " << (end.tv_sec * 1000.0 + (end.tv_usec / 1000.0)) - (start.tv_sec * 1000.0 + (start.tv_usec / 1000.0)) << " milliseconds" << std::endl;
-
-#endif
+	)
 }
 
-std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other, SynchronizedUnifGenerator__0__1& unifGen) {
-#ifdef TIMING_BENCHMARK
-	timeval start, end;
-
-	gettimeofday(&start, NULL);
-#endif
+std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other, UnifGenerator_0_1& unifGen) {
 	if(other.ctrl.chromosomeSize != this->ctrl.chromosomeSize) {
 		throw InvalidCopulationException(__FILE__, __LINE__);
 	}
@@ -166,8 +152,7 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other, Synchroniz
 			child1.chromosomeParts[i] = (this->chromosomeParts[i] & randomMask) | (other.chromosomeParts[i] & negRandomMask);
 			child2.chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
 
-#ifdef ENABLE_DEBUG_VERBOSITY
-			if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
+			IF_DEBUG(
 				Rcout << "Mask for part " << i << ": ";
 				this->printBits(Rcout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
 
@@ -176,8 +161,7 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other, Synchroniz
 				this->printBits(Rcout, child1.chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl
 				<< "Child 2:";
 				this->printBits(Rcout, child2.chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl;
-			}
-#endif
+			)
 		}
 	}
 
@@ -185,15 +169,10 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other, Synchroniz
 	children.push_back(child1);
 	children.push_back(child2);
 
-#ifdef TIMING_BENCHMARK
-	gettimeofday(&end, NULL);
-	Rcout << "Copulating took " << (end.tv_sec * 1000.0 + (end.tv_usec / 1000.0)) - (start.tv_sec * 1000.0 + (start.tv_usec / 1000.0)) << " milliseconds" << std::endl;
-#endif
-
 	return children;
 }
 
-bool Chromosome::mutate(SynchronizedUnifGenerator__0__1& unifGen) {
+bool Chromosome::mutate(UnifGenerator_0_1& unifGen) {
 	static std::vector<uint16_t> positionPopulation(this->ctrl.chromosomeSize);
 	
 	uint16_t currentlySetBits = this->getVariableCount();
@@ -228,8 +207,7 @@ bool Chromosome::mutate(SynchronizedUnifGenerator__0__1& unifGen) {
 		numChangeBits -= this->rtgeom(currentlySetBits - this->ctrl.minVariables + numChangeBits, unifGen);
 	}
 
-#ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
+	IF_DEBUG(
 		if(numChangeBits != 0) {
 			Rcout << "###########################" << std::endl
 			<< "Changing " << numChangeBits << " bits" << std::endl
@@ -238,9 +216,7 @@ bool Chromosome::mutate(SynchronizedUnifGenerator__0__1& unifGen) {
 		} else {
 			Rcout << "Changing " << numChangeBits << " bits" << std::endl;
 		}
-		
-	}
-#endif
+	)
 
 	if(numChangeBits == 0) {
 		return false;
@@ -338,11 +314,7 @@ bool Chromosome::mutate(SynchronizedUnifGenerator__0__1& unifGen) {
 			mask = 0;
 		}
 	}
-#ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->ctrl.verbosity >= DEBUG_VERBOSE) {
-		Rcout << "After mutation: " << *this << std::endl;
-	}
-#endif
+	IF_DEBUG(Rcout << "After mutation: " << *this << std::endl)
 	
 	return true;
 }
@@ -533,7 +505,7 @@ inline uint16_t Chromosome::ctz(IntChromosome mask) const {
 }
 
 
-inline IntChromosome Chromosome::runif(SynchronizedUnifGenerator__0__1& unifGen) const {
+inline IntChromosome Chromosome::runif(UnifGenerator_0_1& unifGen) const {
 	// Calculate the number of random numbers to combine for one IntChromosome
 	static int8_t partsPerRand = (sizeof(IntChromosome) * BITS_PER_BYTE / RNG_MAX_BITS);
 	
@@ -550,7 +522,7 @@ inline IntChromosome Chromosome::runif(SynchronizedUnifGenerator__0__1& unifGen)
 	}
 }
 
-inline void Chromosome::shuffle(std::vector<uint16_t>& pop, uint16_t fillLength, uint16_t shuffleLength, SynchronizedUnifGenerator__0__1& unifGen) const {
+inline void Chromosome::shuffle(std::vector<uint16_t>& pop, uint16_t fillLength, uint16_t shuffleLength, UnifGenerator_0_1& unifGen) const {
 	// Fill population with correct values
 	if(shuffleLength == 1) {
 		pop[0] = unifGen() * fillLength;

@@ -11,7 +11,6 @@
 #include <iostream>
 #include <vector>
 #include <RcppArmadillo.h>
-#include "SynchronizedUnifGenerator__0__1.h"
 
 enum VerbosityLevel {
 	OFF = 0,
@@ -42,13 +41,6 @@ public:
 	std::vector<uint16_t> variablePositionPopulation;
 
 	friend std::ostream& operator<<(std::ostream &os, const Control &ctrl);
-
-	/**
-	 * Convenience method to shuffle the variable-position population
-	 * optionally only the first `length` positions in the population
-	 * are random (though all positions are considered)
-	 */
-//	void shuffleVariablePositionPopulation(SynchronizedUnifGenerator__0__1& unifGen, uint16_t length = 0);
 };
 
 #endif

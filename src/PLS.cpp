@@ -7,13 +7,7 @@
 //
 
 #include "config.h"
-
 #include "PLS.h"
-
-PLS::PLS(const arma::mat &X, const arma::mat &Y, const bool fitValues) : X(X), Y(Y), fitValues(fitValues), validResultState(false), viewX(X), viewY(Y) {
-}
-
-PLS::~PLS() {}
 
 void PLS::subviewChanged() {
 	this->validResultState = false;

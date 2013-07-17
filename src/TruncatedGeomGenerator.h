@@ -10,7 +10,7 @@
 #define GenAlgPLS_TruncatedGeomGenerator_h
 
 #include "config.h"
-#include "SynchronizedUnifGenerator__0__1.h"
+#include "UnifGenerator_0_1.h"
 
 class TruncatedGeomGenerator {
 public:
@@ -22,7 +22,7 @@ public:
 	 * than returning the rounded-down value which is truncated geometrically distributed
 	 * cutoff must be > 0 otherwise undefined behaviour!
 	 */
-	inline uint16_t operator()(const uint16_t cutoff, SynchronizedUnifGenerator__0__1& unifGen) const {
+	inline uint16_t operator()(const uint16_t cutoff, UnifGenerator_0_1& unifGen) const {
 		return (uint16_t) (log1p(- unifGen() * (1. - R_pow_di(1. - this->prob, cutoff + 1))) / this->commonDenominator);
 	}
 

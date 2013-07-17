@@ -17,7 +17,7 @@
 #include "Control.h"
 #include "TruncatedGeomGenerator.h"
 #include "VariablePositionPopulation.h"
-#include "SynchronizedUnifGenerator__0__1.h"
+#include "UnifGenerator_0_1.h"
 
 class InvalidCopulationException : public Rcpp::exception {
 
@@ -28,15 +28,15 @@ public:
 class Chromosome {
 
 public:
-	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, SynchronizedUnifGenerator__0__1& unifGen);
+	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, UnifGenerator_0_1& unifGen);
 	Chromosome(const Chromosome &other, bool copyChromosomeParts = true);
 //	~Chromosome();
 	
 	/**
 	 * @return bool Returns true if mutation occurred, false otherwise
 	 */
-	bool mutate(SynchronizedUnifGenerator__0__1& unifGen);
-	std::vector<Chromosome> mateWith(const Chromosome &other, SynchronizedUnifGenerator__0__1& unifGen);
+	bool mutate(UnifGenerator_0_1& unifGen);
+	std::vector<Chromosome> mateWith(const Chromosome &other, UnifGenerator_0_1& unifGen);
 
 	void setFitness(double fitness) { this->fitness = fitness; };
 	double getFitness() const { return this->fitness; };
@@ -79,21 +79,21 @@ private:
 	std::vector<IntChromosome> chromosomeParts;
 	double fitness;
 
-	void shuffle(std::vector<uint16_t>& pop, const uint16_t fillLength, const uint16_t shuffleLength, SynchronizedUnifGenerator__0__1& unifGen) const;
+	void shuffle(std::vector<uint16_t>& pop, const uint16_t fillLength, const uint16_t shuffleLength, UnifGenerator_0_1& unifGen) const;
 
 	/*
 	 * Init the internal used chromosome parts completely random taking
 	 * the minimum and maximum number of set bits specified by the
 	 * control object into account
 	 */
-	void initChromosomeParts(SynchronizedUnifGenerator__0__1& unifGen, VariablePositionPopulation &varPosPop);
+	void initChromosomeParts(UnifGenerator_0_1& unifGen, VariablePositionPopulation &varPosPop);
 
 	/*
 	 * R's RNG only returns between 25 and 32 random bits
 	 * so two random numbers must be "glued" together to form
 	 * a 64bit random number
 	 */
-	IntChromosome runif(SynchronizedUnifGenerator__0__1& unifGen) const;
+	IntChromosome runif(UnifGenerator_0_1& unifGen) const;
 
 	std::ostream& printBits(std::ostream &os, IntChromosome bits, uint16_t leaveOut = 0) const;
 

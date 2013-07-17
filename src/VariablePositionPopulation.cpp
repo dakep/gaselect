@@ -24,7 +24,7 @@ VariablePositionPopulation::VariablePositionPopulation(const uint16_t size) : si
 	}
 }
 
-VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(const uint16_t length, const uint16_t shift, SynchronizedUnifGenerator__0__1& unifGen) {
+VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(const uint16_t length, const uint16_t shift, UnifGenerator_0_1& unifGen) {
 	uint16_t randPos = 0;
 
 	if(length > this->size) {

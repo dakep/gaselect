@@ -16,8 +16,8 @@ enum PLSMethod {
 class PLS {
 
 public:
-	PLS(const arma::mat &X, const arma::mat &Y, const bool fitValues = true);
-	virtual ~PLS();
+	PLS(const arma::mat &X, const arma::mat &Y, const bool fitValues = true) : X(X), Y(Y), fitValues(fitValues), validResultState(false), viewX(X), viewY(Y) {};
+	virtual ~PLS() {};
 
 	static PLS* getInstance(PLSMethod method, const arma::mat &X, const arma::mat &Y, const bool fitValues = true);
 

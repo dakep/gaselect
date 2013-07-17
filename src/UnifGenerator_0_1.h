@@ -36,41 +36,40 @@ namespace Rcpp {
 }
 #endif
 
-#ifdef HAVE_PTHREAD_H
-class SynchronizedUnifGenerator__0__1 {
+class UnifGenerator_0_1 {
 public:
-	SynchronizedUnifGenerator__0__1(const uint16_t bufferSize = 0) : bufferSize(bufferSize), curRandPos(bufferSize) {
+	UnifGenerator_0_1() {};
+	virtual ~UnifGenerator_0_1() {};
+	
+	inline virtual double operator()() {
+		return UnifGenerator_0_1::unifGen();
+	}
+protected:
+	static Rcpp::stats::UnifGenerator__0__1 unifGen;
+};
+
+
+#ifdef HAVE_PTHREAD_H
+class SynchronizedUnifGenerator_0_1 : public UnifGenerator_0_1 {
+public:
+	SynchronizedUnifGenerator_0_1(const uint16_t bufferSize = 0) : bufferSize(bufferSize), curRandPos(bufferSize) {
 		this->randBuffer.reserve(this->bufferSize);
 	};
+	~SynchronizedUnifGenerator_0_1() {}
 	
 	double operator()();
 	
-	SynchronizedUnifGenerator__0__1& operator=(const SynchronizedUnifGenerator__0__1& ) {
+	SynchronizedUnifGenerator_0_1& operator=(const SynchronizedUnifGenerator_0_1& ) {
 		throw std::logic_error("The synchronized uniform generator can not be assigned");
 	}
 	
 private:
-	static Rcpp::stats::UnifGenerator__0__1 unifGen;
 	static pthread_mutex_t runifMutex;
 
 	const uint16_t bufferSize;
-
 	uint16_t curRandPos;
 	std::vector<double> randBuffer;
 };
-
-#else
-class SynchronizedUnifGenerator__0__1 {
-public:
-	SynchronizedUnifGenerator__0__1() {}
-
-	inline double SynchronizedUnifGenerator__0__1::operator()() {
-		return SynchronizedUnifGenerator__0__1::unifGen();
-	}
-private:
-	static Rcpp::stats::UnifGenerator__0__1 unifGen;
-};
-
 #endif
 
 #endif // header def

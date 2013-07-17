@@ -11,6 +11,14 @@
 #include <algorithm>
 #include "PLSEvaluator.h"
 
+#ifdef ENABLE_DEBUG_VERBOSITY
+#define IF_DEBUG(expr) if(this->verbosity >= DEBUG_VERBOSE) { expr; }
+#define IF_FULLY_VERBOSE(expr) if(this->verbosity >= FULLY_VERBOSE) { expr; }
+#else
+#define IF_DEBUG(expr)
+#define IF_FULLY_VERBOSE(expr)
+#endif
+
 double PLSEvaluator::evaluate(Chromosome &ch) const {
 	arma::uvec columnSubset = ch.toColumnSubset();
 	// -2 because if the segmentLength would not be an exact integer some segments are one longer than others
@@ -20,11 +28,7 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	arma::uword rep = 0;
 	sumSSD.zeros();
 
-#ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->verbosity >= DEBUG_VERBOSE) {
-		Rcpp::Rcout << "EVALUATOR: Testing model with variables" << std::endl << columnSubset.t() << std::endl;
-	}
-#endif
+	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Testing model with variables" << std::endl << columnSubset.t() << std::endl)
 
 	this->pls->setSubmatrixViewColumns(columnSubset);
 	
@@ -35,11 +39,7 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	double bestFitness = -sumSSD.min();
 	ch.setFitness(bestFitness);
 
-#ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->verbosity >= DEBUG_VERBOSE) {
-		Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSSD.t() << std::endl;
-	}
-#endif
+	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSSD.t() << std::endl)
 	return bestFitness;
 }
 
@@ -51,16 +51,11 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
 	sumSSD.zeros();
 
 	this->pls->setSubmatrixViewColumns(columnSubset);
-	
 	for(rep = 0; rep < this->numReplications; ++rep) {
 		sumSSD += this->calcSSD(maxNComp, rowNumbers);
 	}
 
-#ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->verbosity >= DEBUG_VERBOSE) {
-		Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSSD << std::endl;
-	}
-#endif
+	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSSD << std::endl)
 
 	return -sumSSD.min();
 }
@@ -132,11 +127,7 @@ arma::vec PLSEvaluator::calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const {
 			notSegment = rowNumbers.rows(segmentLength, this->nrows - 1);
 		}
 
-#ifdef ENABLE_DEBUG_VERBOSITY
-		if(this->verbosity >= FULLY_VERBOSE) {
-			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;
-		}
-#endif
+		IF_FULLY_VERBOSE(Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl)
 		leftOutX = this->pls->getXColumnView().rows(segment);
 		leftOutY = this->pls->getY().rows(segment);
 		this->pls->setSubmatrixViewRows(notSegment, true);
@@ -164,11 +155,7 @@ arma::vec PLSEvaluator::calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	}
 
 
-#ifdef ENABLE_DEBUG_VERBOSITY
-	if(this->verbosity >= FULLY_VERBOSE) {
-		Rcpp::Rcout << "EVALUATOR: Resulting M2n:" << std::endl << arma::sqrt(residM2n) << std::endl;
-	}
-#endif
+	IF_FULLY_VERBOSE(Rcpp::Rcout << "EVALUATOR: Resulting M2n:" << std::endl << arma::sqrt(residM2n) << std::endl)
 
 //	Altough the square root doesn't change the order of the values,
 //	it may be necessary to accurately reflect the "distance" between two values

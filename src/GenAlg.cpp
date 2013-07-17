@@ -9,11 +9,14 @@
 #include <set>
 
 #include "Chromosome.h"
-#include "Population.h"
 #include "Control.h"
 #include "UserFunEvaluator.h"
 #include "PLSEvaluator.h"
+#include "SingleThreadPopulation.h"
 
+#ifdef HAVE_PTHREAD_H
+#include "MultiThreadedPopulation.h"
+#endif
 
 #include "GenAlg.h"
 
@@ -22,7 +25,9 @@ using namespace Rcpp;
 SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy) {
 	::Evaluator *eval;
 	PLS *pls;
-	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls
+	UnifGenerator_0_1* globalUnifGen;
+	Population *pop;
+	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls; 3rd bit set ==> free globalUnifGen; 4th bit set ==> free pop
 BEGIN_RCPP
 
 	List control = List(Scontrol);
@@ -54,9 +59,19 @@ BEGIN_RCPP
 				 as<double>(control["mutationProb"]),
 				 numThreads,
 				 (VerbosityLevel) as<int>(control["verbosity"]));
+	
+#ifdef HAVE_PTHREAD_H
+	if(numThreads > 1) {
+		globalUnifGen = new SynchronizedUnifGenerator_0_1(UNIF_GENERATOR_BUFFER_SIZE_MAIN);
+	} else {
+		globalUnifGen = new UnifGenerator_0_1();
+	}
+#else
+	globalUnifGen = new UnifGenerator_0_1();
+#endif
 
-	SynchronizedUnifGenerator__0__1 globalUnifGen(UNIF_GENERATOR_BUFFER_SIZE_MAIN);
-
+	toFree |= 4;
+	
 	if(useUserFunction) {
 		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
 	} else {
@@ -69,7 +84,7 @@ BEGIN_RCPP
 		pls = PLS::getInstance(method, X, Y, false);
 		toFree |= 2; // pls has to be freed
 
-		eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity, &globalUnifGen);
+		eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity, globalUnifGen);
 	}
 	toFree |= 1; // eval has to be freed
 
@@ -77,21 +92,27 @@ BEGIN_RCPP
 		Rcout << ctrl << std::endl;
 	}
 
-	Population pop(ctrl, *eval, globalUnifGen);
 #ifdef HAVE_PTHREAD_H
 	try {
-#endif
-	pop.run();
-#ifdef HAVE_PTHREAD_H
-	} catch(Population::ThreadingError& te) {
+		if(numThreads > 1) {
+			pop = new MultiThreadedPopulation(ctrl, *eval, *static_cast<SynchronizedUnifGenerator_0_1 *>(globalUnifGen));
+		} else {
+			pop = new SingleThreadPopulation(ctrl, *eval);
+		}
+		toFree |= 8;
+		pop->run();
+	} catch(MultiThreadedPopulation::ThreadingError& te) {
 		if(ctrl.verbosity >= DEBUG_VERBOSE) {
 			throw te;
 		} else {
 			throw Rcpp::exception("Multithreading could not be initialized. Set numThreads to 0 to avoid this problem.");
 		}
 	}
+#else
+	pop = new SingleThreadPopulation(ctrl, *eval);
+	pop->run();
 #endif
-	SortedChromosomes result = pop.getResult();
+	SortedChromosomes result = pop->getResult();
 
 	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());
 	Rcpp::NumericVector retFitnesses((const int) result.size());
@@ -102,7 +123,13 @@ BEGIN_RCPP
 		retMatrix.column(i) = it->toLogicalVector();
 	}
 
-	delete eval; // must definitely be freed
+	delete eval;
+	delete globalUnifGen;
+	
+	if((toFree & 8) > 0) {
+		delete pop;
+	}
+
 	if((toFree & 2) > 0) {
 		delete pls;
 	}
@@ -115,6 +142,12 @@ VOID_END_RCPP
 	}
 	if((toFree & 2) > 0) {
 		delete pls;
+	}
+	if((toFree & 4) > 0) {
+		delete globalUnifGen;
+	}
+	if((toFree & 8) > 0) {
+		delete pop;
 	}
 
 	return R_NilValue;

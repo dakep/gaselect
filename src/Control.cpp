@@ -24,7 +24,7 @@ Control::Control(const uint16_t chromosomeSize, const uint16_t popSize, const ui
 		}
 }
 //
-//void Control::shuffleVariablePositionPopulation(SynchronizedUnifGenerator__0__1& unifGen, uint16_t length) {
+//void Control::shuffleVariablePositionPopulation(SynchronizedUnifGenerator_0_1& unifGen, uint16_t length) {
 //	uint16_t randPos = 0;
 //	uint16_t popSize = this->variablePositionPopulation.size();
 //
