@@ -28,7 +28,7 @@ public:
 class Chromosome {
 
 public:
-	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, UnifGenerator_0_1& unifGen);
+	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, UnifGenerator_0_1& unifGen, bool randomInit = true);
 	Chromosome(const Chromosome &other, bool copyChromosomeParts = true);
 //	~Chromosome();
 	
@@ -36,7 +36,7 @@ public:
 	 * @return bool Returns true if mutation occurred, false otherwise
 	 */
 	bool mutate(UnifGenerator_0_1& unifGen);
-	std::vector<Chromosome> mateWith(const Chromosome &other, UnifGenerator_0_1& unifGen);
+	void mateWith(const Chromosome &other, UnifGenerator_0_1& unifGen, Chromosome& child1, Chromosome& child2);
 
 	void setFitness(double fitness) { this->fitness = fitness; };
 	double getFitness() const { return this->fitness; };

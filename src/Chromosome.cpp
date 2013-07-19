@@ -52,7 +52,7 @@ IntChromosome Chromosome::getIntChromosomeMax() {
 IntChromosome Chromosome::INT_CHROMOSOME_MAX = Chromosome::getIntChromosomeMax();
 #endif
 
-Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, UnifGenerator_0_1& unifGen) : ctrl(ctrl), rtgeom(1 - ctrl.mutationProbability) {
+Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, UnifGenerator_0_1& unifGen, bool randomInit) : ctrl(ctrl), rtgeom(1 - ctrl.mutationProbability) {
 	// Determine the number of IntChromosome bit values that are
 	// needed to represent all genes
 	
@@ -71,7 +71,9 @@ Chromosome::Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPo
 
 	// Initialize chromosome parts randomly
 	this->chromosomeParts.resize(this->numParts, 0);
-	this->initChromosomeParts(unifGen, varPosPop);
+	if(randomInit == true) {
+		this->initChromosomeParts(unifGen, varPosPop);
+	}
 }
 
 Chromosome::Chromosome(const Chromosome &other, bool copyChromosomeParts) : ctrl(other.ctrl), rtgeom(other.rtgeom) {
@@ -117,19 +119,22 @@ inline void Chromosome::initChromosomeParts(UnifGenerator_0_1& unifGen, Variable
 	)
 }
 
-std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other, UnifGenerator_0_1& unifGen) {
+void Chromosome::mateWith(const Chromosome &other, UnifGenerator_0_1& unifGen, Chromosome& child1, Chromosome& child2) {
 	if(other.ctrl.chromosomeSize != this->ctrl.chromosomeSize) {
 		throw InvalidCopulationException(__FILE__, __LINE__);
 	}
 
-	std::vector<Chromosome> children;
-
-	Chromosome child1(*this, false);
-	Chromosome child2(*this, false);
-
 	IntChromosome randomMask = 0;
 	IntChromosome negRandomMask = 0;
+	
+	if(child1.chromosomeParts.size() != this->numParts) {
+		child1.chromosomeParts.resize(this->numParts, 0);
+	}
 
+	if(child2.chromosomeParts.size() != this->numParts) {
+		child2.chromosomeParts.resize(this->numParts, 0);
+	}
+	
 	for(uint16_t i = 0; i < this->numParts; ++i) {
 		if(this->chromosomeParts[i] == other.chromosomeParts[i]) {
 			// Just copy the chromosome part to both children if it is the same
@@ -164,12 +169,6 @@ std::vector<Chromosome> Chromosome::mateWith(const Chromosome &other, UnifGenera
 			)
 		}
 	}
-
-	children.reserve(2);
-	children.push_back(child1);
-	children.push_back(child2);
-
-	return children;
 }
 
 bool Chromosome::mutate(UnifGenerator_0_1& unifGen) {

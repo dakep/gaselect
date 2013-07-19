@@ -164,6 +164,7 @@ arma::vec PLSEvaluator::calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const {
 
 Evaluator* PLSEvaluator::clone() const {
 	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->verbosity, this->unifGen);
+	that->cloned = true;
 	return that;	
 }
 

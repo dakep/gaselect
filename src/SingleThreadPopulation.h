@@ -11,11 +11,6 @@
 
 #include "config.h"
 
-#include <iostream>
-#include <vector>
-#include <set>
-
-#include "Chromosome.h"
 #include "Evaluator.h"
 #include "Control.h"
 #include "Population.h"

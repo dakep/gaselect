@@ -8,10 +8,9 @@
 
 #ifndef GenAlgPLS_ThreadedPopulation_h
 #define GenAlgPLS_ThreadedPopulation_h
-#ifdef HAVE_PTHREAD_H
-
 #include "config.h"
 
+#ifdef HAVE_PTHREAD_H
 #include <iostream>
 #include <vector>
 #include <set>
@@ -52,12 +51,10 @@ private:
 	
 	SynchronizedUnifGenerator_0_1& unifGen;
 	
-	std::vector<Chromosome> nextGeneration;
+	std::vector<Chromosome*> nextGeneration;
 	std::vector<double> nextGenFitnessMap;
 	double sumCurrentGenFitness;
 	double minCurrentGenFitness; // Minimum fitness value in the current generation
-	
-	pthread_t* threads;
 	
 	/*
 	 * Mutex and condition variables

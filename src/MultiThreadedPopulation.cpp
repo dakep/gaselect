@@ -7,7 +7,7 @@
 //
 #include "config.h"
 
-#define HAVE_PTHREAD_H 1
+//#define HAVE_PTHREAD_H 1
 
 #ifdef HAVE_PTHREAD_H
 
@@ -113,98 +113,103 @@ inline void MultiThreadedPopulation::transformCurrentGenFitnessMap() {
 void MultiThreadedPopulation::mate(uint16_t numMatingCouples, ::Evaluator& evaluator, SynchronizedUnifGenerator_0_1& unifGen, uint16_t offset, bool checkUserInterrupt) {
 	int pthreadRC = 1;
 	int i = 0;
+	double minParentFitness = 0.0;
+	uint8_t matingTries = 0;
 	
-	uint16_t matingTries = 0;
+	Chromosome* tmpChromosome1;
+	Chromosome* tmpChromosome2;
+	Chromosome** child1;
+	Chromosome** child2;
+	Chromosome* proposalChild1 = new Chromosome(*(this->nextGeneration[offset]), false);
+	Chromosome* proposalChild2 = new Chromosome(*(this->nextGeneration[offset]), false);
 	
 	for(; i < numMatingCouples; ++i) {
-		Chromosome tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(unifGen() * this->sumCurrentGenFitness);
-		Chromosome tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(unifGen() * this->sumCurrentGenFitness);
+		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(unifGen() * this->sumCurrentGenFitness);
+		tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(unifGen() * this->sumCurrentGenFitness);
 		
-		std::vector<Chromosome> children = tmpChromosome1.mateWith(tmpChromosome2, unifGen);
-		double minParentFitness = ((tmpChromosome1.getFitness() > tmpChromosome2.getFitness()) ? tmpChromosome1.getFitness() : tmpChromosome2.getFitness());
+		child1 = &(this->nextGeneration[offset + (2 * i)]);
+		child2 = &(this->nextGeneration[offset + (2 * i) + 1]);
+		
+		tmpChromosome1->mateWith(*tmpChromosome2, unifGen, **child1, **child2);
+
+		minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 		
 		/*
 		 * If both children have no variables, mate again
 		 */
-		while(children[0].getVariableCount() == 0 && children[1].getVariableCount() == 0) {
-			tmpChromosome1.mateWith(tmpChromosome2, unifGen);
+		while((*child1)->getVariableCount() == 0 && (*child2)->getVariableCount() == 0) {
+			tmpChromosome1->mateWith(*tmpChromosome2, unifGen, **child1, **child2);
 		}
 		
-		if(children[0].getVariableCount() == 0) {
-			children[0] = children[1];
-		} else if(children[1].getVariableCount() == 0) {
-			children[1] = children[0];
+		if((*child1)->getVariableCount() == 0) {
+			delete *child1;
+			*child1 = new Chromosome(**child2);
+		} else if((*child2)->getVariableCount() == 0) {
+			delete *child2;
+			*child2 = new Chromosome(**child1);
 		}
 		
-		evaluator.evaluate(children[0]);
-		evaluator.evaluate(children[1]);
+		evaluator.evaluate(**child1);
+		evaluator.evaluate(**child2);
 		// Make sure the first child is "better" than the second child
-		if(children[0].getFitness() < children[1].getFitness()) {
-			std::swap(children[1], children[0]);
+		if((*child1)->getFitness() < (*child2)->getFitness()) {
+			std::swap(child1, child2);
 		}
 		
 		IF_DEBUG(
-			Rcout << "Mating chromosomes " << std::endl << tmpChromosome1 << " and" << std::endl << tmpChromosome2 << std::endl
-				 << "with minimal fitness " << minParentFitness << std::endl
-			<< "First two proposals have fitness " << children[0].getFitness() << " / " << children[1].getFitness() << std::endl;
-		)
+			 Rcout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and" << std::endl << *tmpChromosome2 << std::endl
+			 << "with minimal fitness " << minParentFitness << std::endl << "First two proposals have fitness " << (*child1)->getFitness() << " / " << (*child2)->getFitness() << std::endl;
+		 )
 		
 		// At least the first child should be better than the worse parent
 		matingTries = 0;
-		while((children[0].getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
-			std::vector<Chromosome> proposalChildren = tmpChromosome1.mateWith(tmpChromosome2, unifGen);
+		while(((*child1)->getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
+			tmpChromosome1->mateWith(*tmpChromosome2, unifGen, *proposalChild1, *proposalChild1);
 			
 			/*
 			 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
 			 * greater than 0, otherwise the evaluation step would fail
 			 */
-			if(proposalChildren[0].getVariableCount() > 0) {
-				if(evaluator.evaluate(proposalChildren[0]) > children[1].getFitness()) { // better as 2nd child
-					if(proposalChildren[0].getFitness() > children[0].getFitness()) { // even better as 1st child
-						children[1] = children[0];
-						children[0] = proposalChildren[0];
+			if(proposalChild1->getVariableCount() > 0) {
+				if(evaluator.evaluate(*proposalChild1) > (*child2)->getFitness()) { // better as 2nd child
+					if(proposalChild1->getFitness() > (*child1)->getFitness()) { // even better as 1st child
+						std::swap(child1, child2);
+						delete *child1;
+						*child1 = new Chromosome(*proposalChild1);
 					} else {
-						children[1] = proposalChildren[0];
+						delete *child2;
+						*child2 = new Chromosome(*proposalChild1);
 					}
 				}
 			}
 			
 			// Check 2nd new child
-			if(proposalChildren[1].getVariableCount() > 0) {
-				if(evaluator.evaluate(proposalChildren[1]) > children[1].getFitness()) { // better as 2nd child
-					if(proposalChildren[1].getFitness() > children[0].getFitness()) { // even better as 1st child
-						children[1] = children[0];
-						children[0] = proposalChildren[1];
+			if(proposalChild2->getVariableCount() > 0) {
+				if(evaluator.evaluate(*proposalChild2) > (*child2)->getFitness()) { // better as 2nd child
+					if(proposalChild2->getFitness() > (*child1)->getFitness()) { // even better as 1st child
+						std::swap(child1, child2);
+						delete *child1;
+						*child1 = new Chromosome(*proposalChild2);
 					} else {
-						children[1] = proposalChildren[1];
+						delete *child2;
+						*child2 = new Chromosome(*proposalChild2);
 					}
 				}
 			}
 			
 			IF_DEBUG(
-				Rcout << "Proposed children have fitness: " << proposalChildren[0].getFitness() << " / " << proposalChildren[1].getFitness() << std::endl
-					 << "Currently selected children have fitness: " << children[0].getFitness() << " / " << children[1].getFitness() << std::endl;
+				 Rcout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness() << std::endl
+				 << "Currently selected children have fitness: " << (*child1)->getFitness() << " / " << (*child2)->getFitness() << std::endl;
 			)
 		}
 		
-		if(children[0].mutate(unifGen) == true) {
-			evaluator.evaluate(children[0]);
+		if((*child1)->mutate(unifGen) == true) {
+			evaluator.evaluate(**child1);
 		}
-		if(children[1].mutate(unifGen) == true) {
-			evaluator.evaluate(children[1]);
+		if((*child2)->mutate(unifGen) == true) {
+			evaluator.evaluate(**child2);
 		}
-		
-		if(this->ctrl.verbosity >= MORE_VERBOSE) {
-			pthreadRC = pthread_mutex_lock(&this->printMutex);
-			CHECK_PTHREAD_RETURN_CODE(pthreadRC)
-			
-			this->printChromosomeFitness(Rcout, children[0]);
-			this->printChromosomeFitness(Rcout, children[1]);
-			
-			pthreadRC = pthread_mutex_unlock(&this->printMutex);
-			CHECK_PTHREAD_RETURN_CODE(pthreadRC)
-		}
-		
+
 		/*
 		 * Update fitness map and add children to the generation
 		 *
@@ -213,11 +218,8 @@ void MultiThreadedPopulation::mate(uint16_t numMatingCouples, ::Evaluator& evalu
 		 * of the fitness map and the generation are only accessed
 		 * by this particular thread, so no locking is neccessary
 		 */
-		this->nextGenFitnessMap[offset + (2 * i)] = children[0].getFitness();
-		this->nextGenFitnessMap[offset + (2 * i) + 1] = children[1].getFitness();
-
-		this->nextGeneration[offset + (2 * i)] = children[0];
-		this->nextGeneration[offset + (2 * i) + 1] = children[1];
+		this->nextGenFitnessMap[offset + (2 * i)] = (*child1)->getFitness();
+		this->nextGenFitnessMap[offset + (2 * i) + 1] = (*child2)->getFitness();
 
 		/*
 		 * The main thread has to check for a user interrupt
@@ -228,6 +230,9 @@ void MultiThreadedPopulation::mate(uint16_t numMatingCouples, ::Evaluator& evalu
 			}
 		}
 	}
+	
+	delete proposalChild1;
+	delete proposalChild2;
 	
 	/*
 	 * Acquire lock to recalculate the minimum fitness and add
@@ -241,7 +246,7 @@ void MultiThreadedPopulation::mate(uint16_t numMatingCouples, ::Evaluator& evalu
 		if(this->nextGenFitnessMap[i] < this->minCurrentGenFitness) {
 			this->minCurrentGenFitness = this->nextGenFitnessMap[i];
 		}
-		this->addChromosomeToElite(this->nextGeneration[i]);
+		this->addChromosomeToElite(*(this->nextGeneration[i]));
 	}
 
 	pthreadRC = pthread_mutex_unlock(&this->updateMutex);
@@ -249,7 +254,8 @@ void MultiThreadedPopulation::mate(uint16_t numMatingCouples, ::Evaluator& evalu
 }
 
 void MultiThreadedPopulation::run() {
-	int i = 0;
+	int i = 0, j = 0;
+	Chromosome* tmpChromosome;
 	VariablePositionPopulation varPosPop(this->ctrl.chromosomeSize);
 	MultiThreadedPopulation::ThreadArgsWrapper* threadArgs;
 	uint16_t maxThreadsToSpawn = this->ctrl.numThreads - 1;
@@ -258,6 +264,7 @@ void MultiThreadedPopulation::run() {
 	uint16_t remainingMatingCouples = (mainThreadMatingCouples % this->ctrl.numThreads);
 	uint16_t offset = 0;
 	pthread_attr_t threadAttr;
+	pthread_t* threads;
 
 	int pthreadRC = 1; // return value for of pthread_ functions
 
@@ -266,23 +273,23 @@ void MultiThreadedPopulation::run() {
 	if(this->ctrl.verbosity > OFF) {
 		Rcout << "Generating initial population" << std::endl;
 	}
-	
+
 	for(i = this->ctrl.populationSize; i > 0; --i) {
-		Chromosome tmpChromosome(this->ctrl, varPosPop, this->unifGen);
+		tmpChromosome = new Chromosome(this->ctrl, varPosPop, this->unifGen);
 		
-		this->currentGenFitnessMap.push_back(this->evaluator.evaluate(tmpChromosome));
-		if(tmpChromosome.getFitness() < this->minCurrentGenFitness) {
-			this->minCurrentGenFitness = tmpChromosome.getFitness();
+		this->currentGenFitnessMap.push_back(this->evaluator.evaluate(*tmpChromosome));
+		if(tmpChromosome->getFitness() < this->minCurrentGenFitness) {
+			this->minCurrentGenFitness = tmpChromosome->getFitness();
 		}
 		
 		if(this->ctrl.verbosity >= MORE_VERBOSE) {
-			this->printChromosomeFitness(Rcout, tmpChromosome);
+			this->printChromosomeFitness(Rcout, *tmpChromosome);
 		}
-		this->addChromosomeToElite(tmpChromosome);
+		this->addChromosomeToElite(*tmpChromosome);
 		this->currentGeneration.push_back(tmpChromosome);
 		
 		// Full next generation with dummies
-		this->nextGeneration.push_back(Chromosome(tmpChromosome, false));
+		this->nextGeneration.push_back(new Chromosome(this->ctrl, varPosPop, this->unifGen, false));
 		
 		if(check_interrupt()) {
 			throw InterruptException();
@@ -290,7 +297,7 @@ void MultiThreadedPopulation::run() {
 	}
 	
 	threadArgs = new MultiThreadedPopulation::ThreadArgsWrapper[maxThreadsToSpawn];
-	this->threads = new pthread_t[maxThreadsToSpawn];
+	threads = new pthread_t[maxThreadsToSpawn];
 	
 	
 	pthreadRC = pthread_attr_init(&threadAttr);
@@ -321,7 +328,7 @@ void MultiThreadedPopulation::run() {
 		threadArgs[i].unifGen = new SynchronizedUnifGenerator_0_1(UNIF_GENERATOR_BUFFER_SIZE_THREAD);
 		threadArgs[i].evalObj = this->evaluator.clone();
 
-		pthreadRC = pthread_create((this->threads + i), &threadAttr, &MultiThreadedPopulation::matingThreadStart, (void *) (threadArgs + i));
+		pthreadRC = pthread_create((threads + i), &threadAttr, &MultiThreadedPopulation::matingThreadStart, (void *) (threadArgs + i));
 		
 		if(pthreadRC == 0) {
 			++this->actuallySpawnedThreads;
@@ -329,7 +336,7 @@ void MultiThreadedPopulation::run() {
 		} else {
 			mainThreadMatingCouples += threadArgs[i].numMatingCouples;			
 			IF_DEBUG(
-					 Rcerr << "Warning: Thread " << i << " could not be created: " << strerror(pthreadRC) << std::endl;
+				 Rcerr << "Warning: Thread " << i << " could not be created: " << strerror(pthreadRC) << std::endl;
 			)
 		}
 	}
@@ -388,8 +395,20 @@ void MultiThreadedPopulation::run() {
 		this->finishedMating();
 		this->waitForAllThreadsToFinishMating();
 		
-		// Housekeeping
-		this->currentGeneration = this->nextGeneration;
+		/*
+		 * Copy new generation to current generation
+		 */
+		if(this->ctrl.verbosity >= MORE_VERBOSE) { // Copy and print
+			for(j = this->ctrl.populationSize - 1; j >= 0; --j) {
+				*(this->currentGeneration[j]) = *(this->nextGeneration[j]);
+				this->printChromosomeFitness(Rcout, *(this->currentGeneration[i]));
+			}
+		} else { // just print
+			for(j = this->ctrl.populationSize - 1; j >= 0; --j) {
+				*(this->currentGeneration[j]) = *(this->nextGeneration[j]);
+			}
+		}
+		
 		this->currentGenFitnessMap = this->nextGenFitnessMap;
 	}
 	
@@ -414,7 +433,7 @@ void MultiThreadedPopulation::run() {
 		 * If the thread was never created (i.e. pthread_create failed) the call will return an
 		 * error code, but it will not block the thread!
 		 */
-		pthreadRC = pthread_join(this->threads[i], NULL);
+		pthreadRC = pthread_join(threads[i], NULL);
 		CHECK_PTHREAD_RETURN_CODE(pthreadRC)
 		
 		delete threadArgs[i].unifGen;
@@ -422,6 +441,11 @@ void MultiThreadedPopulation::run() {
 	}
 	
 	delete threadArgs;
+	delete threads;
+	
+	for(std::vector<Chromosome*>::iterator it = this->nextGeneration.begin(); it != this->nextGeneration.end(); ++it) {
+		delete *it;
+	}
 	
 	if(interrupted) {
 		throw InterruptException();

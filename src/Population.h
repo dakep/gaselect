@@ -39,12 +39,21 @@ public:
 		this->currentGenFitnessMap.reserve(this->ctrl.populationSize);
 		this->minEliteFitness = 0.0;
 	}
-	virtual ~Population() {};
+
+	virtual ~Population() {
+		for(std::vector<Chromosome*>::iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
+			delete *it;
+		}
+	}
 
 	virtual void run() = 0;
 
 	std::multiset<Chromosome, Population::ChromosomeComparator> getResult() const {
-		std::multiset<Chromosome, Population::ChromosomeComparator> result(this->currentGeneration.begin(), this->currentGeneration.end());
+		std::multiset<Chromosome, Population::ChromosomeComparator> result;
+		
+		for(std::vector<Chromosome*>::const_iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
+			result.insert(**it);
+		}
 		
 		if(this->ctrl.elitism > 0 && this->elite.size() > 0) {
 			result.insert(this->elite.begin(), this->elite.end());
@@ -57,7 +66,7 @@ protected:
 	::Evaluator& evaluator;
 
 	std::multiset<Chromosome, Population::ChromosomeComparator> elite;
-	std::vector<Chromosome> currentGeneration;
+	std::vector<Chromosome*> currentGeneration;
 	std::vector<double> currentGenFitnessMap;
 	double minEliteFitness;
 	
@@ -66,7 +75,7 @@ protected:
 	 * where the probability to pick a chromosome is taken from
 	 * the currentGenFitnessMap
 	 */
-	Chromosome &drawChromosomeFromCurrentGeneration(double rand) {
+	Chromosome* drawChromosomeFromCurrentGeneration(double rand) {
 		int imin = 0, imax = this->ctrl.populationSize - 1;
 		int imid = 0;
 		

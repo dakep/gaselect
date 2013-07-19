@@ -110,6 +110,7 @@ BEGIN_RCPP
 	}
 #else
 	pop = new SingleThreadPopulation(ctrl, *eval);
+	toFree |= 8;
 	pop->run();
 #endif
 	SortedChromosomes result = pop->getResult();
