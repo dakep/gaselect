@@ -401,7 +401,7 @@ void MultiThreadedPopulation::run() {
 		if(this->ctrl.verbosity >= MORE_VERBOSE) { // Copy and print
 			for(j = this->ctrl.populationSize - 1; j >= 0; --j) {
 				*(this->currentGeneration[j]) = *(this->nextGeneration[j]);
-				this->printChromosomeFitness(Rcout, *(this->currentGeneration[i]));
+				this->printChromosomeFitness(Rcout, *(this->currentGeneration[j]));
 			}
 		} else { // just print
 			for(j = this->ctrl.populationSize - 1; j >= 0; --j) {

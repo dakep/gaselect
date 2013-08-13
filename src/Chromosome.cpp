@@ -140,9 +140,9 @@ void Chromosome::mateWith(const Chromosome &other, UnifGenerator_0_1& unifGen, C
 			// Just copy the chromosome part to both children if it is the same
 			// for both parents
 			child1.chromosomeParts[i] = child2.chromosomeParts[i] = this->chromosomeParts[i];
-			if(this->ctrl.verbosity >= MORE_VERBOSE) {
+			IF_DEBUG(
 				Rcout << "Chromosome part is the same for both parents -- copy part to both children" << std::endl;
-			}
+			)
 		} else {
 			// Randomly pick some bits from one chromosome and some bits from the other
 			// chromosome

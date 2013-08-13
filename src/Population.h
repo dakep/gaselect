@@ -17,6 +17,12 @@
 #include "Evaluator.h"
 #include "Control.h"
 
+#ifdef ENABLE_DEBUG_VERBOSITY
+#define IF_DEBUG(expr) if(this->ctrl.verbosity >= DEBUG_VERBOSE) { expr; }
+#else
+#define IF_DEBUG(expr)
+#endif
+
 class Population {
 public:
 	struct ChromosomeComparator {
@@ -111,9 +117,9 @@ protected:
 			
 			this->minEliteFitness = this->elite.begin()->getFitness();
 			
-			if(this->ctrl.verbosity >= MORE_VERBOSE) {
+			IF_DEBUG(
 				Rcpp::Rcout << "Adding chromosome to elite. New minimum fitness for elite is " << this->minEliteFitness << std::endl;
-			}
+			)
 		}
 	};
 };

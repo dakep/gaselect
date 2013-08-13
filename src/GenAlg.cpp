@@ -32,12 +32,17 @@ BEGIN_RCPP
 
 	List control = List(Scontrol);
 	uint16_t numThreads = as<uint16_t>(control["numThreads"]);
+	VerbosityLevel verbosity = (VerbosityLevel) as<int>(control["verbosity"]);
 	bool useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
 	
 	if(numThreads > 1) {
 #ifdef HAVE_PTHREAD_H
 		if(useUserFunction) {
 			Rcerr << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
+		}
+		
+		if(verbosity >= MORE_VERBOSE) {
+			verbosity = MORE_VERBOSE;
 		}
 #else
 		Rcerr << "Warning: Threads are not supported on this system" << std::endl;
@@ -58,7 +63,7 @@ BEGIN_RCPP
 				 as<uint16_t>(control["maxMatingTries"]),
 				 as<double>(control["mutationProb"]),
 				 numThreads,
-				 (VerbosityLevel) as<int>(control["verbosity"]));
+				 verbosity);
 	
 #ifdef HAVE_PTHREAD_H
 	if(numThreads > 1) {
