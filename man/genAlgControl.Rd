@@ -66,8 +66,11 @@
   of very good solutions. The parameter \code{elitism}
   specifies how many "very good" solutions should be kept.
 }
-\seealso{
-  See \code{\link{genAlgEvalControl}} for controlling the
-  evaluation step during the GA
+\examples{
+ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,
+	minVariables = 5, maxVariables = 15)
+evaluator <- evaluatorPLS(numReplications = 3L, numSegments = 4L, numThreads = 2L)
+
+result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
 }
 

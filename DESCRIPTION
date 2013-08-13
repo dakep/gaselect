@@ -1,7 +1,7 @@
 Package: GenAlgPLS
 Type: Package
 Title: Genetic algorithm for variable selection using a PLS criterion
-Version: 1.1
+Version: 2.0
 Date: 2013-07-04
 Author: David Kepplinger
 Maintainer: David Kepplinger <david@dkepplinger.org>
@@ -9,8 +9,15 @@ Description:
 License: GPL (>= 2)
 Depends:
     Rcpp (>= 0.9.10),
-    RcppArmadillo (>= 0.3.4.0)
+    RcppArmadillo (>= 0.3.4.0),
+    methods (>= 2.10.0)
 LinkingTo: Rcpp, RcppArmadillo
 Collate:
-    'control.R'
-    'genAlgPLS.R'
+    'GenAlgControl.R'
+    'Evaluator.R'
+    'genAlg.R'
+    'Evaluator-validData.R'
+    'toCControlList.R'
+    'SEP.R'
+    'subsets.R'
+    'getEvalFun.R'
