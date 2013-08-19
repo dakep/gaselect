@@ -35,11 +35,16 @@
 
 #ifdef HAVE_UNSIGNED_LONG_LONG
 	typedef unsigned long long IntChromosome;
-#elif
+#else
 	typedef unsigned long IntChromosome;
 #endif
 
-#if (defined HAVE_CLIMITS || defined HAVE_LIMITS_H) 
+#ifndef HAVE_UINT8_16_MAX
+	typedef uint8_t unsigned short;
+	typedef uint16_t unsigned short;
+#endif
+
+#if (defined HAVE_CLIMITS || defined HAVE_LIMITS_H)
 	#ifdef HAVE_UNSIGNED_LONG_LONG
 		#define INT_CHROMOSOME_MAX_VAL ULLONG_MAX
 	#else
@@ -71,7 +76,7 @@
 #define RANDOM_NUMBER_BUFFER 256
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-#define CHECK_PTHREAD_RETURN_CODE(rc) if((rc) != 0) { Rcpp::Rcerr << "Warning: Call to pthread function failed with error code " << (rc) << " in " << __FILE__ << ":" << __LINE__ << std::endl; }
+#define CHECK_PTHREAD_RETURN_CODE(rc) if((rc) != 0) { Rcpp::Rcout << "Warning: Call to pthread function failed with error code " << (rc) << " in " << __FILE__ << ":" << __LINE__ << std::endl; }
 #else
 #define CHECK_PTHREAD_RETURN_CODE(rc)
 #endif

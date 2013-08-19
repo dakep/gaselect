@@ -43,7 +43,7 @@ setClass("GenAlg", representation(
 		errors <- c(errors, "The maximum number of variables must be less or equal than the number of available variables");
 	}
 
-	dataErrors <- validData(object@evaluator, object@covariates)
+	dataErrors <- validData(object@evaluator, object)
 	if(!is.logical(dataErrors)) {
 		errors <- c(errors, dataErrors);
 	} else if(dataErrors == FALSE) {

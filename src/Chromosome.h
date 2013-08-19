@@ -64,7 +64,7 @@ private:
 
 #ifdef INT_CHROMOSOME_MAX_VAL
 	static const IntChromosome INT_CHROMOSOME_MAX = INT_CHROMOSOME_MAX_VAL;
-#elif
+#else
 	static IntChromosome INT_CHROMOSOME_MAX;
 	static IntChromosome getIntChromosomeMax();
 #endif

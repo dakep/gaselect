@@ -336,19 +336,19 @@ void MultiThreadedPopulation::run() {
 		} else {
 			mainThreadMatingCouples += threadArgs[i].numMatingCouples;			
 			IF_DEBUG(
-				 Rcerr << "Warning: Thread " << i << " could not be created: " << strerror(pthreadRC) << std::endl;
+				 Rcout << "Warning: Thread " << i << " could not be created: " << strerror(pthreadRC) << std::endl;
 			)
 		}
 	}
 		
 	if(this->actuallySpawnedThreads < maxThreadsToSpawn) {
-		Rcerr << "Warning: Only " << this->actuallySpawnedThreads << " threads could be spawned" << std::endl;
+		Rcout << "Warning: Only " << this->actuallySpawnedThreads << " threads could be spawned" << std::endl;
 	}
 	
 	pthreadRC = pthread_attr_destroy(&threadAttr);
 	CHECK_PTHREAD_RETURN_CODE(pthreadRC);
 	
-	if(this->ctrl.verbosity >= OFF) {
+	if(this->ctrl.verbosity >= ON) {
 		Rcout << "Spawned " << this->actuallySpawnedThreads << " threads" << std::endl;
 	}
 	

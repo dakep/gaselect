@@ -38,14 +38,14 @@ BEGIN_RCPP
 	if(numThreads > 1) {
 #ifdef HAVE_PTHREAD_H
 		if(useUserFunction) {
-			Rcerr << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
+			Rcout << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
 		}
 		
 		if(verbosity >= MORE_VERBOSE) {
 			verbosity = MORE_VERBOSE;
 		}
 #else
-		Rcerr << "Warning: Threads are not supported on this system" << std::endl;
+		Rcout << "Warning: Threads are not supported on this system" << std::endl;
 		numThreads = 1;
 #endif
 	} else if(numThreads < 1) {
@@ -110,7 +110,7 @@ BEGIN_RCPP
 		if(ctrl.verbosity >= DEBUG_VERBOSE) {
 			throw te;
 		} else {
-			throw Rcpp::exception("Multithreading could not be initialized. Set numThreads to 0 to avoid this problem.");
+			throw Rcpp::exception("Multithreading could not be initialized. Set numThreads to 0 to avoid this problem.", __FILE__, __LINE__);
 		}
 	}
 #else

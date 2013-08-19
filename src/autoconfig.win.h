@@ -1,8 +1,8 @@
 /* confdefs.h */
 #define PACKAGE_NAME "GenAlgPLSConfig"
 #define PACKAGE_TARNAME "genalgplsconfig"
-#define PACKAGE_VERSION "version-1.2"
-#define PACKAGE_STRING "GenAlgPLSConfig version-1.2"
+#define PACKAGE_VERSION "version-2.0"
+#define PACKAGE_STRING "GenAlgPLSConfig version-2.0"
 #define PACKAGE_BUGREPORT ""
 #define PACKAGE_URL ""
 #define STDC_HEADERS 1

@@ -5,54 +5,54 @@
 #' This method is used to get the names or indices of the variables used in specified variable subsets
 #'
 #' @param object The GenAlg object returned by \code{\link{genAlg}}
-#' @param names Should the names of the variables
 #' @param indices The indices of the subsets or NULL if all subsets should be returned
+#' @param names Should the names of the variables
 #' @export
 #' @docType methods
 #' @rdname subsets-methods
 #' @example examples/subsets.R
-setGeneric("subsets", function(object, names = TRUE, indices = NULL) { standardGeneric("subsets"); });
+setGeneric("subsets", function(object, indices = NULL, names = TRUE) { standardGeneric("subsets"); });
 
 #' @export
 #' @rdname subsets-methods
 #' @aliases subsets,GenAlg,missing,missing-method
-setMethod("subsets", signature(object = "GenAlg", names = "missing", indices = "missing"), function(object, names, indices) {
-	subsets(object, TRUE, NULL);
+setMethod("subsets", signature(object = "GenAlg", indices = "missing", names = "missing"), function(object, indices, names) {
+	subsets(object, NULL, TRUE);
 });
 
 #' @export
 #' @rdname subsets-methods
-#' @aliases subsets,GenAlg,missing,numeric-method
-setMethod("subsets", signature(object = "GenAlg", names = "missing", indices = "numeric"), function(object, names, indices) {
-	subsets(object, TRUE, indices);
+#' @aliases subsets,GenAlg,numeric,missing-method
+setMethod("subsets", signature(object = "GenAlg", indices = "numeric", names = "missing"), function(object, indices, names) {
+	subsets(object, indices, TRUE);
 });
 
 #' @export
 #' @rdname subsets-methods
-#' @aliases subsets,GenAlg,missing,NULL-method
-setMethod("subsets", signature(object = "GenAlg", names = "missing", indices = "NULL"), function(object, names, indices) {
-	subsets(object, TRUE, NULL);
+#' @aliases subsets,GenAlg,NULL,missing-method
+setMethod("subsets", signature(object = "GenAlg", indices = "NULL", names = "missing"), function(object, indices, names) {
+	subsets(object, NULL, TRUE);
 });
 
 #' @export
 #' @rdname subsets-methods
-#' @aliases subsets,GenAlg,logical,NULL-method
-setMethod("subsets", signature(object = "GenAlg", names = "logical", indices = "NULL"), function(object, names, indices) {
-	subsets(object, names, seq_len(ncol(object@subsets)));
+#' @aliases subsets,GenAlg,NULL,logical-method
+setMethod("subsets", signature(object = "GenAlg", indices = "NULL", names = "logical"), function(object, indices, names) {
+	subsets(object, seq_len(ncol(object@subsets)), names);
 });
 
 #' @export
 #' @rdname subsets-methods
-#' @aliases subsets,GenAlg,logical,missing-method
-setMethod("subsets", signature(object = "GenAlg", names = "logical", indices = "missing"), function(object, names, indices) {
-	subsets(object, names, NULL);
+#' @aliases subsets,GenAlg,missing,logical-method
+setMethod("subsets", signature(object = "GenAlg", indices = "missing", names = "logical"), function(object, indices, names) {
+	subsets(object, NULL, names);
 });
 
 #' @export
 #' @rdname subsets-methods
-#' @aliases subsets,GenAlg,logical,numeric-method
-setMethod("subsets", signature(object = "GenAlg", names = "logical", indices = "numeric"), function(object, names, indices) {
-	subs <- object@subsets[ , indices];
+#' @aliases subsets,GenAlg,numeric,logical-method
+setMethod("subsets", signature(object = "GenAlg", indices = "numeric", names = "logical"), function(object, indices, names) {
+	subs <- object@subsets[ , indices, drop = FALSE];
 	if(names == TRUE && !is.null(colnames(object@covariates))) {
 		cnames <- colnames(object@covariates);
 		lapply(split(subs, rep(seq_len(length(indices)), each = nrow(subs))), function(s) { cnames[s]; });

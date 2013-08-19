@@ -13,7 +13,7 @@ setGeneric("getEvalFun", function(object, genAlg) { standardGeneric("getEvalFun"
 #' @aliases getEvalFun,GenAlgUserEvaluator,GenAlg-method
 setMethod("getEvalFun", signature(object = "GenAlgUserEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
 	return(function(varSubset) {
-		return(object@evalFunction(genAlg@response, genAlg@covariates[ , varSubset]));
+		return(object@evalFunction(genAlg@response, genAlg@covariates[ , varSubset, drop = FALSE]));
 	});
 });
 
