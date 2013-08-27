@@ -3,3 +3,7 @@
 config.log
 .Rapp.history
 autoconfig.h
+.Rproj.user
+GenAlgPLS.Rproj
+.Rbuildignore
+.Rhistory
