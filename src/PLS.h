@@ -61,7 +61,7 @@ public:
 	 */
 	uint16_t getResultNComp() const { return this->resultNComp; }
 
-	// ncomp should be zero based
+	// ncomp should be 1 based (as in the fit method)
 	arma::mat predict(arma::mat newX, uint16_t ncomp) const;
 	arma::cube predict(arma::mat newX) const;
 	

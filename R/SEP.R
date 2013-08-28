@@ -37,8 +37,8 @@ setGeneric("SEPeval", function(object, genAlg) { standardGeneric("SEPeval"); });
 #' @rdname SEPeval-methods
 #' @aliases SEPeval,GenAlgPLSEvaluator,GenAlg-method
 setMethod("SEPeval", signature(object = "GenAlgPLSEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
-	M2n <- (-genAlg@rawFitness) / object@numReplications; # mean M,2,n
-	return(M2n / sqrt(length(genAlg@response) - 1));
+	sumSEP <- (-genAlg@rawFitness);
+	return(sumSEP / object@numReplications);
 });
 
 #' @rdname SEPeval-methods

@@ -62,7 +62,7 @@ private:
 	 * only square root of the sum of squared differences (SSD)
 	 * SEP = SSD / sqrt(n - 1)
 	 */
-	arma::vec calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const;
+	double calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const;
 
 	arma::uvec initRowNumbers() const;
 };
