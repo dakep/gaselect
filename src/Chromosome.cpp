@@ -253,6 +253,10 @@ bool Chromosome::mutate(UnifGenerator_0_1& unifGen) {
 						//unset bit
 						mask |= ((IntChromosome) 1) << totalShift;
 						++removeBitsPosIt;
+						
+						if(removeBitsPosIt == removeBitsPos.end()) {
+							break; // All bits have been removed -- exit while
+						}
 					}
 					++onesCount; // increment after comparision because the position is 0 based
 				}
