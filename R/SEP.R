@@ -46,3 +46,7 @@ setMethod("SEPeval", signature(object = "GenAlgPLSEvaluator", genAlg = "GenAlg")
 setMethod("SEPeval", signature(object = "GenAlgUserEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
 	return(object@sepFunction(genAlg));
 });
+
+setMethod("SEPeval", signature(object = "GenAlgLMEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
+	return(genAlg@rawFitness);
+});

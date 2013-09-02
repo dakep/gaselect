@@ -20,6 +20,12 @@
 
 #endif
 
+enum EvaluatorClass {
+	USER = 0,
+	PLS_EVAL = 1,
+	LM = 2
+};
+
 /**
  * arguments:
  *	control ... A R list with following entries:

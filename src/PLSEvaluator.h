@@ -58,11 +58,9 @@ private:
 	bool cloned;
 
 	/**
-	 * Doesn't calculate the actual SEP but
-	 * only square root of the sum of squared differences (SSD)
-	 * SEP = SSD / sqrt(n - 1)
+	 * Estimate the SEP
 	 */
-	double calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const;
+	double estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const;
 
 	arma::uvec initRowNumbers() const;
 };

@@ -11,12 +11,13 @@ setGeneric("toCControlList", function(object) { standardGeneric("toCControlList"
 #' @aliases toCControlList,GenAlgPLSEvaluator-method
 setMethod("toCControlList", signature(object = "GenAlgPLSEvaluator"), function(object) {
 	return(list(
-		"useUserSuppliedFunction" = FALSE,
+		"evaluatorClass" = 1,
 		"numReplications" = object@numReplications,
 		"numSegments" = object@numSegments,
 		"plsMethod" = object@methodId,
 		"numThreads" = object@numThreads,
-		"userEvalFunction" = function() {NULL;}
+		"userEvalFunction" = function() {NULL;},
+		"statistic" = 0
 	));
 });
 
@@ -24,12 +25,27 @@ setMethod("toCControlList", signature(object = "GenAlgPLSEvaluator"), function(o
 #' @aliases toCControlList,GenAlgUserEvaluator-method
 setMethod("toCControlList", signature(object = "GenAlgUserEvaluator"), function(object) {
 	return(list(
-		"useUserSuppliedFunction" = TRUE,
+		"evaluatorClass" = 0,
 		"numReplications" = 0L,
 		"numSegments" = 0L,
 		"plsMethod" = 0L,
 		"numThreads" = 1L,
-		"userEvalFunction" = object@evalFunction
+		"userEvalFunction" = object@evalFunction,
+		"statistic" = 0
+	));
+});
+
+#' @rdname toCControlList-methods
+#' @aliases toCControlList,GenAlgLMEvaluator-method
+setMethod("toCControlList", signature(object = "GenAlgLMEvaluator"), function(object) {
+	return(list(
+		"evaluatorClass" = 2,
+		"numReplications" = 0L,
+		"numSegments" = 0L,
+		"plsMethod" = 0L,
+		"numThreads" = object@numThreads,
+		"userEvalFunction" = function() {NULL;},
+		"statistic" = object@statisticId
 	));
 });
 

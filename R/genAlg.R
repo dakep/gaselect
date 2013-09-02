@@ -98,7 +98,7 @@ function(y, X, control, evaluator = evaluatorPLS()) {
 
 	ctrlArg$userEvalFunction <- getEvalFun(ret@evaluator, ret);
 
-	if(ctrlArg$useUserSuppliedFunction == TRUE) {
+	if(ctrlArg$evaluatorClass == 0) {
 		res <- .Call("genAlgPLS", ctrlArg, NULL, NULL, PACKAGE = "GenAlgPLS");
 	} else {
 		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), PACKAGE = "GenAlgPLS");

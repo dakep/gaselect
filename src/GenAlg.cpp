@@ -10,8 +10,10 @@
 
 #include "Chromosome.h"
 #include "Control.h"
+#include "PLS.h"
 #include "UserFunEvaluator.h"
 #include "PLSEvaluator.h"
+#include "LMEvaluator.h"
 #include "SingleThreadPopulation.h"
 
 #ifdef HAVE_PTHREAD_H
@@ -33,11 +35,11 @@ BEGIN_RCPP
 	List control = List(Scontrol);
 	uint16_t numThreads = as<uint16_t>(control["numThreads"]);
 	VerbosityLevel verbosity = (VerbosityLevel) as<int>(control["verbosity"]);
-	bool useUserFunction = as<bool>(control["useUserSuppliedFunction"]);
+	EvaluatorClass evalClass = (EvaluatorClass) as<int>(control["evaluatorClass"]);
 	
 	if(numThreads > 1) {
 #ifdef HAVE_PTHREAD_H
-		if(useUserFunction) {
+		if(evalClass == USER) {
 			Rcout << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
 		}
 		
@@ -77,20 +79,41 @@ BEGIN_RCPP
 
 	toFree |= 4;
 	
-	if(useUserFunction) {
-		eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
-	} else {
-		Rcpp::NumericMatrix XMat(SX);
-		Rcpp::NumericMatrix YMat(Sy);
-		arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
-		arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
-		PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
+	switch(evalClass) {
+		case USER: {
+			eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
+			break;
+		}
+		case PLS_EVAL: {
+			Rcpp::NumericMatrix XMat(SX);
+			Rcpp::NumericMatrix YMat(Sy);
+			arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
+			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
+			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
+			
+			pls = PLS::getInstance(method, X, Y, false);
+			toFree |= 2; // pls has to be freed
+			
+			eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity, globalUnifGen);
 
-		pls = PLS::getInstance(method, X, Y, false);
-		toFree |= 2; // pls has to be freed
-
-		eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity, globalUnifGen);
+			break;
+		}
+		case LM: {
+			Rcpp::NumericMatrix XMat(SX);
+			Rcpp::NumericMatrix YMat(Sy);
+			arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
+			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
+			arma::colvec y = Y.col(0);
+			
+			LMEvaluator::Statistic stat = (LMEvaluator::Statistic) as<int>(control["statistic"]);
+			eval = new LMEvaluator(X, y, stat, verbosity);
+			
+			break;
+		}
+		default:
+			break;
 	}
+	
 	toFree |= 1; // eval has to be freed
 
 	if(ctrl.verbosity >= MORE_VERBOSE) {

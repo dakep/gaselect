@@ -32,12 +32,12 @@ double PLSEvaluator::evaluate(Chromosome &ch) const {
 	this->pls->setSubmatrixViewColumns(columnSubset);
 	
 	for(rep = 0; rep < this->numReplications; ++rep) {
-		sumSEP += this->calcSSD(maxNComp, rowNumbers);
+		sumSEP += this->estSEP(maxNComp, rowNumbers);
 	}
 
 	ch.setFitness(-sumSEP);
 
-	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for best number of components:" << std::endl << sumSEP << std::endl)
+	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
 	return -sumSEP;
 }
 
@@ -49,10 +49,10 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
 
 	this->pls->setSubmatrixViewColumns(columnSubset);
 	for(rep = 0; rep < this->numReplications; ++rep) {
-		sumSEP += this->calcSSD(maxNComp, rowNumbers);
+		sumSEP += this->estSEP(maxNComp, rowNumbers);
 	}
 
-	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of sqrt(sum of squared differences) for every number of components:" << std::endl << sumSEP << std::endl)
+	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
 	return -sumSEP;
 }
 
@@ -71,7 +71,7 @@ inline arma::uvec PLSEvaluator::initRowNumbers() const {
 	return rowNumbers;
 }
 
-double PLSEvaluator::calcSSD(uint16_t ncomp, arma::uvec &rowNumbers) const {
+double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	// (online) Sum of squares of differences from the (current) mean (residMeans)
 	// M_2,n = sum( (x_i - mean_n) ^ 2 )
 	arma::vec residM2n(ncomp);
