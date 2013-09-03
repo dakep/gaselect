@@ -79,7 +79,7 @@ private:
 	std::vector<IntChromosome> chromosomeParts;
 	double fitness;
 
-	void shuffle(std::vector<uint16_t>& pop, const uint16_t fillLength, const uint16_t shuffleLength, UnifGenerator_0_1& unifGen) const;
+	std::vector<uint16_t> shuffledSet(const uint16_t setSize, const uint16_t shuffleSize, UnifGenerator_0_1& unifGen) const;
 
 	/*
 	 * Init the internal used chromosome parts completely random taking

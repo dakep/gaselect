@@ -171,9 +171,7 @@ void Chromosome::mateWith(const Chromosome &other, UnifGenerator_0_1& unifGen, C
 	}
 }
 
-bool Chromosome::mutate(UnifGenerator_0_1& unifGen) {
-	static std::vector<uint16_t> positionPopulation(this->ctrl.chromosomeSize);
-	
+bool Chromosome::mutate(UnifGenerator_0_1& unifGen) {	
 	uint16_t currentlySetBits = this->getVariableCount();
 	uint16_t currentlyUnsetBits = this->ctrl.chromosomeSize - currentlySetBits;
 
@@ -223,7 +221,7 @@ bool Chromosome::mutate(UnifGenerator_0_1& unifGen) {
 		/*
 		 * We have to unset -numChangeBits bits, i.e. flip from 1 to 0
 		 */
-		this->shuffle(positionPopulation, currentlySetBits, -numChangeBits, unifGen);
+		std::vector<uint16_t> positionPopulation = this->shuffledSet(currentlySetBits, -numChangeBits, unifGen);
 		std::vector<uint16_t> removeBitsPos(positionPopulation.begin(), positionPopulation.begin() - numChangeBits);
 		std::sort(removeBitsPos.begin(), removeBitsPos.end());
 		std::vector<uint16_t>::iterator removeBitsPosIt = removeBitsPos.begin();
@@ -272,7 +270,7 @@ bool Chromosome::mutate(UnifGenerator_0_1& unifGen) {
 		/*
 		 * We have to set numChangeBits bits, i.e. flip from 0 to 1
 		 */
-		this->shuffle(positionPopulation, currentlyUnsetBits, numChangeBits, unifGen);
+		std::vector<uint16_t> positionPopulation = this->shuffledSet(currentlyUnsetBits, numChangeBits, unifGen);
 		std::vector<uint16_t> addBitsPos(positionPopulation.begin(), positionPopulation.begin() + numChangeBits);
 		std::sort(addBitsPos.begin(), addBitsPos.end());
 		std::vector<uint16_t>::iterator addBitsPosIt = addBitsPos.begin();
@@ -525,22 +523,29 @@ inline IntChromosome Chromosome::runif(UnifGenerator_0_1& unifGen) const {
 	}
 }
 
-inline void Chromosome::shuffle(std::vector<uint16_t>& pop, uint16_t fillLength, uint16_t shuffleLength, UnifGenerator_0_1& unifGen) const {
+inline std::vector<uint16_t> Chromosome::shuffledSet(uint16_t setSize, uint16_t shuffleSize, UnifGenerator_0_1& unifGen) const {
 	// Fill population with correct values
-	if(shuffleLength == 1) {
-		pop[0] = unifGen() * fillLength;
+	std::vector<uint16_t> pop(setSize);
+	
+	if(pop.size() < setSize) {
+	}
+	
+	if(shuffleSize == 1) {
+		pop[0] = unifGen() * setSize;
 	} else {
 		uint16_t i = 0;
-		for(; i < fillLength; ++i) {
+		for(; i < setSize; ++i) {
 			pop[i] = i;
 		}
 
 		uint16_t randPos = 0;
 		// Now shuffle population
-		for(i = 0; i < shuffleLength; ++i) {
-			randPos = i + unifGen() * (fillLength - i);
+		for(i = 0; i < shuffleSize; ++i) {
+			randPos = i + unifGen() * (setSize - i);
 			std::swap(pop[i], pop[randPos]);
 		}
 	}
+	
+	return pop;
 }
 

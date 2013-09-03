@@ -85,7 +85,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	// If not all segments are the same length, segmentLength is the longer one
 	// (i.e. the incomplete segments will be one element shorter)
 	arma::uword segmentLength = this->segmentLength;
-	int32_t completeSegments = this->completeSegments;
+	arma::sword completeSegments = this->completeSegments;
 	arma::uword lastSegmentLength = segmentLength; // if not all segments are the same length, the last segment is always one short
 	arma::uvec segment;
 	arma::uvec notSegment;
@@ -95,6 +95,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	arma::mat leftOutY;
 	
 	residM2n.zeros();
+	RSS.zeros();
 
 	if(this->completeSegments > 0) {
 		++segmentLength;
@@ -128,7 +129,8 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 		IF_FULLY_VERBOSE(Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl)
 
 		/*
-		 * 
+		 * Segment the data and fit the PLS model with up to
+		 * ncomp components
 		 */
 		
 		leftOutX = this->pls->getXColumnView().rows(segment);
@@ -163,9 +165,6 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	/*
 	 * Find best number of components based on the RSS and one standard deviation
 	 */
-	
-	residM2n = arma::sqrt(residM2n / (this->nrows - segmentLength)); //residM2n is now the SD of the residuals
-	RSS = RSS / (this->nrows - segmentLength); // RSS is now the MSE
 	double cutoff = RSS[0];
 	arma::uword Aopt = 0;
 	
@@ -175,10 +174,11 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 			cutoff = RSS[comp];
 		}
 	}
+	
+	cutoff = (cutoff / (this->nrows - segmentLength)) + sqrt(residM2n[Aopt]  / (this->nrows - segmentLength));
 
-	cutoff += residM2n[Aopt];
 	Aopt = 0;
-	while(RSS[Aopt] > cutoff) {
+	while((RSS[Aopt] / (this->nrows - segmentLength)) > cutoff) {
 		++Aopt;
 		if(Aopt > ncomp) {
 			Aopt = 0;
