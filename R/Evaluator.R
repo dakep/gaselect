@@ -186,50 +186,62 @@ evaluatorUserFunction <- function(FUN, sepFUN = NULL, ...) {
 #' @export
 #' @family GenAlg Evaluators
 #' @example examples/evaluatorLM.R
-evaluatorLM <- function(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"), numThreads = NULL, maxCor = 0.95) {
+evaluatorLM <- function(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"), numThreads = NULL, maxCor = NULL) {
 	statistic <- match.arg(statistic);
 
-# 	FUN <- function(y, X) {
-# 		corrs <- cor(X);
-# 		if(any(abs(corrs[upper.tri(corrs)]) > maxCor)) { #PCA
-# 			X <- prcomp(X)$x;
-# 		}
-# 		m <- lm(y ~ X);
-# 		mss <- sum((m$fitted.values - mean(m$fitted.values)) ^ 2);
-# 		rss <- sum(m$residuals ^ 2);
-#
-# 		switch(statistic,
-# 			adjusted.r.squared = 1 - (1 - (mss / (mss + rss))) * ((nrow(m$qr$qr) - 1) / m$df.residual),
-# 			r.squared = mss / (mss + rss),
-# 			BIC = -BIC(m),
-# 			AIC = -AIC(m)
-# 		)
-# 	};
-
-	sepFUN <- function(genAlg) {
-		apply(genAlg@subsets, 2, function(subset) {
-			m <- lm(genAlg@response ~ genAlg@covariates[, subset]);
-			return(sd(m$residuals));
-		});
-	};
-
-	statId = switch(statistic,
-		BIC = 0L,
-		AIC = 1L,
-		adjusted.r.squared = 2L,
-		r.squared = 3L
-	);
-
-	if(missing(numThreads) || is.null(numThreads)) {
-		numThreads <- 1L;
-	} else if(is.numeric(numThreads)) {
-		numThreads <- as.integer(numThreads);
+	if(!missing(maxCor) && !is.null(maxCor) && (maxCor < 0 || maxCor > 1)) {
+		maxCor <- NULL;
 	}
 
-	return(new("GenAlgLMEvaluator",
-		statistic = statistic,
-		statisticId = statId,
-		numThreads = numThreads,
-		maxCor = maxCor
-	));
+	if(!is.null(maxCor)) {
+		FUN <- function(y, X) {
+			corrs <- cor(X);
+			if(any(abs(corrs[upper.tri(corrs)]) > maxCor)) { #PCA
+				X <- prcomp(X)$x;
+			}
+			m <- lm(y ~ X);
+			mss <- sum((m$fitted.values - mean(m$fitted.values)) ^ 2);
+			rss <- sum(m$residuals ^ 2);
+
+			switch(statistic,
+				adjusted.r.squared = 1 - (1 - (mss / (mss + rss))) * ((nrow(m$qr$qr) - 1) / m$df.residual),
+				r.squared = mss / (mss + rss),
+				BIC = -BIC(m),
+				AIC = -AIC(m)
+			)
+		};
+
+		sepFUN <- function(genAlg) {
+			apply(genAlg@subsets, 2, function(subset) {
+				m <- lm(genAlg@response ~ genAlg@covariates[, subset]);
+				return(sd(m$residuals));
+			});
+		};
+
+		return(new("GenAlgUserEvaluator",
+			evalFunction = FUN,
+			sepFunction = sepFUN
+		));
+
+	} else {
+		statId = switch(statistic,
+			BIC = 0L,
+			AIC = 1L,
+			adjusted.r.squared = 2L,
+			r.squared = 3L
+		);
+
+		if(missing(numThreads) || is.null(numThreads)) {
+			numThreads <- 1L;
+		} else if(is.numeric(numThreads)) {
+			numThreads <- as.integer(numThreads);
+		}
+
+		return(new("GenAlgLMEvaluator",
+			statistic = statistic,
+			statisticId = statId,
+			numThreads = numThreads,
+			maxCor = maxCor
+		));
+	}
 };
