@@ -66,8 +66,7 @@ setClass("GenAlgUserEvaluator", representation(
 setClass("GenAlgLMEvaluator", representation(
 	statistic = "character",
 	statisticId = "integer",
-	numThreads = "integer",
-	maxCor = "numeric"
+	numThreads = "integer"
 ), prototype(covariatesPC = matrix()), contains = "GenAlgEvaluator",
 validity = function(object) {
 	errors <- character(0);
@@ -76,10 +75,6 @@ validity = function(object) {
 
 	if(object@numThreads < 0L || object@numThreads > MAXUINT16) {
 		errors <- c(errors, paste("The maximum number of threads must be greater than or equal 0 and less than", MAXUINT16));
-	}
-
-	if(object@maxCor < 0 || object@maxCor > 1) {
-		errors <- c(errors, "The absolute maximum correlation must be between 0 and 1");
 	}
 
 	if(length(errors) == 0) {
@@ -240,8 +235,7 @@ evaluatorLM <- function(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squ
 		return(new("GenAlgLMEvaluator",
 			statistic = statistic,
 			statisticId = statId,
-			numThreads = numThreads,
-			maxCor = maxCor
+			numThreads = numThreads
 		));
 	}
 };

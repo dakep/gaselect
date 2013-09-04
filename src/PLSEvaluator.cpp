@@ -74,10 +74,12 @@ inline arma::uvec PLSEvaluator::initRowNumbers() const {
 double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	// (online) Sum of squares of differences from the (current) mean (residMeans)
 	// M_2,n = sum( (x_i - mean_n) ^ 2 )
-	arma::vec residM2n(ncomp);
 	arma::vec RSS(ncomp);
-	std::vector<double> residMeans(ncomp, 0.0);
-	double delta = 0.0;
+	double RSSSDdelta = 0.0;
+	arma::vec RSSSDm2n(ncomp);
+	std::vector<double> RSSSDmean(ncomp, 0.0);
+	double r2;
+
 	uint16_t seg = 0, comp = 0;
 	arma::uword randPos = 0, i = 0;
 	arma::uword n = 0, nSeg = 0;
@@ -94,7 +96,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	arma::mat leftOutX;
 	arma::mat leftOutY;
 	
-	residM2n.zeros();
+	RSSSDm2n.zeros();
 	RSS.zeros();
 
 	if(this->completeSegments > 0) {
@@ -149,13 +151,16 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 		 */
 		for(comp = 0; comp < ncomp; ++comp) {
 			residuals = arma::square(leftOutY - this->pls->predict(leftOutX, comp + 1));
-			RSS[comp] += arma::sum(residuals.col(0));
+//			RSS[comp] += arma::sum(arma::square(residuals.col(0)));
 			
 			/* Only consider multiple PLS (not multivariate), i.e. only use first response vector */
 			for (nSeg = 0; nSeg < residuals.n_rows; ++nSeg) {
-				delta = residuals[nSeg] - residMeans[comp];
-				residMeans[comp] = residMeans[comp] + delta / (n + 1 + nSeg);
-				residM2n[comp] = residM2n[comp] + delta * (residuals[nSeg] - residMeans[comp]);
+				r2 = residuals[nSeg] * residuals[nSeg];
+				RSS[comp] += r2;
+				
+				RSSSDdelta = r2 - RSSSDmean[comp];
+				RSSSDmean[comp] = RSSSDmean[comp] + RSSSDdelta / (n + 1 + nSeg);
+				RSSSDm2n[comp] = RSSSDm2n[comp] + RSSSDdelta * (r2 - RSSSDmean[comp]);
 			}
 		}
 
@@ -168,6 +173,9 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	double cutoff = RSS[0];
 	arma::uword Aopt = 0;
 	
+//	Rcpp::Rcout << "RSS: " << RSS.t() << std::endl;
+//	Rcpp::Rcout << "SD: " << sqrt(RSSSDm2n.t() / (this->nrows - segmentLength)) << std::endl;
+	
 	for(comp = 1; comp < ncomp; ++comp) {
 		if(RSS[comp] < cutoff) {
 			Aopt = comp;
@@ -175,10 +183,14 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 		}
 	}
 	
-	cutoff = (cutoff / (this->nrows - segmentLength)) + sqrt(residM2n[Aopt]  / (this->nrows - segmentLength));
+//	Rcpp::Rcout << "Cutoff: " << cutoff;
+	
+	cutoff += sqrt(RSSSDm2n[Aopt] / (this->nrows - segmentLength));
 
+//	Rcpp::Rcout << " --> " << cutoff << std::endl;
+	
 	Aopt = 0;
-	while((RSS[Aopt] / (this->nrows - segmentLength)) > cutoff) {
+	while(RSS[Aopt] > cutoff) {
 		++Aopt;
 		if(Aopt > ncomp) {
 			Aopt = 0;
@@ -186,6 +198,8 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 		}
 	}
 	++Aopt;
+	
+//	Rcpp::Rcout << "--> Aopt: " << Aopt << std::endl << std::endl;
 
 	/*
 	 * The last segment is used as test set

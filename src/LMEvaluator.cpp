@@ -7,6 +7,9 @@
 //
 
 #include "config.h"
+
+#include <limits>
+
 #include "LMEvaluator.h"
 
 LMEvaluator::LMEvaluator(const arma::mat &X, const arma::colvec &y, const LMEvaluator::Statistic statistic, const VerbosityLevel &verbosity, const bool addIntercept) : Evaluator(verbosity), y(y), statistic(statistic), Xdesign(X) {
@@ -21,40 +24,43 @@ LMEvaluator::LMEvaluator(const arma::mat &X, const arma::colvec &y, const LMEval
 };
 
 double LMEvaluator::evaluate(Chromosome &ch) const {
+	double ret = 0.0;
 	arma::uvec columnSubset = ch.toColumnSubset();
 	columnSubset += 1;
 	columnSubset.insert_rows(0, 1);
 	
 	arma::mat Xsub(this->Xdesign.cols(columnSubset));
-	arma::colvec coef = arma::solve(Xsub, this->y);
-	arma::colvec residuals = this->y - Xsub * coef;
-	
-	
-	double RSS = arma::sum(arma::square(residuals));
-	double ret = 0.0;
-	
-	switch(this->statistic) {
-		case BIC: {
-			ret = -(Xsub.n_rows * log(RSS / Xsub.n_rows) + Xsub.n_cols * log(Xsub.n_rows));
-			break;
+	try {
+		arma::colvec coef = arma::solve(Xsub, this->y);
+		arma::colvec residuals = this->y - Xsub * coef;
+		
+		double RSS = arma::sum(arma::square(residuals));
+		
+		switch(this->statistic) {
+			case BIC: {
+				ret = -(Xsub.n_rows * log(RSS / Xsub.n_rows) + Xsub.n_cols * log(Xsub.n_rows));
+				break;
+			}
+			case AIC: {
+				ret = -(Xsub.n_rows * log(RSS / Xsub.n_rows) + Xsub.n_cols * 2.0);
+				break;
+			}
+			case ADJ_R2: {
+				double r2 = 1 - (RSS / this->r2denom);
+				ret = 1 - (((Xsub.n_rows - 1) * (1 - r2)) / (Xsub.n_rows - Xsub.n_cols - 1));
+				break;
+			}
+			case R2: {
+				ret = 1 - (RSS / this->r2denom);
+				break;
+			}
+			default:
+				break;
 		}
-		case AIC: {
-			ret = -(Xsub.n_rows * log(RSS / Xsub.n_rows) + Xsub.n_cols * 2.0);
-			break;
-		}
-		case ADJ_R2: {
-			double r2 = 1 - (RSS / this->r2denom);
-			ret = 1 - (((Xsub.n_rows - 1) * (1 - r2)) / (Xsub.n_rows - Xsub.n_cols - 1));
-			break;
-		}
-		case R2: {
-			ret = 1 - (RSS / this->r2denom);
-			break;
-		}
-		default:
-			break;
+	} catch(std::runtime_error re) {
+		ret = std::numeric_limits<double>::min();
 	}
-	
+
 	ch.setFitness(ret);
 	
 	return ret;
