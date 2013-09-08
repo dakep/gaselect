@@ -36,7 +36,13 @@ public:
 		}
 	}
 	
-	double evaluate(Chromosome &ch) const;
+	double evaluate(Chromosome &ch) const {
+		arma::uvec columnSubset = ch.toColumnSubset();
+		double fitness = this->evaluate(columnSubset);
+		ch.setFitness(fitness);
+		return fitness;
+	};
+
 	double evaluate(arma::uvec &colSubset) const;
 
 	void setUnifGenerator(UnifGenerator_0_1 *unifGen) {

@@ -19,28 +19,6 @@
 #define IF_FULLY_VERBOSE(expr)
 #endif
 
-double PLSEvaluator::evaluate(Chromosome &ch) const {
-	arma::uvec columnSubset = ch.toColumnSubset();
-	// -2 because if the segmentLength would not be an exact integer some segments are one longer than others
-	uint16_t maxNComp = ((columnSubset.n_elem < (this->nrows - 2 * this->segmentLength - 2)) ? columnSubset.n_elem : this->nrows - 2 * this->segmentLength - 2);
-	double sumSEP = 0;
-	arma::uvec rowNumbers = this->initRowNumbers();
-	arma::uword rep = 0;
-
-	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Testing model with variables" << std::endl << columnSubset.t() << std::endl)
-
-	this->pls->setSubmatrixViewColumns(columnSubset);
-	
-	for(rep = 0; rep < this->numReplications; ++rep) {
-		sumSEP += this->estSEP(maxNComp, rowNumbers);
-	}
-
-	ch.setFitness(-sumSEP);
-
-	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
-	return -sumSEP;
-}
-
 double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
 	uint16_t maxNComp = ((columnSubset.n_elem < (this->nrows - 2 * this->segmentLength - 2)) ? columnSubset.n_elem : this->nrows - 2 * this->segmentLength - 2);
 	double sumSEP = 0;

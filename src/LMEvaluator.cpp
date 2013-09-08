@@ -23,9 +23,8 @@ LMEvaluator::LMEvaluator(const arma::mat &X, const arma::colvec &y, const LMEval
 	
 };
 
-double LMEvaluator::evaluate(Chromosome &ch) const {
+double LMEvaluator::evaluate(arma::uvec &columnSubset) const {
 	double ret = 0.0;
-	arma::uvec columnSubset = ch.toColumnSubset();
 	columnSubset += 1;
 	columnSubset.insert_rows(0, 1);
 	
@@ -60,8 +59,6 @@ double LMEvaluator::evaluate(Chromosome &ch) const {
 	} catch(std::runtime_error re) {
 		ret = std::numeric_limits<double>::min();
 	}
-
-	ch.setFitness(ret);
 	
 	return ret;
 }

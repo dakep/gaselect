@@ -182,6 +182,76 @@ VOID_END_RCPP
 	return R_NilValue;
 }
 
+SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy) {
+	double fitness = 0.0;
+	::Evaluator *eval;
+	PLS *pls;
+	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls; 3rd bit set ==> free globalUnifGen; 4th bit set ==> free pop
+	
+	BEGIN_RCPP
+	List evaluator = List(Sevaluator);
+	UnifGenerator_0_1 unifGen;
+	Rcpp::NumericMatrix XMat(SX);
+	Rcpp::NumericMatrix YMat(Sy);
+	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
+	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
+	EvaluatorClass evalClass = (EvaluatorClass) as<int>(evaluator["evaluatorClass"]);
+
+	
+	switch(evalClass) {
+		case USER: {
+			eval = new UserFunEvaluator(as<Rcpp::Function>(evaluator["userEvalFunction"]), OFF);
+			break;
+		}
+		case PLS_EVAL: {
+			PLSMethod method = (PLSMethod) as<int>(evaluator["plsMethod"]);
+			
+			pls = PLS::getInstance(method, X, Y, false);
+			toFree |= 2; // pls has to be freed
+		
+			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]), as<uint16_t>(evaluator["numSegments"]), OFF, &unifGen);
+			
+			break;
+		}
+		case LM: {
+			arma::colvec y = Y.col(0);
+			
+			LMEvaluator::Statistic stat = (LMEvaluator::Statistic) as<int>(evaluator["statistic"]);
+			eval = new LMEvaluator(X, y, stat, OFF);
+			
+			break;
+		}
+		default:
+			break;
+	}
+	
+	toFree |= 1; // eval has to be freed
+	
+	arma::uvec allCols(X.n_cols);
+
+	for(arma::uword i = 0; i < allCols.n_elem; ++i) {
+		allCols[i] = i;
+	}
+	
+	fitness = eval->evaluate(allCols);
+	
+	if((toFree & 2) > 0) {
+		delete pls;
+	}
+	
+	return Rcpp::wrap(fitness);
+	
+	VOID_END_RCPP
+	if((toFree & 1) > 0) {
+		delete eval;
+	}
+	if((toFree & 2) > 0) {
+		delete pls;
+	}
+	
+	return R_NilValue;
+}
+
 // SEXP simpls(SEXP Xs, SEXP Ys, SEXP numOfComp, SEXP newXs) {
 // BEGIN_RCPP
 // 	Rcpp::NumericMatrix XMat(Xs);

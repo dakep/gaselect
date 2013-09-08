@@ -39,16 +39,32 @@ enum EvaluatorClass {
  *		double mutationProb ... The probability of using a new variable (0 <= onesRatio < 1)
  *		uint16_t numThreads ... The maximum number of threads to spawn
  *		VerbosityLevel verbosity ... Level of verbosity
- *
- *		bool useUserSuppliedFunction ... If true, a user specified function is used to evaluate the fitness of a chromosome
+ *		EvaluatorClass evaluatorClass ... The evaluator to use
  *		Rcpp::Function userEvalFunction ... The function to be called for evaluating the fitness of a chromosome
  *		PLSMethod plsMethod ... PLS method to use in internal evaluation
  *		uint16_t numReplications ... Number of replications in the internal evaluation procedure (the variable subset is evaluted with CV numReplication times and the mean fitness is returned) (> 0)
  *		uint16_t numSegments ... Number of CV segments used in the internal evaluation method (> 0)
+ *		int statistic ... The statistic the LM Evaluator should use
  *	X ... A numeric matrix with dimensions n x p (optional - only needed if using internal evaluation methods)
  *	y ... A numeric vector with length n (optional - only needed if using internal evaluation methods)
  */
 RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y);
+
+/**
+ * evaluate the given data with the given evaluator
+ * arguments:
+ *	evaluator ... A R list with following entries
+ *		EvaluatorClass evaluatorClass ... The evaluator to use
+ *		Rcpp::Function userEvalFunction ... The function to be called for evaluating the fitness of a chromosome
+ *		PLSMethod plsMethod ... PLS method to use in internal evaluation
+ *		uint16_t numReplications ... Number of replications in the internal evaluation procedure (the variable subset is evaluted with CV numReplication times and the mean fitness is returned) (> 0)
+ *		uint16_t numSegments ... Number of CV segments used in the internal evaluation method (> 0)
+ *		int statistic ... The statistic the LM Evaluator should use
+ *
+ *	X ... A numeric matrix with dimensions n x p
+ *	y ... A numeric vector with length n
+ */
+RcppExport SEXP evaluate(SEXP evaluator, SEXP X, SEXP y);
 
 // RcppExport SEXP simpls(SEXP X, SEXP Y, SEXP ncomp, SEXP newX);
 //

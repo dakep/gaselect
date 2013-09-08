@@ -2,12 +2,16 @@
 \alias{evaluatorLM}
 \title{LM Evaluator}
 \usage{
-  evaluatorLM(statistic = c("adjusted.r.squared", "r.squared", "BIC", "AIC"),
-    maxCor = 0.95)
+  evaluatorLM(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"),
+    numThreads = NULL, maxCor = NULL)
 }
 \arguments{
   \item{statistic}{The statistic used to evaluate the
   fitness}
+
+  \item{numThreads}{The maximum number of threads the
+  algorithm is allowed to spawn (a value less than 1 or
+  NULL means no threads)}
 
   \item{maxCor}{If the correlation-matrix of the covariates
   has an entry (absolutely) greater than this value the
@@ -19,7 +23,10 @@
 }
 \details{
   Different statistics to evaluate the fitness of the
-  variable subset can be given
+  variable subset can be given. If a maximum absolute
+  correlation is given the algorithm will be very slow (as
+  the C++ implementation can not be used anymore) and
+  multithreading is not available.
 }
 \examples{
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,

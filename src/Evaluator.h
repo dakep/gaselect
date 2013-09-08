@@ -10,6 +10,7 @@
 #define GenAlgPLS_Evaluator_h
 
 #include "config.h"
+#include <RcppArmadillo.h>
 #include "Control.h"
 #include "Chromosome.h"
 #include "UnifGenerator_0_1.h"
@@ -20,6 +21,7 @@ public:
 	virtual ~Evaluator() {};
 
 	virtual void setUnifGenerator(UnifGenerator_0_1*) {};
+	virtual double evaluate(arma::uvec &columnSubset) const = 0;
 	virtual double evaluate(Chromosome &ch) const = 0;
 	
 	virtual Evaluator* clone() const = 0;

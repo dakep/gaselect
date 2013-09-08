@@ -1,10 +1,10 @@
 \docType{methods}
 \name{subsets}
 \alias{subsets}
-\alias{subsets,GenAlg,missing,logical-method}
-\alias{subsets,GenAlg,missing,missing-method}
 \alias{subsets,GenAlg,NULL,logical-method}
 \alias{subsets,GenAlg,NULL,missing-method}
+\alias{subsets,GenAlg,missing,logical-method}
+\alias{subsets,GenAlg,missing,missing-method}
 \alias{subsets,GenAlg,numeric,logical-method}
 \alias{subsets,GenAlg,numeric,missing-method}
 \title{Get the found subset(s)}

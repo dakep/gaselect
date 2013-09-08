@@ -2,7 +2,9 @@
 \name{getEvalFun}
 \alias{getEvalFun}
 \alias{getEvalFun,GenAlgEvaluator,GenAlg-method}
+\alias{getEvalFun,GenAlgEvaluator,matrix-method}
 \alias{getEvalFun,GenAlgUserEvaluator,GenAlg-method}
+\alias{getEvalFun,GenAlgUserEvaluator,matrix-method}
 \title{Get the evaluation function from a GenAlgUserEvaluator}
 \arguments{
   \item{object}{The evaluator}
