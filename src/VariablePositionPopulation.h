@@ -15,7 +15,7 @@
 #include <vector>
 #include <RcppArmadillo.h>
 
-#include "UnifGenerator_0_1.h"
+#include "RNG.h"
 
 class VariablePositionPopulation;
 
@@ -49,7 +49,7 @@ public:
 	 * The adjustment is added to every index. This is useful if the actual
 	 * positions are shifted.
 	 */
-	const_iterator shuffle(const uint16_t length, const uint16_t shift, UnifGenerator_0_1& unifGen);
+	const_iterator shuffle(const uint16_t length, const uint16_t shift, RNG& rng);
 
 	const_iterator end() { return const_iterator(*this, 0, 0, this->variablePositionPopulation.size()); };
 

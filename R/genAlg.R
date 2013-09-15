@@ -75,17 +75,32 @@ setClass("GenAlg", representation(
 #' @param X A n x p numeric matrix with all p covariates
 #' @param control Options for controlling the genetic algorithm. See \code{\link{genAlgControl}} for details.
 #' @param evaluator The evaluator used to evaluate the fitness of a variable subset. See \code{\link{evaluatorPLS}}, \code{\link{evaluatorLM}} or \code{\link{evaluatorUserFunction}} for details.
+#' @param seed Integer with the seed for the random number generator or NULL to automatically seed the RNG
 #' @export
 #' @rdname genAlg-methods
 #' @docType methods
 #' @useDynLib GenAlgPLS
 #' @example examples/genAlg.R
-setGeneric("genAlg", function(y, X, control, evaluator = evaluatorPLS()) { standardGeneric("genAlg") });
+setGeneric("genAlg", function(y, X, control, evaluator = evaluatorPLS(), seed = NULL) { standardGeneric("genAlg") });
 
 #' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator-method
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator"),
-function(y, X, control, evaluator = evaluatorPLS()) {
+#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,NULL-method
+setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "NULL"),
+function(y, X, control, evaluator = evaluatorPLS(), seed) {
+	genAlg(y, X, control, evaluator, as.integer(sample.int(2^30, 1)));
+});
+
+#' @rdname genAlg-methods
+#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,numeric-method
+setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "numeric"),
+function(y, X, control, evaluator = evaluatorPLS(), seed) {
+	genAlg(y, X, control, evaluator, as.integer(seed));
+});
+
+#' @rdname genAlg-methods
+#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,integer-method
+setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "integer"),
+function(y, X, control, evaluator = evaluatorPLS(), seed) {
 	ret <- new("GenAlg",
 		response = y,
 		covariates = X,
@@ -99,9 +114,9 @@ function(y, X, control, evaluator = evaluatorPLS()) {
 	ctrlArg$userEvalFunction <- getEvalFun(ret@evaluator, ret);
 
 	if(ctrlArg$evaluatorClass == 0) {
-		res <- .Call("genAlgPLS", ctrlArg, NULL, NULL, PACKAGE = "GenAlgPLS");
+		res <- .Call("genAlgPLS", ctrlArg, NULL, NULL, seed, PACKAGE = "GenAlgPLS");
 	} else {
-		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), PACKAGE = "GenAlgPLS");
+		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), seed, PACKAGE = "GenAlgPLS");
 	}
 
 	ret@subsets <- res$subsets;

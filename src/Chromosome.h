@@ -17,7 +17,7 @@
 #include "Control.h"
 #include "TruncatedGeomGenerator.h"
 #include "VariablePositionPopulation.h"
-#include "UnifGenerator_0_1.h"
+#include "RNG.h"
 
 class InvalidCopulationException : public Rcpp::exception {
 
@@ -28,15 +28,15 @@ public:
 class Chromosome {
 
 public:
-	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, UnifGenerator_0_1& unifGen, bool randomInit = true);
+	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, RNG& rng, bool randomInit = true);
 	Chromosome(const Chromosome &other, bool copyChromosomeParts = true);
 //	~Chromosome();
 	
 	/**
 	 * @return bool Returns true if mutation occurred, false otherwise
 	 */
-	bool mutate(UnifGenerator_0_1& unifGen);
-	void mateWith(const Chromosome &other, UnifGenerator_0_1& unifGen, Chromosome& child1, Chromosome& child2);
+	bool mutate(RNG& rng);
+	void mateWith(const Chromosome &other, RNG& rng, Chromosome& child1, Chromosome& child2);
 
 	void setFitness(double fitness) { this->fitness = fitness; };
 	double getFitness() const { return this->fitness; };
@@ -79,21 +79,21 @@ private:
 	std::vector<IntChromosome> chromosomeParts;
 	double fitness;
 
-	std::vector<uint16_t> shuffledSet(const uint16_t setSize, const uint16_t shuffleSize, UnifGenerator_0_1& unifGen) const;
+	std::vector<uint16_t> shuffledSet(const uint16_t setSize, const uint16_t shuffleSize, RNG& rng) const;
 
 	/*
 	 * Init the internal used chromosome parts completely random taking
 	 * the minimum and maximum number of set bits specified by the
 	 * control object into account
 	 */
-	void initChromosomeParts(UnifGenerator_0_1& unifGen, VariablePositionPopulation &varPosPop);
+	void initChromosomeParts(RNG& rng, VariablePositionPopulation &varPosPop);
 
 	/*
-	 * R's RNG only returns between 25 and 32 random bits
+	 * The RNG only returns 32 random bits
 	 * so two random numbers must be "glued" together to form
 	 * a 64bit random number
 	 */
-	IntChromosome runif(UnifGenerator_0_1& unifGen) const;
+	IntChromosome rbits(RNG& rng) const;
 
 	std::ostream& printBits(std::ostream &os, IntChromosome bits, uint16_t leaveOut = 0) const;
 

@@ -15,6 +15,7 @@
 #include "PLSEvaluator.h"
 #include "LMEvaluator.h"
 #include "SingleThreadPopulation.h"
+#include "RNG.h"
 
 #ifdef HAVE_PTHREAD_H
 #include "MultiThreadedPopulation.h"
@@ -24,14 +25,13 @@
 
 using namespace Rcpp;
 
-SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy) {
+SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy, SEXP Sseed) {
 	::Evaluator *eval;
 	PLS *pls;
-	UnifGenerator_0_1* globalUnifGen;
 	Population *pop;
 	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls; 3rd bit set ==> free globalUnifGen; 4th bit set ==> free pop
 BEGIN_RCPP
-
+	RNG rng(as<uint32_t>(Sseed));
 	List control = List(Scontrol);
 	uint16_t numThreads = as<uint16_t>(control["numThreads"]);
 	VerbosityLevel verbosity = (VerbosityLevel) as<int>(control["verbosity"]);
@@ -67,18 +67,6 @@ BEGIN_RCPP
 				 numThreads,
 				 verbosity);
 	
-#ifdef HAVE_PTHREAD_H
-	if(numThreads > 1) {
-		globalUnifGen = new SynchronizedUnifGenerator_0_1(UNIF_GENERATOR_BUFFER_SIZE_MAIN);
-	} else {
-		globalUnifGen = new UnifGenerator_0_1();
-	}
-#else
-	globalUnifGen = new UnifGenerator_0_1();
-#endif
-
-	toFree |= 4;
-	
 	switch(evalClass) {
 		case USER: {
 			eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
@@ -94,7 +82,7 @@ BEGIN_RCPP
 			pls = PLS::getInstance(method, X, Y, false);
 			toFree |= 2; // pls has to be freed
 			
-			eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity, globalUnifGen);
+			eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity, &rng);
 
 			break;
 		}
@@ -123,9 +111,9 @@ BEGIN_RCPP
 #ifdef HAVE_PTHREAD_H
 	try {
 		if(numThreads > 1) {
-			pop = new MultiThreadedPopulation(ctrl, *eval, *static_cast<SynchronizedUnifGenerator_0_1 *>(globalUnifGen));
+			pop = new MultiThreadedPopulation(ctrl, *eval, rng);
 		} else {
-			pop = new SingleThreadPopulation(ctrl, *eval);
+			pop = new SingleThreadPopulation(ctrl, *eval, rng);
 		}
 		toFree |= 8;
 		pop->run();
@@ -137,7 +125,7 @@ BEGIN_RCPP
 		}
 	}
 #else
-	pop = new SingleThreadPopulation(ctrl, *eval);
+	pop = new SingleThreadPopulation(ctrl, *eval, rng);
 	toFree |= 8;
 	pop->run();
 #endif
@@ -153,7 +141,6 @@ BEGIN_RCPP
 	}
 
 	delete eval;
-	delete globalUnifGen;
 	
 	if((toFree & 8) > 0) {
 		delete pop;
@@ -172,9 +159,6 @@ VOID_END_RCPP
 	if((toFree & 2) > 0) {
 		delete pls;
 	}
-	if((toFree & 4) > 0) {
-		delete globalUnifGen;
-	}
 	if((toFree & 8) > 0) {
 		delete pop;
 	}
@@ -182,7 +166,12 @@ VOID_END_RCPP
 	return R_NilValue;
 }
 
-SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy) {
+
+
+/**
+ *
+ */
+SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 	double fitness = 0.0;
 	::Evaluator *eval;
 	PLS *pls;
@@ -190,7 +179,6 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy) {
 	
 	BEGIN_RCPP
 	List evaluator = List(Sevaluator);
-	UnifGenerator_0_1 unifGen;
 	Rcpp::NumericMatrix XMat(SX);
 	Rcpp::NumericMatrix YMat(Sy);
 	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
@@ -205,11 +193,12 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy) {
 		}
 		case PLS_EVAL: {
 			PLSMethod method = (PLSMethod) as<int>(evaluator["plsMethod"]);
+			RNG rng(as<uint32_t>(Sseed));
 			
 			pls = PLS::getInstance(method, X, Y, false);
 			toFree |= 2; // pls has to be freed
 		
-			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]), as<uint16_t>(evaluator["numSegments"]), OFF, &unifGen);
+			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]), as<uint16_t>(evaluator["numSegments"]), OFF, &rng);
 			
 			break;
 		}

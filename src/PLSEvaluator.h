@@ -12,7 +12,7 @@
 #include "config.h"
 
 #include <RcppArmadillo.h>
-#include "UnifGenerator_0_1.h"
+#include "RNG.h"
 
 #include "Evaluator.h"
 #include "Chromosome.h"
@@ -20,10 +20,10 @@
 
 class PLSEvaluator : public Evaluator {
 public:
-	PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const VerbosityLevel verbosity, UnifGenerator_0_1* unifGen) :
+	PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const VerbosityLevel verbosity, RNG* rng) :
 	Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
 	nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
-	completeSegments(nrows % numSegments), pls(pls), unifGen(unifGen), cloned(false)
+	completeSegments(nrows % numSegments), pls(pls), rng(rng), cloned(false)
 	{
 		if(pls->getNumberOfResponseVariables() > 1) {
 			throw Rcpp::exception("PLS evaluator only available for models with 1 response variable", __FILE__, __LINE__);
@@ -45,8 +45,8 @@ public:
 
 	double evaluate(arma::uvec &colSubset) const;
 
-	void setUnifGenerator(UnifGenerator_0_1 *unifGen) {
-		this->unifGen = unifGen;
+	void setRNG(RNG* rng) {
+		this->rng = rng;
 	};
 	
 	Evaluator* clone() const;
@@ -59,7 +59,7 @@ private:
 	const uint16_t completeSegments; // The number of segments with `segmentLength` + 1 elements. If 0, all segments have `segmentLength` elements
 
 	PLS *pls;
-	UnifGenerator_0_1 *unifGen;
+	RNG *rng;
 
 	bool cloned;
 

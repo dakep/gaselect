@@ -20,12 +20,12 @@
 #include "Control.h"
 #include "Population.h"
 
-#include "UnifGenerator_0_1.h"
+#include "RNG.h"
 
 class MultiThreadedPopulation : public Population {
 	
 public:
-	MultiThreadedPopulation(const Control &ctrl, ::Evaluator &evaluator, SynchronizedUnifGenerator_0_1& unifGen);
+	MultiThreadedPopulation(const Control &ctrl, ::Evaluator &evaluator, RNG& rng);
 	~MultiThreadedPopulation();
 	
 	/**
@@ -44,12 +44,10 @@ private:
 	struct ThreadArgsWrapper {
 		MultiThreadedPopulation* popObj;
 		Evaluator* evalObj;
-		SynchronizedUnifGenerator_0_1* unifGen;
+		unsigned int seed;
 		uint16_t numMatingCouples;
 		uint16_t offset;
 	};
-	
-	SynchronizedUnifGenerator_0_1& unifGen;
 	
 	std::vector<Chromosome*> nextGeneration;
 	std::vector<double> nextGenFitnessMap;
@@ -72,7 +70,7 @@ private:
 	uint16_t actuallySpawnedThreads;
 	uint16_t numThreadsFinishedMating;
 		
-	void mate(uint16_t numMatingCouples, ::Evaluator& evaluator, SynchronizedUnifGenerator_0_1& unifGen, uint16_t offset, bool checkUserInterrupt = true);
+	void mate(uint16_t numMatingCouples, ::Evaluator& evaluator, RNG& rng, uint16_t offset, bool checkUserInterrupt = true);
 	
 	/**
 	 * Transform the given fitness map to start at 0 and only have positive values
@@ -81,7 +79,7 @@ private:
 	
 	static void* matingThreadStart(void* obj);
 	
-	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator, SynchronizedUnifGenerator_0_1& unifGen, uint16_t offset);
+	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator, RNG& rng, uint16_t offset);
 	void finishedMating();
 	void waitForAllThreadsToFinishMating();
 };

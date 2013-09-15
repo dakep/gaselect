@@ -1,11 +1,11 @@
 Package: GenAlgPLS
 Type: Package
 Title: Genetic algorithm for variable selection using a PLS criterion
-Version: 2.1
+Version: 2.2
 Date: 2013-07-04
 Author: David Kepplinger
 Maintainer: David Kepplinger <david@dkepplinger.org>
-Description:
+Description: 
 License: GPL (>= 2)
 NeedsCompilation: yes
 Depends:

@@ -17,7 +17,7 @@
 
 class SingleThreadPopulation : public Population {
 public:
-	SingleThreadPopulation(const Control &ctrl, ::Evaluator &evaluator);
+	SingleThreadPopulation(const Control &ctrl, ::Evaluator &evaluator, RNG &rng);
 	~SingleThreadPopulation() {};
 
 	void run();

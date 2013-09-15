@@ -47,8 +47,9 @@ enum EvaluatorClass {
  *		int statistic ... The statistic the LM Evaluator should use
  *	X ... A numeric matrix with dimensions n x p (optional - only needed if using internal evaluation methods)
  *	y ... A numeric vector with length n (optional - only needed if using internal evaluation methods)
+ *	seed ... An integer (uint32_t) with the initial seed
  */
-RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y);
+RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y, SEXP seed);
 
 /**
  * evaluate the given data with the given evaluator
@@ -63,8 +64,9 @@ RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y);
  *
  *	X ... A numeric matrix with dimensions n x p
  *	y ... A numeric vector with length n
+ *	seed ... An integer (uint32_t) with the initial seed
  */
-RcppExport SEXP evaluate(SEXP evaluator, SEXP X, SEXP y);
+RcppExport SEXP evaluate(SEXP evaluator, SEXP X, SEXP y, SEXP seed);
 
 // RcppExport SEXP simpls(SEXP X, SEXP Y, SEXP ncomp, SEXP newX);
 //

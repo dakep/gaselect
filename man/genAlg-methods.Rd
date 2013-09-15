@@ -1,7 +1,9 @@
 \docType{methods}
 \name{genAlg}
 \alias{genAlg}
-\alias{genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator-method}
+\alias{genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,NULL-method}
+\alias{genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,integer-method}
+\alias{genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,numeric-method}
 \title{Genetic algorithm for variable subset selection}
 \arguments{
   \item{y}{The numeric response vector of length n}
@@ -15,6 +17,9 @@
   fitness of a variable subset. See
   \code{\link{evaluatorPLS}}, \code{\link{evaluatorLM}} or
   \code{\link{evaluatorUserFunction}} for details.}
+
+  \item{seed}{Integer with the seed for the random number
+  generator or NULL to automatically seed the RNG}
 }
 \description{
   A genetic algorithm to find "good" variable subsets based

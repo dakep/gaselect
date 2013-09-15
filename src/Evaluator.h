@@ -13,14 +13,14 @@
 #include <RcppArmadillo.h>
 #include "Control.h"
 #include "Chromosome.h"
-#include "UnifGenerator_0_1.h"
+#include "RNG.h"
 
 class Evaluator {
 public:
 	Evaluator(const VerbosityLevel verbosity) : verbosity(verbosity) {}
 	virtual ~Evaluator() {};
 
-	virtual void setUnifGenerator(UnifGenerator_0_1*) {};
+	virtual void setRNG(RNG*) {};
 	virtual double evaluate(arma::uvec &columnSubset) const = 0;
 	virtual double evaluate(Chromosome &ch) const = 0;
 	

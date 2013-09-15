@@ -98,7 +98,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 			 * find a random position in the back of the array
 			 * (first elements are already used elements or current ones)
 			 */
-			randPos = n + i + (arma::uword) ((*this->unifGen)() * (this->nrows - n - i));
+			randPos = (arma::uword) ((*this->rng)(n + i, this->nrows - n - i));
 
 			std::swap(rowNumbers[n + i], rowNumbers[randPos]);
 			std::swap(rowNumbers[i], rowNumbers[n + i]);
@@ -197,7 +197,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 }
 
 Evaluator* PLSEvaluator::clone() const {
-	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->verbosity, this->unifGen);
+	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->verbosity, this->rng);
 	that->cloned = true;
 	return that;	
 }

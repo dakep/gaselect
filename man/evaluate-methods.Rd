@@ -1,7 +1,10 @@
 \docType{methods}
 \name{evaluate}
 \alias{evaluate}
-\alias{evaluate,GenAlgEvaluator,matrix,numeric-method}
+\alias{evaluate,ANY,matrix,numeric,NULL-method}
+\alias{evaluate,ANY,matrix,numeric,numeric-method}
+\alias{evaluate,GenAlgEvaluator,matrix,numeric,integer-method}
+\alias{evaluate,GenAlgUserEvaluator,matrix,numeric,integer-method}
 \title{Evaluate the fitness of variables}
 \arguments{
   \item{object}{The GenAlgEvaluator object that is used to
