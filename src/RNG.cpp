@@ -49,7 +49,7 @@ RNG::RNG(uint32_t seed) {
 
 void RNG::seed(uint32_t seed) {
 	this->STATE[0] = seed;
-	this->stateIndex = 00;
+	this->stateIndex = 0;
 
 	// Same generator used to seed Mersenne twister
 	uint32_t i = 1;
