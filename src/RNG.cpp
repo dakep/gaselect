@@ -47,14 +47,6 @@ RNG::RNG(uint32_t seed) {
 	this->seed(seed);
 }
 
-uint32_t RNG::operator()() {
-	return (this->*genFun)();
-}
-
-double RNG::operator()(double min, double max) {
-	return min + ((this->*genFun)() / RNG::RANDOM_MAX) * max;
-}
-
 void RNG::seed(uint32_t seed) {
 	this->STATE[0] = seed;
 	this->stateIndex = 00;
