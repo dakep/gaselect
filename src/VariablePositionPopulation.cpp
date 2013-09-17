@@ -32,7 +32,7 @@ VariablePositionPopulation::const_iterator VariablePositionPopulation::shuffle(c
 	}
 
 	for(uint16_t i = 0; i < length; ++i) {
-		randPos = rng(i, this->size - i);
+		randPos = rng(i, this->size);
 		std::swap(this->variablePositionPopulation[i], this->variablePositionPopulation[randPos]);
 	}
 

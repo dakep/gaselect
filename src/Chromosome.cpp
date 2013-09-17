@@ -176,7 +176,7 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 			/*
 			 * Single crossover - draw a random position
 			 */
-			uint16_t randPos = (uint16_t) rng(this->unusedBits, this->ctrl.chromosomeSize);
+			uint16_t randPos = (uint16_t) rng(this->unusedBits, this->ctrl.chromosomeSize + this->unusedBits);
 			uint16_t chosenPart = randPos / Chromosome::BITS_PER_PART;
 			uint16_t crossoverBit = randPos % Chromosome::BITS_PER_PART;
 			IntChromosome coMask = (INT_CHROMOSOME_MAX >> crossoverBit);
@@ -580,7 +580,7 @@ inline std::vector<uint16_t> Chromosome::shuffledSet(uint16_t setSize, uint16_t 
 		uint16_t randPos = 0;
 		// Now shuffle population
 		for(i = 0; i < shuffleSize; ++i) {
-			randPos = rng(i, setSize - i);
+			randPos = rng(i, setSize);
 			std::swap(pop[i], pop[randPos]);
 		}
 	}

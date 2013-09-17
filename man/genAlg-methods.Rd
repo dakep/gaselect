@@ -5,6 +5,7 @@
 \alias{genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,integer-method}
 \alias{genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,numeric-method}
 \alias{genAlg,numeric,matrix,GenAlgControl,missing,ANY-method}
+\alias{genAlg,numeric,matrix,GenAlgControl,missing,missing-method}
 \title{Genetic algorithm for variable subset selection}
 \arguments{
   \item{y}{The numeric response vector of length n}
@@ -49,7 +50,7 @@ ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,
 	minVariables = 5, maxVariables = 15)
 evaluator <- evaluatorPLS(numReplications = 3L, numSegments = 4L, numThreads = 2L)
 
-\dontrun{
+\\dontrun{
 result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
 }
 }

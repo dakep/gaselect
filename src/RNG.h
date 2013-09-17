@@ -10,8 +10,8 @@ class RNG {
 
 		void seed(uint32_t seed);
 
-		double operator()(double min, double range){
-			return min + ((this->*genFun)() / RNG::RANDOM_MAX) * range;
+		double operator()(double min, double max){
+			return min + ((this->*genFun)() / RNG::RANDOM_MAX) * (max - min);
 		}
 		uint32_t operator()() {
 			return (this->*genFun)();
