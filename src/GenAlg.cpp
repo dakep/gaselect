@@ -65,6 +65,7 @@ BEGIN_RCPP
 				 as<uint16_t>(control["maxMatingTries"]),
 				 as<double>(control["mutationProb"]),
 				 numThreads,
+				 (CrossoverType) as<int>(control["crossover"]),
 				 verbosity);
 	
 	switch(evalClass) {

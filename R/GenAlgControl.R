@@ -21,6 +21,8 @@ setClass("GenAlgControl", representation(
 	maxMatingTries = "integer",
 	elitism = "integer",
 	mutationProbability = "numeric",
+	crossover = "character",
+	crossoverId = "integer",
 	verbosity = "integer"
 ), validity = function(object) {
 	errors <- character(0);
@@ -92,6 +94,13 @@ setClass("GenAlgControl", representation(
 #' mutation probability, the more "uniform" the distribution). This should not be a problem for most
 #' applications.
 #'
+#' The user can choose between \code{single} and \code{random} crossover for the mating process. If single crossover
+#' is used, a single position is randomly chosen that marks the position to split both parent chromosomes. The child
+#' chromosomes are than the concatenated chromosomes from the 1st part of the 1st parent and the 2nd part of the
+#' 2nd parent resp. the 2nd part of the 1st parent and the 1st part of the 2nd parent.
+#' Random crossover is that a random number of random positions are drawn and these positions are transferred
+#' from one parent to the other in order to generate the children.
+#'
 #' Elitism is a method of enhancing the GA by keeping track of very good solutions. The parameter \code{elitism}
 #' specifies how many "very good" solutions should be kept.
 #'
@@ -103,10 +112,11 @@ setClass("GenAlgControl", representation(
 #'						 children are generated as long as they are not fitter than one parent or \code{maxMatingTries} children have been generated.
 #' @param elitism The number of absolute best chromosomes to keep across all generations (between 1 and min(\code{populationSize} * \code{numGenerations}, 2^16))
 #' @param mutationProbability The probability of mutation (between 0 and 1)
+#' @param crossover The crossover type to use during mating (see details). Partial matching is performed
 #' @param verbosity The level of verbosity. 0 means no output at all, 3 is very verbose.
 #' @export
 #' @example examples/genAlg.R
-genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, maxMatingTries = 5L, elitism = 10L, mutationProbability = 0.01, verbosity = 0L) {
+genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, maxMatingTries = 5L, elitism = 10L, mutationProbability = 0.01, crossover = c("single", "random"), verbosity = 0L) {
 	if(is.numeric(populationSize)) {
 		populationSize <- as.integer(populationSize);
 	}
@@ -135,6 +145,13 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 		verbosity <- as.integer(verbosity);
 	}
 
+	crossover <- match.arg(crossover);
+
+	crossoverId <- switch(crossover,
+		single = 0L,
+		random = 1L
+	);
+
 	return(new("GenAlgControl",
 				populationSize = populationSize,
 				numGenerations = numGenerations,
@@ -143,5 +160,7 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 				maxMatingTries = maxMatingTries,
 				elitism = elitism,
 				mutationProbability = mutationProbability,
+				crossover = crossover,
+				crossoverId = crossoverId,
 				verbosity = verbosity));
 };

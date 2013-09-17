@@ -122,9 +122,6 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 	if(other.ctrl.chromosomeSize != this->ctrl.chromosomeSize) {
 		throw InvalidCopulationException(__FILE__, __LINE__);
 	}
-
-	IntChromosome randomMask = 0;
-	IntChromosome negRandomMask = 0;
 	
 	if(child1.chromosomeParts.size() != this->numParts) {
 		child1.chromosomeParts.resize(this->numParts, 0);
@@ -133,39 +130,82 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 	if(child2.chromosomeParts.size() != this->numParts) {
 		child2.chromosomeParts.resize(this->numParts, 0);
 	}
-	
-	for(uint16_t i = 0; i < this->numParts; ++i) {
-		if(this->chromosomeParts[i] == other.chromosomeParts[i]) {
-			// Just copy the chromosome part to both children if it is the same
-			// for both parents
-			child1.chromosomeParts[i] = child2.chromosomeParts[i] = this->chromosomeParts[i];
-			IF_DEBUG(
-				Rcout << "Chromosome part is the same for both parents -- copy part to both children" << std::endl;
-			)
-		} else {
-			// Randomly pick some bits from one chromosome and some bits from the other
-			// chromosome
-			do {
-				randomMask = this->rbits(rng);
-				if(i == 0) {
-					randomMask <<= this->unusedBits;
+
+	switch(this->ctrl.crossover) {
+		case RANDOM: {
+			IntChromosome randomMask = 0;
+			IntChromosome negRandomMask = 0;
+			for(uint16_t i = 0; i < this->numParts; ++i) {
+				if(this->chromosomeParts[i] == other.chromosomeParts[i]) {
+					// Just copy the chromosome part to both children if it is the same
+					// for both parents
+					child1.chromosomeParts[i] = child2.chromosomeParts[i] = this->chromosomeParts[i];
+					IF_DEBUG(
+							 Rcout << "Chromosome part is the same for both parents -- copy part to both children" << std::endl;
+							 )
+				} else {
+					// Randomly pick some bits from one chromosome and some bits from the other
+					// chromosome
+					do {
+						randomMask = this->rbits(rng);
+						if(i == 0) {
+							randomMask <<= this->unusedBits;
+						}
+					} while(randomMask == 0);
+					negRandomMask = ~randomMask;
+					
+					child1.chromosomeParts[i] = (this->chromosomeParts[i] & randomMask) | (other.chromosomeParts[i] & negRandomMask);
+					child2.chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
+					
+					IF_DEBUG(
+							 Rcout << "Mask for part " << i << ": ";
+							 this->printBits(Rcout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
+							 
+							 Rcout << "Resulting parts:" << std::endl
+							 << "Child 1:";
+							 this->printBits(Rcout, child1.chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl
+							 << "Child 2:";
+							 this->printBits(Rcout, child2.chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl;
+							 )
 				}
-			} while(randomMask == 0);
-			negRandomMask = ~randomMask;
-
-			child1.chromosomeParts[i] = (this->chromosomeParts[i] & randomMask) | (other.chromosomeParts[i] & negRandomMask);
-			child2.chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
-
-			IF_DEBUG(
-				Rcout << "Mask for part " << i << ": ";
-				this->printBits(Rcout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
-
-				Rcout << "Resulting parts:" << std::endl
-				<< "Child 1:";
-				this->printBits(Rcout, child1.chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl
-				<< "Child 2:";
-				this->printBits(Rcout, child2.chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl;
-			)
+			}
+			break;
+		}
+		case SINGLE:
+		default: {
+			/*
+			 * Single crossover - draw a random position
+			 */
+			uint16_t randPos = (uint16_t) rng(this->unusedBits, this->ctrl.chromosomeSize);
+			uint16_t chosenPart = randPos / Chromosome::BITS_PER_PART;
+			uint16_t crossoverBit = randPos % Chromosome::BITS_PER_PART;
+			IntChromosome coMask = (INT_CHROMOSOME_MAX >> crossoverBit);
+			
+			IF_DEBUG(Rcout << "Crossover at position " << randPos << " (= part " << chosenPart << " - bit " << crossoverBit << ")" << std::endl;)
+			
+			//	uint16_t i = 0;
+			
+			//	Rcout << "Rand pos: " << randPos << " (= part " << chosenPart << " bit " << crossoverBit << ") -- mask: " << coMask << std::endl;
+			
+			std::copy(this->chromosomeParts.begin(), this->chromosomeParts.begin() + chosenPart, child1.chromosomeParts.begin());
+			std::copy(other.chromosomeParts.begin(), other.chromosomeParts.begin() + chosenPart, child2.chromosomeParts.begin());
+			
+			//	for(; i < chosenPart; ++i) {
+			//		child1.chromosomeParts[i] = this->chromosomeParts[i];
+			//		child2.chromosomeParts[i] = other.chromosomeParts[i];
+			//	}
+			
+			child1.chromosomeParts[chosenPart] = (this->chromosomeParts[chosenPart] & (~coMask)) | (other.chromosomeParts[chosenPart] & coMask);
+			child2.chromosomeParts[chosenPart] = (other.chromosomeParts[chosenPart] & (~coMask)) | (this->chromosomeParts[chosenPart] & coMask);
+			
+			std::copy(other.chromosomeParts.begin() + chosenPart + 1, other.chromosomeParts.end(), child1.chromosomeParts.begin() + chosenPart + 1);
+			std::copy(this->chromosomeParts.begin() + chosenPart + 1, this->chromosomeParts.end(), child2.chromosomeParts.begin() + chosenPart + 1);
+			
+			//	for(i = chosenPart + 1; i < this->numParts; ++i) {
+			//		child1.chromosomeParts[i] = other.chromosomeParts[i];
+			//		child2.chromosomeParts[i] = this->chromosomeParts[i];
+			//	}
+			break;
 		}
 	}
 }

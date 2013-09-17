@@ -5,7 +5,7 @@
   genAlgControl(populationSize, numGenerations,
     minVariables, maxVariables, maxMatingTries = 5L,
     elitism = 10L, mutationProbability = 0.01,
-    verbosity = 0L)
+    crossover = c("single", "random"), verbosity = 0L)
 }
 \arguments{
   \item{populationSize}{The number of "chromosomes" in the
@@ -36,6 +36,9 @@
   \item{mutationProbability}{The probability of mutation
   (between 0 and 1)}
 
+  \item{crossover}{The crossover type to use during mating
+  (see details). Partial matching is performed}
+
   \item{verbosity}{The level of verbosity. 0 means no
   output at all, 3 is very verbose.}
 }
@@ -61,6 +64,18 @@
   the mutation probability, the more "uniform" the
   distribution). This should not be a problem for most
   applications.
+
+  The user can choose between \code{single} and
+  \code{random} crossover for the mating process. If single
+  crossover is used, a single position is randomly chosen
+  that marks the position to split both parent chromosomes.
+  The child chromosomes are than the concatenated
+  chromosomes from the 1st part of the 1st parent and the
+  2nd part of the 2nd parent resp. the 2nd part of the 1st
+  parent and the 1st part of the 2nd parent. Random
+  crossover is that a random number of random positions are
+  drawn and these positions are transferred from one parent
+  to the other in order to generate the children.
 
   Elitism is a method of enhancing the GA by keeping track
   of very good solutions. The parameter \code{elitism}

@@ -80,7 +80,7 @@ private:
 	double fitness;
 
 	std::vector<uint16_t> shuffledSet(const uint16_t setSize, const uint16_t shuffleSize, RNG& rng) const;
-
+	
 	/*
 	 * Init the internal used chromosome parts completely random taking
 	 * the minimum and maximum number of set bits specified by the

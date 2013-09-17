@@ -38,6 +38,7 @@ enum EvaluatorClass {
  *		uint16_t elitism ... The number of "elite" chromosomes to keep accross all generations (>= 0)
  *		double mutationProb ... The probability of using a new variable (0 <= onesRatio < 1)
  *		uint16_t numThreads ... The maximum number of threads to spawn
+ *		CrossoverType crossover ... Type of crossover to use
  *		VerbosityLevel verbosity ... Level of verbosity
  *		EvaluatorClass evaluatorClass ... The evaluator to use
  *		Rcpp::Function userEvalFunction ... The function to be called for evaluating the fitness of a chromosome

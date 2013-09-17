@@ -4,6 +4,7 @@
 \alias{genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,NULL-method}
 \alias{genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,integer-method}
 \alias{genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,numeric-method}
+\alias{genAlg,numeric,matrix,GenAlgControl,missing,ANY-method}
 \title{Genetic algorithm for variable subset selection}
 \arguments{
   \item{y}{The numeric response vector of length n}
