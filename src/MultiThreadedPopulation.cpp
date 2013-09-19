@@ -164,7 +164,7 @@ void MultiThreadedPopulation::mate(uint16_t numMatingCouples, ::Evaluator& evalu
 		// At least the first child should be better than the worse parent
 		matingTries = 0;
 		while(((*child1)->getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
-			tmpChromosome1->mateWith(*tmpChromosome2, unifGen, *proposalChild1, *proposalChild1);
+			tmpChromosome1->mateWith(*tmpChromosome2, unifGen, *proposalChild1, *proposalChild2);
 			
 			/*
 			 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
