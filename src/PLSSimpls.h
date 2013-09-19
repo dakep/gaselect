@@ -20,8 +20,8 @@ public:
 	~PLSSimpls();
 
 	void fit(uint16_t ncomp = 0);
-	arma::cube getCoefficients() const { return this->coef; }
-	arma::mat getIntercepts() const { return this->intercepts; };
+	const arma::cube& getCoefficients() const { return this->coef; }
+	const arma::mat& getIntercepts() const { return this->intercepts; };
 	arma::cube getFittedValues() const { return this->fittedValues; }
 
 //	arma::mat getScores() { return this->TT; }

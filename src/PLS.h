@@ -36,13 +36,13 @@ public:
 	 * that are obtained with ncomp specified in the last call
 	 * to PLS::fit.
 	 */
-	virtual arma::cube getCoefficients() const = 0;
+	virtual const arma::cube& getCoefficients() const = 0;
 
 	/**
 	 * Returns the intercept term for every number of components
 	 * i.e. ncomp x nresp matrix
 	 */
-	virtual arma::mat getIntercepts() const = 0;
+	virtual const arma::mat& getIntercepts() const = 0;
 
 	/**
 	 * Check whether the results returned by the other methods (e.g. getCoefficients, getIntercepts, ...)

@@ -53,7 +53,8 @@ void PLS::setSubmatrixViewRows(const arma::uvec &rows, bool keepOldColumns) {
 
 // ncomp should be zero based
 arma::mat PLS::predict(arma::mat newX, uint16_t ncomp) const {
-	arma::cube coefs = this->getCoefficients();
+	const arma::cube& coefs = this->getCoefficients();
+	const arma::mat& intercepts = this->getIntercepts();
 	if(ncomp > coefs.n_slices) {
 		Rcpp::Rcout << "Trying to predict with " << ncomp << " components when only " << coefs.n_slices << " components are available" << std::endl;
 		throw Rcpp::exception("Can not predict values for a model with more components than fit components", __FILE__, __LINE__);
@@ -61,13 +62,13 @@ arma::mat PLS::predict(arma::mat newX, uint16_t ncomp) const {
 	
 	--ncomp;
 	arma::mat pred = newX * coefs.slice(ncomp);
-	pred.each_row() += this->getIntercepts().row(ncomp);
+	pred.each_row() += intercepts.row(ncomp);
 	return pred;
 }
 
 arma::cube PLS::predict(arma::mat newX) const {
-	arma::cube coefs = this->getCoefficients();
-	arma::mat intercepts = this->getIntercepts();
+	const arma::cube& coefs = this->getCoefficients();
+	const arma::mat& intercepts = this->getIntercepts();
 	arma::cube pred(newX.n_rows, coefs.n_cols, coefs.n_slices);
 	for(uint16_t i = 0; i < coefs.n_slices; ++i) {
 		pred.slice(i) = newX * coefs.slice(i);
