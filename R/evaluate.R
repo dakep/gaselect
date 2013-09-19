@@ -5,7 +5,13 @@
 #' @param object The GenAlgEvaluator object that is used to evaluate the variables
 #' @docType methods
 #' @rdname evaluate-methods
-setGeneric("evaluate", function(object, X, y, seed = NULL) { standardGeneric("evaluate"); });
+setGeneric("evaluate", function(object, X, y, seed) { standardGeneric("evaluate"); });
+
+#' @rdname evaluate-methods
+#' @aliases evaluate,ANY,matrix,numeric,missing-method
+setMethod("evaluate", signature(object = "ANY", X = "matrix", y = "numeric", seed = "missing"), function(object, X, y, seed) {
+	evaluate(object, X, y, as.integer(sample.int(2^30, 1)));
+});
 
 #' @rdname evaluate-methods
 #' @aliases evaluate,ANY,matrix,numeric,NULL-method

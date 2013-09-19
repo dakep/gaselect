@@ -13,7 +13,7 @@
 #include <algorithm>
 #include <RcppArmadillo.h>
 
-#include "UnifGenerator_0_1.h"
+#include "RNG.h"
 #include "SingleThreadPopulation.h"
 
 using namespace Rcpp;
@@ -35,7 +35,7 @@ inline bool check_interrupt() {
 	return (R_ToplevelExec(check_interrupt_impl, NULL) == FALSE);
 }
 
-SingleThreadPopulation::SingleThreadPopulation(const Control &ctrl, ::Evaluator &evaluator) : Population(ctrl, evaluator) {}
+SingleThreadPopulation::SingleThreadPopulation(const Control &ctrl, ::Evaluator &evaluator, RNG &rng) : Population(ctrl, evaluator, rng) {}
 
 
 void SingleThreadPopulation::run() {
@@ -52,14 +52,13 @@ void SingleThreadPopulation::run() {
 	std::vector<double> newFitnessMap;
 	std::vector<Chromosome*> newGeneration;
 	std::vector<double>::iterator fitnessMapIt;
-	UnifGenerator_0_1 unifGen;
 	
 	Chromosome* tmpChromosome1;
 	Chromosome* tmpChromosome2;
 	Chromosome** child1;
 	Chromosome** child2;
-	Chromosome* proposalChild1 = new Chromosome(this->ctrl, varPosPop, unifGen, false);
-	Chromosome* proposalChild2 = new Chromosome(this->ctrl, varPosPop, unifGen, false);
+	Chromosome* proposalChild1 = new Chromosome(this->ctrl, varPosPop, this->rng, false);
+	Chromosome* proposalChild2 = new Chromosome(this->ctrl, varPosPop, this->rng, false);
 	
 	newGeneration.reserve(this->ctrl.populationSize);
 	newFitnessMap.reserve(this->ctrl.populationSize);
@@ -69,7 +68,7 @@ void SingleThreadPopulation::run() {
 	}
 	
 	for(i = this->ctrl.populationSize; i > 0; --i) {
-		tmpChromosome1 = new Chromosome(this->ctrl, varPosPop, unifGen);
+		tmpChromosome1 = new Chromosome(this->ctrl, varPosPop, this->rng);
 		
 		this->currentGenFitnessMap.push_back(this->evaluator.evaluate(*tmpChromosome1));
 		if(tmpChromosome1->getFitness() < minFitness) {
@@ -81,26 +80,35 @@ void SingleThreadPopulation::run() {
 		}
 		this->addChromosomeToElite(*tmpChromosome1);
 		this->currentGeneration.push_back(tmpChromosome1);
-		newGeneration.push_back(new Chromosome(this->ctrl, varPosPop, unifGen, false));
+		newGeneration.push_back(new Chromosome(this->ctrl, varPosPop, this->rng, false));
 		
 		if(check_interrupt()) {
 			throw InterruptException();
 		}
 	}
+	
+	double scale = 0.0;
 		
 	for(i = this->ctrl.numGenerations; i > 0; --i) {
 		/*
-		 *r
+		 *
 		 * Transform the fitness map of the current generation to start at 0
 		 *
 		 */
 		sumFitness = 0.0;
-		std::vector<double>::iterator fitnessMapIt;
 		IF_DEBUG(Rcout << "Fitness map: ")
 		
+		scale = (this->ctrl.cutoffQuantile > 0 ? this->getQuantileFitness() : minFitness);
+
 		for(fitnessMapIt = this->currentGenFitnessMap.begin(); fitnessMapIt != this->currentGenFitnessMap.end(); ++fitnessMapIt) {
-			sumFitness += (*fitnessMapIt) - minFitness;
-			(*fitnessMapIt) = sumFitness;
+			if((*fitnessMapIt) < scale) {
+				(*fitnessMapIt) = 0.0;
+			} else {
+				sumFitness += (*fitnessMapIt) - scale;
+				(*fitnessMapIt) = sumFitness;
+			}
+//			sumFitness += (*fitnessMapIt) - minFitness;
+//			(*fitnessMapIt) = sumFitness;
 			
 			IF_DEBUG(Rcout << sumFitness << " | ")
 		}
@@ -113,13 +121,13 @@ void SingleThreadPopulation::run() {
 		}
 		
 		for(j = 0; j < popSizeHalf; ++j) {
-			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(unifGen() * sumFitness);
-			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(unifGen() * sumFitness);
+			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(this->rng(0.0, sumFitness));
+			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(this->rng(0.0, sumFitness));
 			
 			child1 = &(newGeneration[2 * j]);
 			child2 = &(newGeneration[(2 * j) + 1]);
 
-			tmpChromosome1->mateWith(*tmpChromosome2, unifGen, **child1, **child2);
+			tmpChromosome1->mateWith(*tmpChromosome2, this->rng, **child1, **child2);
 			
 			minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 
@@ -127,7 +135,7 @@ void SingleThreadPopulation::run() {
 			 * If both children have no variables, mate again
 			 */
 			while((*child1)->getVariableCount() == 0 && (*child2)->getVariableCount() == 0) {
-				tmpChromosome1->mateWith(*tmpChromosome2, unifGen, **child1, **child2);
+				tmpChromosome1->mateWith(*tmpChromosome2, this->rng, **child1, **child2);
 			}
 
 			if((*child1)->getVariableCount() == 0) {
@@ -153,7 +161,7 @@ void SingleThreadPopulation::run() {
 			// At least the first child should be better than the worse parent
 			matingTries = 0;
 			while(((*child1)->getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
-				tmpChromosome1->mateWith(*tmpChromosome2, unifGen, *proposalChild1, *proposalChild2);
+				tmpChromosome1->mateWith(*tmpChromosome2, this->rng, *proposalChild1, *proposalChild2);
 				
 				/*
 				 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
@@ -192,10 +200,10 @@ void SingleThreadPopulation::run() {
 				)
 			}
 			
-			if((*child1)->mutate(unifGen) == true) {
+			if((*child1)->mutate(this->rng) == true) {
 				this->evaluator.evaluate(**child1);
 			}
-			if((*child2)->mutate(unifGen) == true) {
+			if((*child2)->mutate(this->rng) == true) {
 				this->evaluator.evaluate(**child2);
 			}
 			

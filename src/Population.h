@@ -45,6 +45,7 @@ public:
 		this->currentGeneration.reserve(this->ctrl.populationSize);
 		this->currentGenFitnessMap.reserve(this->ctrl.populationSize);
 		this->minEliteFitness = 0.0;
+		this->cutoffPoint = this->ctrl.populationSize * this->ctrl.cutoffQuantile / 100;
 	}
 
 	virtual ~Population() {
@@ -68,6 +69,8 @@ public:
 		
 		return result;
 	}
+private:
+	uint16_t cutoffPoint;
 protected:
 	const Control& ctrl;
 	::Evaluator& evaluator;
@@ -99,6 +102,29 @@ protected:
 		}
 		
 		return this->currentGeneration[imid];
+	};
+	
+//	static bool comp(Chromosome* c1, Chromosome* c2) {
+//		return ((*c1) == (*c2));
+//	}
+//	
+//	void printUniques() {
+//		std::vector<Chromosome*> gen = this->currentGeneration;
+//		std::vector<Chromosome*>::iterator end = std::unique(gen.begin(), gen.end(), this->comp);
+//		int uniques = 0;
+//		for(std::vector<Chromosome*>::iterator it = gen.begin(); it != end; ++it) {
+//			++uniques;
+////			Rcpp::Rcout << (*it)->toColumnSubset().t() << std::endl;
+//			(*it)->toColumnSubset().t().raw_print(Rcpp::Rcout);
+//		}
+//		Rcpp::Rcout << std::endl << "================> " << uniques << " unique chromosomes" << std::endl << std::endl;
+//	};
+	
+	double getQuantileFitness() {
+		std::vector<double> copyFitnessMap = this->currentGenFitnessMap;
+		std::vector<double>::iterator cutoffIt = copyFitnessMap.begin() + this->cutoffPoint;
+		std::nth_element(copyFitnessMap.begin(), cutoffIt, copyFitnessMap.end());
+		return (*cutoffIt);
 	};
 
 	std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch) {

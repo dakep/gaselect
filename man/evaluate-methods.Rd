@@ -2,6 +2,7 @@
 \name{evaluate}
 \alias{evaluate}
 \alias{evaluate,ANY,matrix,numeric,NULL-method}
+\alias{evaluate,ANY,matrix,numeric,missing-method}
 \alias{evaluate,ANY,matrix,numeric,numeric-method}
 \alias{evaluate,GenAlgEvaluator,matrix,numeric,integer-method}
 \alias{evaluate,GenAlgUserEvaluator,matrix,numeric,integer-method}

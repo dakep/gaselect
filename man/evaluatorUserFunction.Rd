@@ -43,7 +43,7 @@ sepFUN <- function(genAlg) {
 		}));
 }
 evaluator <- evaluatorUserFunction(FUN = evalFun, sepFUN = sepFUN)
-\\dontrun{
+\dontrun{
 result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
 }
 }

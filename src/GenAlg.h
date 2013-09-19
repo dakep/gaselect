@@ -69,6 +69,8 @@ RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y, SEXP seed);
  */
 RcppExport SEXP evaluate(SEXP evaluator, SEXP X, SEXP y, SEXP seed);
 
+//RcppExport SEXP WELL19937a(SEXP n, SEXP min, SEXP max, SEXP SnStreams, SEXP seed);
+
 // RcppExport SEXP simpls(SEXP X, SEXP Y, SEXP ncomp, SEXP newX);
 //
 // RcppExport SEXP evalTest(SEXP X, SEXP Y, SEXP numReplications, SEXP numSegments);

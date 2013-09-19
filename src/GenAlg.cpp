@@ -65,6 +65,7 @@ BEGIN_RCPP
 				 as<uint16_t>(control["maxMatingTries"]),
 				 as<double>(control["mutationProb"]),
 				 numThreads,
+				 as<uint8_t>(control["cutoffQuantile"]),
 				 (CrossoverType) as<int>(control["crossover"]),
 				 verbosity);
 	
@@ -241,6 +242,29 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 	
 	return R_NilValue;
 }
+
+//RcppExport SEXP WELL19937a(SEXP Sn, SEXP Smin, SEXP Smax, SEXP SnStreams, SEXP Sseed) {
+//	uint32_t n = as<uint32_t>(Sn);
+//	uint32_t nStreams = as<uint32_t>(SnStreams);
+//	uint32_t seed = as<uint32_t>(Sseed);
+//	double min = as<double>(Smin);
+//	double max = as<double>(Smax);
+//	uint16_t row = 0;
+//	
+//	RNG rng(seed);
+//	
+//	Rcpp::NumericMatrix retMat(n, nStreams);
+//
+//	for(uint16_t col = 0; col < nStreams; ++col) {
+//		for(row = 0; row < n; ++row) {
+//			retMat.column(col)[row] = rng(min, max);
+//		}
+//	}
+//
+//	Rcpp::Rcout << retMat.rows() << " x " << retMat.cols() << std::endl;
+//	
+//	return Rcpp::wrap(retMat);
+//}
 
 // SEXP simpls(SEXP Xs, SEXP Ys, SEXP numOfComp, SEXP newXs) {
 // BEGIN_RCPP

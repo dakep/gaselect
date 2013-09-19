@@ -96,7 +96,7 @@ void Chromosome::copyFrom(const Chromosome &other, bool copyChromosomeParts) {
 //}
 
 inline void Chromosome::initChromosomeParts(RNG& rng, VariablePositionPopulation &varPosPop) {
-	uint16_t bitsToSet =  rng(this->ctrl.minVariables, (this->ctrl.maxVariables - this->ctrl.minVariables));
+	uint16_t bitsToSet =  rng(this->ctrl.minVariables, this->ctrl.maxVariables + 1);
 
 	IF_DEBUG(
 		Rcout << "Init chromosome with " << bitsToSet << " bits set" << std::endl;
@@ -176,12 +176,18 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 			/*
 			 * Single crossover - draw a random position
 			 */
-			uint16_t randPos = (uint16_t) rng(this->unusedBits, this->ctrl.chromosomeSize + this->unusedBits);
+			uint16_t randPos = (uint16_t) rng(1.0, this->ctrl.chromosomeSize);
 			uint16_t chosenPart = randPos / Chromosome::BITS_PER_PART;
 			uint16_t crossoverBit = randPos % Chromosome::BITS_PER_PART;
 			IntChromosome coMask = (INT_CHROMOSOME_MAX >> crossoverBit);
-			
-			IF_DEBUG(Rcout << "Crossover at position " << randPos << " (= part " << chosenPart << " - bit " << crossoverBit << ")" << std::endl;)
+
+			IF_DEBUG(
+					 Rcout << "Crossover at position " << randPos << " (= part " << chosenPart << " - bit " << crossoverBit << ") --" << coMask << " -- " << ~coMask << std::endl;
+					 Rcout << "First parent: " << *(this) << "  (" << this->chromosomeParts[chosenPart] << ")" << std::endl;
+					 Rcout << "Second parent: " << other << "  (" << other.chromosomeParts[chosenPart] << ")" << std::endl;
+					 Rcout << ((this->chromosomeParts[chosenPart] & (~coMask)) | (other.chromosomeParts[chosenPart] & coMask)) << std::endl;
+					 Rcout << ((other.chromosomeParts[chosenPart] & (~coMask)) | (this->chromosomeParts[chosenPart] & coMask)) << std::endl;
+			)
 			
 			//	uint16_t i = 0;
 			
@@ -195,11 +201,16 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 			//		child2.chromosomeParts[i] = other.chromosomeParts[i];
 			//	}
 			
-			child1.chromosomeParts[chosenPart] = (this->chromosomeParts[chosenPart] & (~coMask)) | (other.chromosomeParts[chosenPart] & coMask);
-			child2.chromosomeParts[chosenPart] = (other.chromosomeParts[chosenPart] & (~coMask)) | (this->chromosomeParts[chosenPart] & coMask);
+			child1.chromosomeParts[chosenPart] = ((this->chromosomeParts[chosenPart] & (~coMask)) | (other.chromosomeParts[chosenPart] & coMask));
+			child2.chromosomeParts[chosenPart] = ((other.chromosomeParts[chosenPart] & (~coMask)) | (this->chromosomeParts[chosenPart] & coMask));
 			
 			std::copy(other.chromosomeParts.begin() + chosenPart + 1, other.chromosomeParts.end(), child1.chromosomeParts.begin() + chosenPart + 1);
 			std::copy(this->chromosomeParts.begin() + chosenPart + 1, this->chromosomeParts.end(), child2.chromosomeParts.begin() + chosenPart + 1);
+			
+			IF_DEBUG(
+					 Rcout << "First child: " << child1 << std::endl;
+					 Rcout << "Second child: " << child2 << std::endl;
+			 )
 			
 			//	for(i = chosenPart + 1; i < this->numParts; ++i) {
 			//		child1.chromosomeParts[i] = other.chromosomeParts[i];

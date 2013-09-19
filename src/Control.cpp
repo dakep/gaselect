@@ -8,9 +8,9 @@
 #include <algorithm>
 #include "Control.h"
 
-Control::Control(const uint16_t chromosomeSize, const uint16_t popSize, const uint16_t numGenerations, const uint16_t elitism, const uint16_t minVariables, const uint16_t maxVariables, const uint16_t maxMatingTries, const double mutationProbability, const uint16_t numThreads, const enum CrossoverType crossover, const enum VerbosityLevel verbosity) :
+Control::Control(const uint16_t chromosomeSize, const uint16_t popSize, const uint16_t numGenerations, const uint16_t elitism, const uint16_t minVariables, const uint16_t maxVariables, const uint16_t maxMatingTries, const double mutationProbability, const uint16_t numThreads, const uint8_t cutoffQuantile, const enum CrossoverType crossover, const enum VerbosityLevel verbosity) :
 	chromosomeSize(chromosomeSize), populationSize(popSize), numGenerations(numGenerations), elitism(elitism), minVariables(minVariables), maxVariables(maxVariables),
-	maxMatingTries(maxMatingTries), mutationProbability(mutationProbability), numThreads(numThreads), crossover(crossover), verbosity(verbosity) {
+	maxMatingTries(maxMatingTries), mutationProbability(mutationProbability), numThreads(numThreads), cutoffQuantile(cutoffQuantile), crossover(crossover), verbosity(verbosity) {
 
 		this->variablePositionPopulation.reserve(this->chromosomeSize);
 
@@ -32,6 +32,7 @@ std::ostream& operator<<(std::ostream &os, const Control &ctrl) {
 		<< "Number of variables set: " << ctrl.minVariables << " to " << ctrl.maxVariables << std::endl
 		<< "Maximum number of tries for mating: " << ctrl.maxMatingTries << std::endl
 		<< "Mutation probability: " << ctrl.mutationProbability << std::endl
+		<< "Fitness cutoff quantile: " << (unsigned int) ctrl.cutoffQuantile << std::endl
 		<< "Crossover-type: " << ((ctrl.crossover == SINGLE) ? "Single" : "Random") << std::endl
 		<< "Number of threads: " << ctrl.numThreads << std::endl
 	<< "Verbosity Level: " << ctrl.verbosity << std::endl;

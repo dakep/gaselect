@@ -5,7 +5,8 @@
   genAlgControl(populationSize, numGenerations,
     minVariables, maxVariables, maxMatingTries = 5L,
     elitism = 10L, mutationProbability = 0.01,
-    crossover = c("single", "random"), verbosity = 0L)
+    crossover = c("single", "random"),
+    fitnessCutoffQuantile = 0, verbosity = 0L)
 }
 \arguments{
   \item{populationSize}{The number of "chromosomes" in the
@@ -38,6 +39,10 @@
 
   \item{crossover}{The crossover type to use during mating
   (see details). Partial matching is performed}
+
+  \item{fitnessCutoffQuantile}{The quantile (between 0 and
+  50) of chromosomes with worst fitness that are not
+  considered for mutation}
 
   \item{verbosity}{The level of verbosity. 0 means no
   output at all, 3 is very verbose.}
@@ -86,7 +91,7 @@ ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,
 	minVariables = 5, maxVariables = 15)
 evaluator <- evaluatorPLS(numReplications = 3L, numSegments = 4L, numThreads = 2L)
 
-\\dontrun{
+\dontrun{
 result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
 }
 }
