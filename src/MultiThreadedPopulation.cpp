@@ -101,7 +101,7 @@ inline void MultiThreadedPopulation::transformCurrentGenFitnessMap() {
 	std::vector<double>::iterator fitnessMapIt;
 	IF_DEBUG(Rcout << "Fitness map: ")
 	
-	scale = (this->ctrl.cutoffQuantile > 0 ? this->getQuantileFitness() : this->minCurrentGenFitness);
+	double scale = (this->ctrl.cutoffQuantile > 0 ? this->getQuantileFitness() : this->minCurrentGenFitness);
 	
 	for(fitnessMapIt = this->currentGenFitnessMap.begin(); fitnessMapIt != this->currentGenFitnessMap.end(); ++fitnessMapIt) {
 		if((*fitnessMapIt) < scale) {
