@@ -80,7 +80,7 @@ private:
 	static void* matingThreadStart(void* obj);
 	
 	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator, RNG& rng, uint16_t offset);
-	void finishedMating();
+//	void finishedMating();
 	void waitForAllThreadsToFinishMating();
 };
 

@@ -400,7 +400,7 @@ void MultiThreadedPopulation::run() {
 			interrupted = true;
 		}
 		
-		this->finishedMating();
+//		this->finishedMating();
 		this->waitForAllThreadsToFinishMating();
 		
 		/*
@@ -501,25 +501,12 @@ void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& 
 		/*
 		 * Signal that the thread has finished mating
 		 */
-		this->finishedMating();
+//		this->finishedMating();
 		this->waitForAllThreadsToFinishMating();
 	}
 }
 
 inline void MultiThreadedPopulation::waitForAllThreadsToFinishMating() {
-	int pthreadRC = pthread_mutex_lock(&this->syncMutex);
-	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
-	
-	while(this->allThreadsFinishedMating == false) {
-		pthreadRC = pthread_cond_wait(&this->allThreadsFinishedMatingCond, &this->syncMutex);
-		CHECK_PTHREAD_RETURN_CODE(pthreadRC)
-	}
-	
-	pthreadRC = pthread_mutex_unlock(&this->syncMutex);
-	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
-}
-
-inline void MultiThreadedPopulation::finishedMating() {
 	int pthreadRC = pthread_mutex_lock(&this->syncMutex);
 	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
 	
@@ -534,8 +521,37 @@ inline void MultiThreadedPopulation::finishedMating() {
 		this->allThreadsFinishedMating = false;
 	}
 	
+//	pthreadRC = pthread_mutex_unlock(&this->syncMutex);
+//	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
+//	int pthreadRC = pthread_mutex_lock(&this->syncMutex);
+//	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
+	
+	while(this->allThreadsFinishedMating == false) {
+		pthreadRC = pthread_cond_wait(&this->allThreadsFinishedMatingCond, &this->syncMutex);
+		CHECK_PTHREAD_RETURN_CODE(pthreadRC)
+	}
+	
 	pthreadRC = pthread_mutex_unlock(&this->syncMutex);
 	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
 }
+
+//inline void MultiThreadedPopulation::finishedMating() {
+//	int pthreadRC = pthread_mutex_lock(&this->syncMutex);
+//	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
+//	
+//	if(++this->numThreadsFinishedMating > this->actuallySpawnedThreads) { // > because the main thread must finish mating as well
+//		this->allThreadsFinishedMating = true;
+//		this->numThreadsFinishedMating = 0;
+//		this->startMating = false;
+//		
+//		pthreadRC = pthread_cond_broadcast(&this->allThreadsFinishedMatingCond);
+//		CHECK_PTHREAD_RETURN_CODE(pthreadRC)
+//	} else {
+//		this->allThreadsFinishedMating = false;
+//	}
+//	
+//	pthreadRC = pthread_mutex_unlock(&this->syncMutex);
+//	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
+//}
 
 #endif
