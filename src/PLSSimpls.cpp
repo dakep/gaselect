@@ -13,6 +13,9 @@
 #include "PLSSimpls.h"
 
 PLSSimpls::PLSSimpls(const arma::mat &X, const arma::mat &Y, const bool fitValues) : PLS(X, Y, fitValues) {
+	if(Y.n_cols > 1) {
+		throw std::logic_error("The SIMPLS implementation can only handle a univariate response");
+	}
 	this->subviewChanged();
 }
 
@@ -25,14 +28,13 @@ PLS* PLSSimpls::clone() const {
 	clone->viewX = this->viewX;
 	clone->viewY = this->viewY;
 	clone->viewXCol = this->viewXCol;
-	clone->resultNComp = this->resultNComp;
-	clone->validResultState = this->validResultState;
-
-	clone->fittedValues = this->fittedValues;
-	clone->coef = this->coef;
-	clone->intercepts = this->intercepts;
-	clone->Ymean = this->Ymean;
-	clone->Xmean = this->Xmean;
+	
+//	clone->resultNComp = this->resultNComp;
+//	clone->fittedValues = this->fittedValues;
+//	clone->coef = this->coef;
+//	clone->intercepts = this->intercepts;
+//	clone->Ymean = this->Ymean;
+//	clone->Xmean = this->Xmean;
 	
 	return clone;
 }
@@ -60,14 +62,11 @@ void PLSSimpls::fit(uint16_t ncomp) {
 	this->coef.zeros(this->viewX.n_cols, this->viewY.n_cols, ncomp);
 	this->intercepts.zeros(ncomp, this->viewY.n_cols);
 
-	arma::mat R(this->viewX.n_cols, ncomp); // X factor weights -- only set if keepCoefficients is true
-	arma::mat V(this->viewX.n_cols, ncomp); // Orthogonal loadings
-	arma::mat tQ(ncomp, this->viewY.n_cols); // Y factor loadings (transposed)
 	arma::mat TT; // X factor scores (only really needed if fitted values should be calculated)
 
-	R.zeros();
-	V.zeros();
-	tQ.zeros();
+	this->R.zeros(this->viewX.n_cols, ncomp);
+	this->V.zeros(this->viewX.n_cols, ncomp);
+	this->tQ.zeros(ncomp, this->viewY.n_cols);
 
 	if(this->fitValues) {
 		TT.zeros(this->viewX.n_rows, ncomp);
@@ -85,27 +84,10 @@ void PLSSimpls::fit(uint16_t ncomp) {
 	arma::vec q; // Y block factor loadings / weights
 
 	for(uint16_t i = 0; i < ncomp; ++i) {
-		arma::vec r = R.unsafe_col(i); // X block factor weights
-		arma::vec v = V.unsafe_col(i); // Orthogonal loadings
+		arma::vec r = this->R.unsafe_col(i); // X block factor weights
+		arma::vec v = this->V.unsafe_col(i); // Orthogonal loadings
 
-		if(this->viewY.n_cols > 1) {
-			arma::vec eigenVals;
-			arma::mat eigenVecs;
-
-			if(this->viewY.n_cols < this->viewX.n_cols) {
-				arma::eig_sym(eigenVals, eigenVecs, S.t() * S, "dc");
-				q = eigenVecs.unsafe_col(eigenVecs.n_cols - 1);
-			} else {
-				arma::eig_sym(eigenVals, eigenVecs, S * S.t(), "dc");
-
-				q = S.t() * eigenVecs.unsafe_col(eigenVecs.n_cols - 1);
-				q = q / (arma::sqrt(q.t() * q)[0]);
-			}
-
-			r = S * q;
-		} else {
-			r = S;
-		}
+		r = S; // Only univariate responses are supported
 
 		t = this->viewX * r;
 
@@ -126,10 +108,11 @@ void PLSSimpls::fit(uint16_t ncomp) {
 		v = v / ( arma::sqrt(v.t() * v)[0] ); // Normalize orthogonal loadings
 
 		S = S - v * v.t() * S; // deflate S
-		tQ.row(i) = q.t();
+		this->tQ.row(i) = q.t();
 
 		// R and V must not be updated because r resp. v are already pointers to the correct column
-		this->coef.slice(i) = R.cols(0, i) * tQ.rows(0, i);
+
+		this->coef.slice(i) = this->R.cols(0, i) * this->tQ.rows(0, i);
 		this->intercepts.row(i) = this->Ymean - (this->Xmean * this->coef.slice(i));
 
 		if(this->fitValues) {

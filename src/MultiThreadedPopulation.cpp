@@ -343,9 +343,7 @@ void MultiThreadedPopulation::run() {
 			offset += 2 * threadArgs[i].numMatingCouples;
 		} else {
 			mainThreadMatingCouples += threadArgs[i].numMatingCouples;
-			IF_DEBUG(
-					 Rcout << "Warning: Thread " << i << " could not be created: " << strerror(pthreadRC) << std::endl;
-					 )
+			IF_DEBUG(Rcout << "Warning: Thread " << i << " could not be created: " << strerror(pthreadRC) << std::endl;)
 		}
 	}
 	

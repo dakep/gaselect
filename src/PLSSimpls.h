@@ -39,6 +39,14 @@ private:
 	arma::mat intercepts; // n x ncomp matrix with intercept terms
 	arma::rowvec Ymean; // Column means of Y
 	arma::rowvec Xmean; // Column means of X
+
+	/*
+	 * Following private variables are only for fitting, but it is faster to not
+	 * destroy them after each fit
+	 */
+	arma::mat R; // X factor weights
+	arma::mat V; // Orthogonal loadings
+	arma::mat tQ; // Y factor loadings (transposed)
 };
 
 
