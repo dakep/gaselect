@@ -2,50 +2,58 @@
 #define RNG_H
 
 #include "config.h"
+#include <vector>
 
 class RNG {
-	public:
-		RNG(uint32_t seed);
-//		~RNG() {}
+public:
+	RNG(void);
+	RNG(uint32_t seed);
+	RNG(const uint32_t * const seed);
+	RNG(const std::vector<uint32_t> &seed);
 
-		void seed(uint32_t seed);
+//	~RNG() {}
 
-		double operator()(double min, double max){
-			return min + ((this->*genFun)() / RNG::RANDOM_MAX) * (max - min);
-		}
-		uint32_t operator()() {
-			return (this->*genFun)();
-		}
+	void seed(uint32_t seed);
+	void seed(const uint32_t * const seed);
+	void seed(const std::vector<uint32_t> &seed);
 
-	private:
-		static const uint32_t W = 32;
-		static const uint32_t R = 624;
-		static const uint32_t DISCARD = 31;
-		static const uint32_t MASKU = (0xffffffffU >> (RNG::W - RNG::DISCARD));
-		static const uint32_t MASKL = (~RNG::MASKU);
-		static const uint32_t M1 = 70;
-		static const uint32_t M2 = 179;
-		static const uint32_t M3 = 449;
+	double operator()(double min, double max){
+		return min + ((this->*genFun)() / RNG::RANDOM_MAX) * (max - min);
+	}
+	uint32_t operator()() {
+		return (this->*genFun)();
+	}
 
-		static const double RANDOM_MAX; // 2^W = 2^32
+private:
+	static const uint32_t W = 32;
+	static const uint32_t R = 624;
+	static const uint32_t DISCARD = 31;
+	static const uint32_t MASKU = (0xffffffffU >> (RNG::W - RNG::DISCARD));
+	static const uint32_t MASKL = (~RNG::MASKU);
+	static const uint32_t M1 = 70;
+	static const uint32_t M2 = 179;
+	static const uint32_t M3 = 449;
 
-		int32_t stateIndex;
-		uint32_t STATE[RNG::R];
-		uint32_t z0;
-		uint32_t z1;
-		uint32_t z2;
+	static const double RANDOM_MAX; // 2^W = 2^32
 
-		uint32_t (RNG::*genFun)(void);
+	int32_t stateIndex;
+	uint32_t STATE[RNG::R];
+	uint32_t z0;
+	uint32_t z1;
+	uint32_t z2;
 
-		uint32_t case1(void); // stateIndex = 0
-		uint32_t case2(void); // stateIndex = 1
-		uint32_t case3(void); // stateIndex + M1 >= R
-		uint32_t case4(void); // stateIndex + M3 >= R
-		uint32_t case5(void); // stateIndex + M2 >= R
-		uint32_t case6(void); // 2 <= stateIndex <= (R - M3 - 1)
+	uint32_t (RNG::*genFun)(void);
 
-	public:
-		static const uint16_t RANDOM_BITS = RNG::W;
+	uint32_t case1(void); // stateIndex = 0
+	uint32_t case2(void); // stateIndex = 1
+	uint32_t case3(void); // stateIndex + M1 >= R
+	uint32_t case4(void); // stateIndex + M3 >= R
+	uint32_t case5(void); // stateIndex + M2 >= R
+	uint32_t case6(void); // 2 <= stateIndex <= (R - M3 - 1)
+
+public:
+	static const uint16_t RANDOM_BITS = RNG::W;
+	static const uint32_t SEED_SIZE = RNG::R;
 };
 
 #endif

@@ -25,7 +25,7 @@
 class MultiThreadedPopulation : public Population {
 	
 public:
-	MultiThreadedPopulation(const Control &ctrl, ::Evaluator &evaluator, RNG& rng);
+	MultiThreadedPopulation(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed);
 	~MultiThreadedPopulation();
 	
 	/**

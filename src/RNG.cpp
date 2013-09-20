@@ -9,6 +9,8 @@
  *
  ******************************/
 #include "RNG.h"
+#include <vector>
+#include <stdexcept>
 
 #define MAT0POS(t,v) (v^(v>>t))
 #define MAT0NEG(t,v) (v^(v<<(-(t))))
@@ -43,8 +45,37 @@
 
 const double RNG::RANDOM_MAX = 4294967296; // 2^W = 2^32
 
+RNG::RNG(void) {
+	this->stateIndex = 0;
+	this->genFun = &RNG::case1;
+}
+
 RNG::RNG(uint32_t seed) {
 	this->seed(seed);
+}
+
+RNG::RNG(const uint32_t * const seed) {
+	this->seed(seed);
+}
+
+RNG::RNG(const std::vector<uint32_t> &seed) {
+	this->seed(seed);
+}
+
+void RNG::seed(const uint32_t * const seed) {
+	std::copy(seed, seed + RNG::SEED_SIZE, this->STATE);
+	this->stateIndex = 0;
+	this->genFun = &RNG::case1;
+}
+
+void RNG::seed(const std::vector<uint32_t> &seed) {
+	if(seed.size() < RNG::SEED_SIZE) {
+		throw std::invalid_argument("The size of the seed must not be smaller than the RNG's seed size");
+	}
+
+	std::copy(seed.begin(), seed.begin() + RNG::SEED_SIZE, this->STATE);
+	this->stateIndex = 0;
+	this->genFun = &RNG::case1;
 }
 
 void RNG::seed(uint32_t seed) {

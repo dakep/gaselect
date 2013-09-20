@@ -28,9 +28,9 @@ public:
 	LMEvaluator(const arma::mat &X, const arma::colvec &y, const LMEvaluator::Statistic statistic, const VerbosityLevel &verbosity, const bool addIntercept = true);
 	//	~LMEvaluator();
 	
-	double evaluate(arma::uvec &columnSubset) const;
+	double evaluate(arma::uvec &columnSubset);
 	
-	double evaluate(Chromosome &ch) const {
+	double evaluate(Chromosome &ch) {
 		arma::uvec columnSubset = ch.toColumnSubset();
 		double fitness = this->evaluate(columnSubset);
 		ch.setFitness(fitness);

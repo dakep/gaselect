@@ -52,7 +52,7 @@ void PLS::setSubmatrixViewRows(const arma::uvec &rows, bool keepOldColumns) {
 }
 
 // ncomp should be zero based
-arma::mat PLS::predict(arma::mat newX, uint16_t ncomp) const {
+arma::mat PLS::predict(const arma::mat &newX, uint16_t ncomp) const {
 	const arma::cube& coefs = this->getCoefficients();
 	const arma::mat& intercepts = this->getIntercepts();
 	if(ncomp > coefs.n_slices) {
@@ -66,7 +66,7 @@ arma::mat PLS::predict(arma::mat newX, uint16_t ncomp) const {
 	return pred;
 }
 
-arma::cube PLS::predict(arma::mat newX) const {
+arma::cube PLS::predict(const arma::mat &newX) const {
 	const arma::cube& coefs = this->getCoefficients();
 	const arma::mat& intercepts = this->getIntercepts();
 	arma::cube pred(newX.n_rows, coefs.n_cols, coefs.n_slices);

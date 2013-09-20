@@ -19,37 +19,47 @@
 #define IF_FULLY_VERBOSE(expr)
 #endif
 
-double PLSEvaluator::evaluate(arma::uvec &columnSubset) const {
+PLSEvaluator::PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const std::vector<uint32_t> &seed, const VerbosityLevel verbosity) :
+Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
+nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
+completeSegments(nrows % numSegments), seed(seed), pls(pls), cloned(false), rowNumbers(nrows)
+{
+	if(pls->getNumberOfResponseVariables() > 1) {
+		throw std::invalid_argument("PLS evaluator only available for models with 1 response variable");
+	}
+};
+
+double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 	uint16_t maxNComp = ((columnSubset.n_elem < (this->nrows - 2 * this->segmentLength - 2)) ? columnSubset.n_elem : this->nrows - 2 * this->segmentLength - 2);
 	double sumSEP = 0;
-	arma::uvec rowNumbers = this->initRowNumbers();
 	arma::uword rep = 0;
 
+	// Seed RNG again so that equal columnSubsets have the same estimated SEP
+	this->initRowNumbers();
+	this->rng.seed(this->seed);
+	
 	this->pls->setSubmatrixViewColumns(columnSubset);
 	for(rep = 0; rep < this->numReplications; ++rep) {
-		sumSEP += this->estSEP(maxNComp, rowNumbers);
+		sumSEP += this->estSEP(maxNComp);
 	}
 
 	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
 	return -sumSEP;
 }
 
-inline arma::uvec PLSEvaluator::initRowNumbers() const {
+inline void PLSEvaluator::initRowNumbers() {
 	arma::uword i = 0, j = 1;
-	arma::uvec rowNumbers(this->nrows);
 
 	for(; j < this->nrows; i += 2, j += 2) {
-		rowNumbers[i] = i;
-		rowNumbers[j] = j;
+		this->rowNumbers[i] = i;
+		this->rowNumbers[j] = j;
 	}
 	if(i < this->nrows) {
-		rowNumbers[i] = i;
+		this->rowNumbers[i] = i;
 	}
-
-	return rowNumbers;
 }
 
-double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
+double PLSEvaluator::estSEP(uint16_t ncomp) {
 	// (online) Sum of squares of differences from the (current) mean (residMeans)
 	// M_2,n = sum( (x_i - mean_n) ^ 2 )
 	arma::vec RSS(ncomp);
@@ -59,8 +69,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 	double r2;
 
 	uint16_t seg = 0, comp = 0;
-	arma::uword randPos = 0, i = 0;
-	arma::uword n = 0, nSeg = 0;
+	arma::uword i = 0, n = 0, nSeg = 0;
 
 	// If not all segments are the same length, segmentLength is the longer one
 	// (i.e. the incomplete segments will be one element shorter)
@@ -98,15 +107,13 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 			 * find a random position in the back of the array
 			 * (first elements are already used elements or current ones)
 			 */
-			randPos = (arma::uword) ((*this->rng)(n + i, this->nrows - n - i));
-
-			std::swap(rowNumbers[n + i], rowNumbers[randPos]);
+			std::swap(rowNumbers[n + i], rowNumbers[(arma::uword) this->rng(n + i, this->nrows)]);
 			std::swap(rowNumbers[i], rowNumbers[n + i]);
 		}
 		segment = rowNumbers.rows(0, segmentLength - 1);
 		notSegment = rowNumbers.rows(segmentLength, this->nrows - lastSegmentLength - 1);
 
-		IF_FULLY_VERBOSE(Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl)
+		IF_FULLY_VERBOSE(Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;)
 
 		/*
 		 * Segment the data and fit the PLS model with up to
@@ -197,7 +204,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const {
 }
 
 Evaluator* PLSEvaluator::clone() const {
-	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->verbosity, this->rng);
+	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->seed, this->verbosity);
 	that->cloned = true;
 	return that;	
 }

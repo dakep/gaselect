@@ -7,8 +7,6 @@
 //
 #include "config.h"
 
-//#define HAVE_PTHREAD_H 1
-
 #ifdef HAVE_PTHREAD_H
 
 #include <exception>
@@ -40,7 +38,7 @@ inline bool check_interrupt() {
 	return (R_ToplevelExec(check_interrupt_impl, NULL) == FALSE);
 }
 
-MultiThreadedPopulation::MultiThreadedPopulation(const Control &ctrl, ::Evaluator &evaluator, RNG& rng) : Population(ctrl, evaluator, rng), nextGenFitnessMap(ctrl.populationSize, 0.0) {
+MultiThreadedPopulation::MultiThreadedPopulation(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) : Population(ctrl, evaluator, seed), nextGenFitnessMap(ctrl.populationSize, 0.0) {
 	// initialize original population (generation 0) totally randomly
 	if(this->ctrl.numThreads <= 1) {
 		throw new std::logic_error("This population should only be used if multiple threads are requested");
@@ -263,6 +261,7 @@ void MultiThreadedPopulation::mate(uint16_t numMatingCouples, ::Evaluator& evalu
 
 void MultiThreadedPopulation::run() {
 	int i = 0, j = 0;
+	RNG rng(this->seed);
 	Chromosome* tmpChromosome;
 	VariablePositionPopulation varPosPop(this->ctrl.chromosomeSize);
 	MultiThreadedPopulation::ThreadArgsWrapper* threadArgs;
@@ -283,7 +282,7 @@ void MultiThreadedPopulation::run() {
 	}
 	
 	for(i = this->ctrl.populationSize; i > 0; --i) {
-		tmpChromosome = new Chromosome(this->ctrl, varPosPop, this->rng);
+		tmpChromosome = new Chromosome(this->ctrl, varPosPop, rng);
 		
 		this->currentGenFitnessMap.push_back(this->evaluator.evaluate(*tmpChromosome));
 		if(tmpChromosome->getFitness() < this->minCurrentGenFitness) {
@@ -297,7 +296,7 @@ void MultiThreadedPopulation::run() {
 		this->currentGeneration.push_back(tmpChromosome);
 		
 		// Full next generation with dummies
-		this->nextGeneration.push_back(new Chromosome(this->ctrl, varPosPop, this->rng, false));
+		this->nextGeneration.push_back(new Chromosome(this->ctrl, varPosPop, rng, false));
 		
 		if(check_interrupt()) {
 			throw InterruptException();
@@ -333,7 +332,7 @@ void MultiThreadedPopulation::run() {
 		}
 		threadArgs[i].offset = offset;
 		threadArgs[i].popObj = this;
-		threadArgs[i].seed = this->rng();
+		threadArgs[i].seed = rng();
 		threadArgs[i].evalObj = this->evaluator.clone();
 		
 		pthreadRC = pthread_create((threads + i), &threadAttr, &MultiThreadedPopulation::matingThreadStart, (void *) (threadArgs + i));
@@ -393,7 +392,7 @@ void MultiThreadedPopulation::run() {
 		 *
 		 */
 		try {
-			this->mate(mainThreadMatingCouples, this->evaluator, this->rng, offset, true);
+			this->mate(mainThreadMatingCouples, this->evaluator, rng, offset, true);
 		} catch (InterruptException) {
 			interrupted = true;
 		}
@@ -460,8 +459,6 @@ void MultiThreadedPopulation::run() {
 void* MultiThreadedPopulation::matingThreadStart(void* obj) {
 	ThreadArgsWrapper* args = static_cast<ThreadArgsWrapper*>(obj);
 	RNG rng(args->seed);
-	
-	args->evalObj->setRNG(&rng);
 	args->popObj->runMating(args->numMatingCouples, *args->evalObj, rng, args->offset);
 	return NULL;
 }

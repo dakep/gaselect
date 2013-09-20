@@ -9,12 +9,13 @@
 #include "config.h"
 
 #include <iostream>
+#include <stdexcept>
 #include <RcppArmadillo.h>
 #include "PLSSimpls.h"
 
 PLSSimpls::PLSSimpls(const arma::mat &X, const arma::mat &Y, const bool fitValues) : PLS(X, Y, fitValues) {
 	if(Y.n_cols > 1) {
-		throw std::logic_error("The SIMPLS implementation can only handle a univariate response");
+		throw std::invalid_argument("The size of the seed must not be smaller than the RNG's seed size");
 	}
 	this->subviewChanged();
 }

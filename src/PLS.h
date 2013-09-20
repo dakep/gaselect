@@ -62,8 +62,8 @@ public:
 	uint16_t getResultNComp() const { return this->resultNComp; }
 
 	// ncomp should be 1 based (as in the fit method)
-	arma::mat predict(arma::mat newX, uint16_t ncomp) const;
-	arma::cube predict(arma::mat newX) const;
+	arma::mat predict(const arma::mat &newX, uint16_t ncomp) const;
+	arma::cube predict(const arma::mat &newX) const;
 	
 	const arma::mat & getXColumnView() const { return this->viewXCol; }
 	const arma::mat & getY() const { return this->Y; }

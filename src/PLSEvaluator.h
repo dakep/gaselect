@@ -11,24 +11,19 @@
 
 #include "config.h"
 
+#include <stdexcept>
+#include <vector>
+#include <algorithm>
 #include <RcppArmadillo.h>
-#include "RNG.h"
 
+#include "RNG.h"
 #include "Evaluator.h"
 #include "Chromosome.h"
 #include "PLS.h"
 
 class PLSEvaluator : public Evaluator {
 public:
-	PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const VerbosityLevel verbosity, RNG* rng) :
-	Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
-	nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
-	completeSegments(nrows % numSegments), pls(pls), rng(rng), cloned(false)
-	{
-		if(pls->getNumberOfResponseVariables() > 1) {
-			throw Rcpp::exception("PLS evaluator only available for models with 1 response variable", __FILE__, __LINE__);
-		}
-	};
+	PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const std::vector<uint32_t> &seed, const VerbosityLevel verbosity);
 
 	~PLSEvaluator() {
 		if(this->cloned == true) {
@@ -36,18 +31,14 @@ public:
 		}
 	}
 	
-	double evaluate(Chromosome &ch) const {
+	double evaluate(Chromosome &ch) {
 		arma::uvec columnSubset = ch.toColumnSubset();
 		double fitness = this->evaluate(columnSubset);
 		ch.setFitness(fitness);
 		return fitness;
 	};
 
-	double evaluate(arma::uvec &colSubset) const;
-
-	void setRNG(RNG* rng) {
-		this->rng = rng;
-	};
+	double evaluate(arma::uvec &columnSubset);
 	
 	Evaluator* clone() const;
 
@@ -57,18 +48,20 @@ private:
 	const arma::uword nrows;
 	const arma::uword segmentLength; // The length of the incomplete segments
 	const uint16_t completeSegments; // The number of segments with `segmentLength` + 1 elements. If 0, all segments have `segmentLength` elements
+	const std::vector<uint32_t> &seed;
 
 	PLS *pls;
-	RNG *rng;
-
+	
+	RNG rng;
 	bool cloned;
 
 	/**
 	 * Estimate the SEP
 	 */
-	double estSEP(uint16_t ncomp, arma::uvec &rowNumbers) const;
+	double estSEP(uint16_t ncomp);
 
-	arma::uvec initRowNumbers() const;
+	arma::uvec rowNumbers;
+	void initRowNumbers();
 };
 
 

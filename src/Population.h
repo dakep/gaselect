@@ -41,7 +41,7 @@ public:
 		}
 	};
 
-	Population(const Control &ctrl, ::Evaluator &evaluator, RNG &rng) : ctrl(ctrl), evaluator(evaluator), rng(rng) {
+	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) : ctrl(ctrl), evaluator(evaluator), seed(seed) {
 		this->currentGeneration.reserve(this->ctrl.populationSize);
 		this->currentGenFitnessMap.reserve(this->ctrl.populationSize);
 		this->minEliteFitness = 0.0;
@@ -74,7 +74,7 @@ private:
 protected:
 	const Control& ctrl;
 	::Evaluator& evaluator;
-	RNG &rng;
+	const std::vector<uint32_t> &seed;
 
 	std::multiset<Chromosome, Population::ChromosomeComparator> elite;
 	std::vector<Chromosome*> currentGeneration;

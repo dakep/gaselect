@@ -31,8 +31,9 @@ SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy, SEXP Sseed) {
 	Population *pop;
 	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls; 3rd bit set ==> free globalUnifGen; 4th bit set ==> free pop
 BEGIN_RCPP
-	RNG rng(as<uint32_t>(Sseed));
 	List control = List(Scontrol);
+	uint32_t singleSeed = as<uint32_t>(Sseed);
+	std::vector<uint32_t> seed;
 	uint16_t numThreads = as<uint16_t>(control["numThreads"]);
 	VerbosityLevel verbosity = (VerbosityLevel) as<int>(control["verbosity"]);
 	EvaluatorClass evalClass = (EvaluatorClass) as<int>(control["evaluatorClass"]);
@@ -68,6 +69,15 @@ BEGIN_RCPP
 				 as<uint8_t>(control["cutoffQuantile"]),
 				 (CrossoverType) as<int>(control["crossover"]),
 				 verbosity);
+
+	/*
+	 * Generate a common seed for the Population and the PLSEvaluator objects
+	 */
+	RNG rng(singleSeed);
+	seed.reserve(RNG::SEED_SIZE);
+	for(uint32_t i = 0; i < RNG::SEED_SIZE; ++i) {
+		seed.push_back(rng());
+	}
 	
 	switch(evalClass) {
 		case USER: {
@@ -84,7 +94,7 @@ BEGIN_RCPP
 			pls = PLS::getInstance(method, X, Y, false);
 			toFree |= 2; // pls has to be freed
 			
-			eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), ctrl.verbosity, &rng);
+			eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), seed, ctrl.verbosity);
 
 			break;
 		}
@@ -113,9 +123,9 @@ BEGIN_RCPP
 #ifdef HAVE_PTHREAD_H
 	try {
 		if(numThreads > 1) {
-			pop = new MultiThreadedPopulation(ctrl, *eval, rng);
+			pop = new MultiThreadedPopulation(ctrl, *eval, seed);
 		} else {
-			pop = new SingleThreadPopulation(ctrl, *eval, rng);
+			pop = new SingleThreadPopulation(ctrl, *eval, seed);
 		}
 		toFree |= 8;
 		pop->run();
@@ -127,7 +137,7 @@ BEGIN_RCPP
 		}
 	}
 #else
-	pop = new SingleThreadPopulation(ctrl, *eval, rng);
+	pop = new SingleThreadPopulation(ctrl, *eval);
 	toFree |= 8;
 	pop->run();
 #endif
@@ -186,6 +196,7 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 	EvaluatorClass evalClass = (EvaluatorClass) as<int>(evaluator["evaluatorClass"]);
+	std::vector<uint32_t> seed;
 
 	
 	switch(evalClass) {
@@ -196,11 +207,16 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 		case PLS_EVAL: {
 			PLSMethod method = (PLSMethod) as<int>(evaluator["plsMethod"]);
 			RNG rng(as<uint32_t>(Sseed));
+
+			seed.reserve(RNG::SEED_SIZE);
+			for (uint32_t i = 0; i < RNG::SEED_SIZE; ++i) {
+				seed.push_back(rng());
+			}
 			
 			pls = PLS::getInstance(method, X, Y, false);
 			toFree |= 2; // pls has to be freed
 		
-			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]), as<uint16_t>(evaluator["numSegments"]), OFF, &rng);
+			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]), as<uint16_t>(evaluator["numSegments"]), seed, OFF);
 			
 			break;
 		}

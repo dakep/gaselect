@@ -35,7 +35,7 @@ inline bool check_interrupt() {
 	return (R_ToplevelExec(check_interrupt_impl, NULL) == FALSE);
 }
 
-SingleThreadPopulation::SingleThreadPopulation(const Control &ctrl, ::Evaluator &evaluator, RNG &rng) : Population(ctrl, evaluator, rng) {}
+SingleThreadPopulation::SingleThreadPopulation(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) : Population(ctrl, evaluator, seed) {}
 
 
 void SingleThreadPopulation::run() {
@@ -43,6 +43,7 @@ void SingleThreadPopulation::run() {
 	uint8_t matingTries = 0;
 	int popSizeHalf = this->ctrl.populationSize / 2;
 	VariablePositionPopulation varPosPop(this->ctrl.chromosomeSize);
+	RNG rng(this->seed);
 	
 	double sumFitness = 0.0;
 	double minFitness = 0.0;
@@ -57,8 +58,8 @@ void SingleThreadPopulation::run() {
 	Chromosome* tmpChromosome2;
 	Chromosome** child1;
 	Chromosome** child2;
-	Chromosome* proposalChild1 = new Chromosome(this->ctrl, varPosPop, this->rng, false);
-	Chromosome* proposalChild2 = new Chromosome(this->ctrl, varPosPop, this->rng, false);
+	Chromosome* proposalChild1 = new Chromosome(this->ctrl, varPosPop, rng, false);
+	Chromosome* proposalChild2 = new Chromosome(this->ctrl, varPosPop, rng, false);
 	
 	newGeneration.reserve(this->ctrl.populationSize);
 	newFitnessMap.reserve(this->ctrl.populationSize);
@@ -68,7 +69,7 @@ void SingleThreadPopulation::run() {
 	}
 	
 	for(i = this->ctrl.populationSize; i > 0; --i) {
-		tmpChromosome1 = new Chromosome(this->ctrl, varPosPop, this->rng);
+		tmpChromosome1 = new Chromosome(this->ctrl, varPosPop, rng);
 		
 		this->currentGenFitnessMap.push_back(this->evaluator.evaluate(*tmpChromosome1));
 		if(tmpChromosome1->getFitness() < minFitness) {
@@ -80,7 +81,7 @@ void SingleThreadPopulation::run() {
 		}
 		this->addChromosomeToElite(*tmpChromosome1);
 		this->currentGeneration.push_back(tmpChromosome1);
-		newGeneration.push_back(new Chromosome(this->ctrl, varPosPop, this->rng, false));
+		newGeneration.push_back(new Chromosome(this->ctrl, varPosPop, rng, false));
 		
 		if(check_interrupt()) {
 			throw InterruptException();
@@ -121,13 +122,13 @@ void SingleThreadPopulation::run() {
 		}
 		
 		for(j = 0; j < popSizeHalf; ++j) {
-			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(this->rng(0.0, sumFitness));
-			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(this->rng(0.0, sumFitness));
+			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
+			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
 			
 			child1 = &(newGeneration[2 * j]);
 			child2 = &(newGeneration[(2 * j) + 1]);
 
-			tmpChromosome1->mateWith(*tmpChromosome2, this->rng, **child1, **child2);
+			tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1, **child2);
 			
 			minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 
@@ -135,7 +136,7 @@ void SingleThreadPopulation::run() {
 			 * If both children have no variables, mate again
 			 */
 			while((*child1)->getVariableCount() == 0 && (*child2)->getVariableCount() == 0) {
-				tmpChromosome1->mateWith(*tmpChromosome2, this->rng, **child1, **child2);
+				tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1, **child2);
 			}
 
 			if((*child1)->getVariableCount() == 0) {
@@ -161,7 +162,7 @@ void SingleThreadPopulation::run() {
 			// At least the first child should be better than the worse parent
 			matingTries = 0;
 			while(((*child1)->getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
-				tmpChromosome1->mateWith(*tmpChromosome2, this->rng, *proposalChild1, *proposalChild2);
+				tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2);
 				
 				/*
 				 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
@@ -200,10 +201,10 @@ void SingleThreadPopulation::run() {
 				)
 			}
 			
-			if((*child1)->mutate(this->rng) == true) {
+			if((*child1)->mutate(rng) == true) {
 				this->evaluator.evaluate(**child1);
 			}
-			if((*child2)->mutate(this->rng) == true) {
+			if((*child2)->mutate(rng) == true) {
 				this->evaluator.evaluate(**child2);
 			}
 			

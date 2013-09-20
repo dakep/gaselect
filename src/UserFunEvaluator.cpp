@@ -10,7 +10,7 @@
 #include <RcppArmadillo.h>
 #include "UserFunEvaluator.h"
 
-double UserFunEvaluator::evaluate(Chromosome &ch) const {
+double UserFunEvaluator::evaluate(Chromosome &ch) {
 	SEXP rawFitness = this->userFun(Rcpp::wrap(ch.toLogicalVector()));
 	if(!Rf_isNumeric(rawFitness)) {
 		throw Rcpp::exception("Evaluation function has to return a numeric value", __FILE__, __LINE__);
@@ -21,7 +21,7 @@ double UserFunEvaluator::evaluate(Chromosome &ch) const {
 	return fitness;
 }
 
-double UserFunEvaluator::evaluate(arma::uvec &columnSubset) const {
+double UserFunEvaluator::evaluate(arma::uvec &columnSubset) {
 	Rcpp::LogicalVector logVec(columnSubset.n_elem, false);
 
 	for(arma::uword i = 0; i < columnSubset.n_elem; ++i) {

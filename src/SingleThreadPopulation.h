@@ -10,6 +10,7 @@
 #define GenAlgPLS_SingleThreadPopulation_h
 
 #include "config.h"
+#include <vector>
 
 #include "Evaluator.h"
 #include "Control.h"
@@ -17,7 +18,7 @@
 
 class SingleThreadPopulation : public Population {
 public:
-	SingleThreadPopulation(const Control &ctrl, ::Evaluator &evaluator, RNG &rng);
+	SingleThreadPopulation(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed);
 	~SingleThreadPopulation() {};
 
 	void run();

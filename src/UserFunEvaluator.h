@@ -11,7 +11,7 @@
 
 #include "config.h"
 
-#include <exception>
+#include <stdexcept>
 #include <RcppArmadillo.h>
 #include "Evaluator.h"
 #include "Chromosome.h"
@@ -21,8 +21,8 @@ public:
 	UserFunEvaluator(Rcpp::Function const &userFun, const VerbosityLevel &verbosity) : Evaluator(verbosity), userFun(userFun) {};
 //	~UserFunEvaluator();
 
-	double evaluate(Chromosome &ch) const;
-	double evaluate(arma::uvec &columnSubset) const;
+	double evaluate(Chromosome &ch);
+	double evaluate(arma::uvec &columnSubset);
 	/**
 	 * The UserFunEvaluator can not be cloned!!
 	 * It throws an std::logic_error if called

@@ -20,9 +20,8 @@ public:
 	Evaluator(const VerbosityLevel verbosity) : verbosity(verbosity) {}
 	virtual ~Evaluator() {};
 
-	virtual void setRNG(RNG*) {};
-	virtual double evaluate(arma::uvec &columnSubset) const = 0;
-	virtual double evaluate(Chromosome &ch) const = 0;
+	virtual double evaluate(arma::uvec &columnSubset) = 0;
+	virtual double evaluate(Chromosome &ch) = 0;
 	
 	virtual Evaluator* clone() const = 0;
 protected:

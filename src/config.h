@@ -61,7 +61,7 @@
 
 
 //#undef HAVE_PTHREAD_H
-//#define HAVE_PTHREAD_H 1
+#define HAVE_PTHREAD_H 1
 
 
 #ifdef ENABLE_DEBUG_VERBOSITY
