@@ -81,6 +81,15 @@ ShuffledSet::iterator ShuffledSet::iterator::operator+(const uint16_t &shift) {
 	return newIt;
 }
 
+
+ShuffledSet::iterator& ShuffledSet::iterator::operator+=(const uint16_t &shift) {
+	this->pos += shift;
+#ifdef SHUFFLED_SET_CHECK_ITERATOR_STATE
+	this->shifted = true;
+#endif
+	return *this;
+}
+
 bool ShuffledSet::iterator::operator==(const ShuffledSet::iterator &it) const {
 	return ((it.pos == this->pos) && (&(it.obj) == &(this->obj)));
 }

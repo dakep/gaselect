@@ -99,7 +99,7 @@ inline void Chromosome::initChromosomeParts(RNG& rng, ShuffledSet &shuffledSet) 
 	this->currentlySetBits = rng(this->ctrl.minVariables, this->ctrl.maxVariables + 1);
 
 	IF_DEBUG(
-		Rcout << "Init chromosome with " << bitsToSet << " bits set" << std::endl;
+		Rcout << "Init chromosome with " << this->currentlySetBits << " bits set" << std::endl;
 		Rcout << "First part before initializing: " << this->chromosomeParts[0] << std::endl;
 	)
 
@@ -573,26 +573,3 @@ inline IntChromosome Chromosome::rbits(RNG& rng) const {
 		return (IntChromosome) rng();
 	}
 }
-
-//inline std::vector<uint16_t> Chromosome::shuffledSet(uint16_t setSize, uint16_t shuffleSize, RNG& rng) const {
-//	// Fill population with correct values
-//	std::vector<uint16_t> pop(setSize);
-//
-//	if(shuffleSize == 1) {
-//		pop[0] = rng(0.0, setSize);
-//	} else {
-//		uint16_t i = 0;
-//		for(; i < setSize; ++i) {
-//			pop[i] = i;
-//		}
-//
-//		uint16_t randPos = 0;
-//		// Now shuffle population
-//		for(i = 0; i < shuffleSize; ++i) {
-//			randPos = rng(i, setSize);
-//			std::swap(pop[i], pop[randPos]);
-//		}
-//	}
-//	
-//	return pop;
-//}

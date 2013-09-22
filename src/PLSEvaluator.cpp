@@ -35,8 +35,7 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 	arma::uword rep = 0;
 
 	// Seed RNG again so that equal columnSubsets have the same estimated SEP
-//	this->initRowNumbers();
-	this->rowNumbers.reset();
+	this->initRowNumbers();
 	this->rng.seed(this->seed);
 	
 	this->pls->setSubmatrixViewColumns(columnSubset);

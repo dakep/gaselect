@@ -30,7 +30,7 @@ SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy, SEXP Sseed) {
 	PLS *pls;
 	Population *pop;
 	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls; 3rd bit set ==> free globalUnifGen; 4th bit set ==> free pop
-BEGIN_RCPP
+BEGIN_RCPP	
 	List control = List(Scontrol);
 	uint32_t singleSeed = as<uint32_t>(Sseed);
 	std::vector<uint32_t> seed;

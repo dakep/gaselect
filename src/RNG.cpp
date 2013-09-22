@@ -54,18 +54,8 @@ RNG::RNG(uint32_t seed) {
 	this->seed(seed);
 }
 
-RNG::RNG(const uint32_t * const seed) {
-	this->seed(seed);
-}
-
 RNG::RNG(const std::vector<uint32_t> &seed) {
 	this->seed(seed);
-}
-
-void RNG::seed(const uint32_t * const seed) {
-	std::copy(seed, seed + RNG::SEED_SIZE, this->STATE);
-	this->stateIndex = 0;
-	this->genFun = &RNG::case1;
 }
 
 void RNG::seed(const std::vector<uint32_t> &seed) {

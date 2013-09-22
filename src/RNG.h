@@ -8,13 +8,11 @@ class RNG {
 public:
 	RNG(void);
 	RNG(uint32_t seed);
-	RNG(const uint32_t * const seed);
 	RNG(const std::vector<uint32_t> &seed);
 
 //	~RNG() {}
 
 	void seed(uint32_t seed);
-	void seed(const uint32_t * const seed);
 	void seed(const std::vector<uint32_t> &seed);
 
 	double operator()(double min, double max){

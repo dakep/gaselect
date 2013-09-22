@@ -23,7 +23,7 @@ public:
 	ShuffledSet(uint16_t size);
 //	~ShuffledSet();
 	
-	class iterator : std::iterator<std::input_iterator_tag, uint16_t> {
+	class iterator : public std::iterator<std::input_iterator_tag, uint16_t> {
 	public:
 		/**
 		 * Attention: The first element in obj.set must already
@@ -41,10 +41,11 @@ public:
 		bool operator!=(const iterator &it) const;
 
 		/**
-		 * This method invalidates the shuffle-process
+		 * These methods invalidate the shuffle-process
 		 * Use only for comparisons (all checks for misuse are disabled!)
 		 */
 		iterator operator+(const uint16_t &shift);
+		iterator& operator+=(const uint16_t &shift);
 	private:
 		ShuffledSet &obj;
 		RNG &rng;

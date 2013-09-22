@@ -54,12 +54,6 @@ public:
 
 	friend std::ostream& operator<<(std::ostream &os, const Chromosome &ch);
 private:
-#if !(defined HAVE_BUILTIN_POPCOUNTLL | defined HAVE_BUILTIN_POPCOUNTL)
-	static const IntChromosome M1 = 0x5555555555555555; // binary: 010101010101... (1 zero, 1 one)
-	static const IntChromosome M2 = 0x3333333333333333; // binary: 001100110011... (2 zeros, 2 ones)
-	static const IntChromosome M4 = 0x0f0f0f0f0f0f0f0f; // binary: 000011110000... (4 zeros, 4 ones)
-	static const IntChromosome H01 = 0x0101010101010101; // the sum of 256 to the power of 0,1,2,3...
-#endif
 	static const uint8_t BITS_PER_PART = sizeof(IntChromosome) * BITS_PER_BYTE;
 
 #ifdef INT_CHROMOSOME_MAX_VAL
@@ -101,6 +95,7 @@ private:
 	std::ostream& printBits(std::ostream &os, IntChromosome bits, uint16_t leaveOut = 0) const;
 
 	inline void updateCurrentlySetBits();
+
 	/*
 	 * count trailing zeros
 	 */
@@ -109,9 +104,13 @@ private:
 	void copyFrom(const Chromosome& ch, bool copyChromosomeParts);
 
 #if !(defined HAVE_BUILTIN_POPCOUNTLL | defined HAVE_BUILTIN_POPCOUNTL)
+	static const IntChromosome M1 = 0x5555555555555555; // binary: 010101010101... (1 zero, 1 one)
+	static const IntChromosome M2 = 0x3333333333333333; // binary: 001100110011... (2 zeros, 2 ones)
+	static const IntChromosome M4 = 0x0f0f0f0f0f0f0f0f; // binary: 000011110000... (4 zeros, 4 ones)
+	static const IntChromosome H01 = 0x0101010101010101; // the sum of 256 to the power of 0,1,2,3...
+
 	static uint16_t popcount(IntChromosome x);
 #endif
-
 
 };
 
