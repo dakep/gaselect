@@ -51,16 +51,14 @@ private:
 	const std::vector<uint32_t> &seed;
 
 	PLS *pls;
-	
-	RNG rng;
 	bool cloned;
 
 	/**
 	 * Estimate the SEP
 	 */
-	double estSEP(uint16_t ncomp);
+	double estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers);
 
-	arma::uvec rowNumbers;
+	std::vector< std::vector<arma::uword> > shuffledRowNumbers;
 	void initRowNumbers();
 };
 

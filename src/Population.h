@@ -104,21 +104,15 @@ protected:
 		return this->currentGeneration[imid];
 	};
 	
-//	static bool comp(Chromosome* c1, Chromosome* c2) {
-//		return ((*c1) == (*c2));
-//	}
-//	
-//	void printUniques() {
-//		std::vector<Chromosome*> gen = this->currentGeneration;
-//		std::vector<Chromosome*>::iterator end = std::unique(gen.begin(), gen.end(), this->comp);
-//		int uniques = 0;
-//		for(std::vector<Chromosome*>::iterator it = gen.begin(); it != end; ++it) {
-//			++uniques;
-////			Rcpp::Rcout << (*it)->toColumnSubset().t() << std::endl;
-//			(*it)->toColumnSubset().t().raw_print(Rcpp::Rcout);
-//		}
-//		Rcpp::Rcout << std::endl << "================> " << uniques << " unique chromosomes" << std::endl << std::endl;
-//	};
+	static bool comp(Chromosome* c1, Chromosome* c2) {
+		return ((*c1) == (*c2));
+	}
+	
+	uint16_t countUniques() {
+		std::vector<Chromosome*> gen = this->currentGeneration;
+		std::vector<Chromosome*>::iterator end = std::unique(gen.begin(), gen.end(), Population::comp);
+		return std::distance(gen.begin(), end);
+	};
 	
 	double getQuantileFitness() {
 		std::vector<double> copyFitnessMap = this->currentGenFitnessMap;

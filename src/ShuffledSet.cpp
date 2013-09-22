@@ -9,12 +9,13 @@
 #include "config.h"
 #include "ShuffledSet.h"
 
+#include <RcppArmadillo.h>
 #include <stdexcept>
 #include <algorithm>
 
 ShuffledSet::ShuffledSet() {}
 
-ShuffledSet::ShuffledSet(uint16_t size) {
+ShuffledSet::ShuffledSet(arma::uword size) {
 	this->reset(size);
 }
 
@@ -22,9 +23,9 @@ void ShuffledSet::reset() {
 	this->reset(this->set.size());
 }
 
-void ShuffledSet::reset(uint16_t size) {
+void ShuffledSet::reset(size_t size) {
 	this->set.resize(size);
-	uint16_t i = 0, j = 1;
+	arma::uword i = 0, j = 1;
 	for(; j < size; i += 2, j += 2) {
 		this->set[i] = i;
 		this->set[j] = j;
@@ -34,6 +35,13 @@ void ShuffledSet::reset(uint16_t size) {
 	}
 }
 
+const std::vector<arma::uword>& ShuffledSet::shuffleAll(RNG &rng) {
+	for(arma::uword i = 0; i < this->set.size(); ++i) {
+		std::swap(this->set[i], this->set[rng(i, this->set.size())]);
+	}
+	
+	return this->set;
+}
 
 ShuffledSet::iterator ShuffledSet::shuffle(RNG &rng) {
 	std::swap(this->set[0], this->set[rng(0.0, this->set.size())]);
@@ -41,10 +49,10 @@ ShuffledSet::iterator ShuffledSet::shuffle(RNG &rng) {
 	return ShuffledSet::iterator(*this, rng);
 }
 
-ShuffledSet::iterator ShuffledSet::shuffle(uint16_t size, RNG &rng, bool onlyOne) {
+ShuffledSet::iterator ShuffledSet::shuffle(arma::uword size, RNG &rng, bool onlyOne) {
 	if(onlyOne) {
 		this->set.resize(1);
-		this->set[0] = (uint16_t) rng(0.0, size);
+		this->set[0] = (arma::uword) rng(0.0, size);
 		return ShuffledSet::iterator(*this, rng);
 	} else {
 		this->reset(size);
@@ -63,7 +71,7 @@ ShuffledSet::iterator& ShuffledSet::iterator::operator++() {
 	return *this;
 }
 
-const uint16_t ShuffledSet::iterator::operator*() const {
+const arma::uword ShuffledSet::iterator::operator*() const {
 #ifdef SHUFFLED_SET_CHECK_ITERATOR_STATE
 	if(this->shifted == true) {
 		throw std::logic_error("The iterator has been shifted and is thus not valid for accessing elements");
@@ -72,7 +80,7 @@ const uint16_t ShuffledSet::iterator::operator*() const {
 	return this->obj.set[this->pos];
 }
 
-ShuffledSet::iterator ShuffledSet::iterator::operator+(const uint16_t &shift) {
+ShuffledSet::iterator ShuffledSet::iterator::operator+(const arma::uword &shift) {
 	ShuffledSet::iterator newIt(this->obj, this->rng);
 	newIt.pos = this->pos + shift;
 #ifdef SHUFFLED_SET_CHECK_ITERATOR_STATE
@@ -82,7 +90,7 @@ ShuffledSet::iterator ShuffledSet::iterator::operator+(const uint16_t &shift) {
 }
 
 
-ShuffledSet::iterator& ShuffledSet::iterator::operator+=(const uint16_t &shift) {
+ShuffledSet::iterator& ShuffledSet::iterator::operator+=(const arma::uword &shift) {
 	this->pos += shift;
 #ifdef SHUFFLED_SET_CHECK_ITERATOR_STATE
 	this->shifted = true;

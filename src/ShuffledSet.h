@@ -11,6 +11,7 @@
 
 #include "config.h"
 
+#include <RcppArmadillo.h>
 #include <iterator>
 #include <vector>
 
@@ -20,10 +21,10 @@ class ShuffledSet
 {
 public:
 	ShuffledSet();
-	ShuffledSet(uint16_t size);
+	ShuffledSet(arma::uword size);
 //	~ShuffledSet();
 	
-	class iterator : public std::iterator<std::input_iterator_tag, uint16_t> {
+	class iterator : public std::iterator<std::input_iterator_tag, arma::uword> {
 	public:
 		/**
 		 * Attention: The first element in obj.set must already
@@ -35,7 +36,7 @@ public:
 #endif
 		};
 		
-		const uint16_t operator*() const;
+		const arma::uword operator*() const;
 		iterator& operator++();
 		bool operator==(const iterator &it) const;
 		bool operator!=(const iterator &it) const;
@@ -44,18 +45,24 @@ public:
 		 * These methods invalidate the shuffle-process
 		 * Use only for comparisons (all checks for misuse are disabled!)
 		 */
-		iterator operator+(const uint16_t &shift);
-		iterator& operator+=(const uint16_t &shift);
+		iterator operator+(const arma::uword &shift);
+		iterator& operator+=(const arma::uword &shift);
 	private:
 		ShuffledSet &obj;
 		RNG &rng;
-		uint16_t pos;
+		arma::uword pos;
 
 #ifdef SHUFFLED_SET_CHECK_ITERATOR_STATE
 		bool shifted;
 #endif
 	};
 
+	/**
+	 * Shuffle the whole set and return a reference to the shuffled set (the reference
+	 * will be invalid once the ShuffledSet object is destroyed)
+	 */
+	const std::vector<arma::uword>& shuffleAll(RNG &rng);
+	
 	/**
 	 *
 	 */
@@ -64,19 +71,19 @@ public:
 	/**
 	 * First reset the size of the set to `size`
 	 *
-	 * @param uint16_t size ... The new size of the set
+	 * @param arma::uword size ... The new size of the set
 	 * @param RNG rng ... The random number generator instance
 	 * @param bool onlyOne ... If this is TRUE, only one element is guaranteed to be shuffled
 	 */
-	iterator shuffle(uint16_t size, RNG &rng, bool onlyOne = false);
+	iterator shuffle(arma::uword size, RNG &rng, bool onlyOne = false);
 	
 	/**
 	 * Reset the set to a sorted stated with `size` elements
 	 * (i.e. have values 0, 1, 2, 3, ..., size - 1)
 	 *
-	 * @param uint16_t size ... The new size of the set
+	 * @param arma::uword size ... The new size of the set
 	 */
-	void reset(uint16_t size);
+	void reset(size_t size);
 
 	/**
 	 * Reset the set to a sorted state with the same number of elements
@@ -85,7 +92,7 @@ public:
 	void reset();
 
 private:
-	std::vector<uint16_t> set;
+	std::vector<arma::uword> set;
 };
 
 #endif

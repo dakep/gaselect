@@ -22,25 +22,23 @@
 PLSEvaluator::PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const std::vector<uint32_t> &seed, const VerbosityLevel verbosity) :
 Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
 nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
-completeSegments(nrows % numSegments), seed(seed), pls(pls), cloned(false), rowNumbers(nrows)
+completeSegments(nrows % numSegments), seed(seed), pls(pls), cloned(false)
 {
 	if(pls->getNumberOfResponseVariables() > 1) {
 		throw std::invalid_argument("PLS evaluator only available for models with 1 response variable");
 	}
+
+	this->initRowNumbers();
 };
 
 double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 	uint16_t maxNComp = ((columnSubset.n_elem < (this->nrows - 2 * this->segmentLength - 2)) ? columnSubset.n_elem : this->nrows - 2 * this->segmentLength - 2);
 	double sumSEP = 0;
 	arma::uword rep = 0;
-
-	// Seed RNG again so that equal columnSubsets have the same estimated SEP
-	this->initRowNumbers();
-	this->rng.seed(this->seed);
 	
 	this->pls->setSubmatrixViewColumns(columnSubset);
 	for(rep = 0; rep < this->numReplications; ++rep) {
-		sumSEP += this->estSEP(maxNComp);
+		sumSEP += this->estSEP(maxNComp, this->shuffledRowNumbers[rep]);
 	}
 
 	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
@@ -48,18 +46,16 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 }
 
 inline void PLSEvaluator::initRowNumbers() {
-	arma::uword i = 0, j = 1;
+	RNG rng(this->seed);
+	ShuffledSet rowNumbers(this->nrows);
+	this->shuffledRowNumbers.reserve(this->numReplications);
 
-	for(; j < this->nrows; i += 2, j += 2) {
-		this->rowNumbers[i] = i;
-		this->rowNumbers[j] = j;
-	}
-	if(i < this->nrows) {
-		this->rowNumbers[i] = i;
+	for(uint16_t i = 0; i < this->numReplications; ++i) {
+		this->shuffledRowNumbers.push_back(rowNumbers.shuffleAll(rng));
 	}
 }
 
-double PLSEvaluator::estSEP(uint16_t ncomp) {
+double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers) {
 	// (online) Sum of squares of differences from the (current) mean (residMeans)
 	// M_2,n = sum( (x_i - mean_n) ^ 2 )
 	arma::vec RSS(ncomp);
@@ -69,7 +65,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 	double r2;
 
 	uint16_t seg = 0, comp = 0;
-	arma::uword i = 0, n = 0, nSeg = 0;
+	arma::uword n = 0, nSeg = 0;
 
 	// If not all segments are the same length, segmentLength is the longer one
 	// (i.e. the incomplete segments will be one element shorter)
@@ -91,39 +87,19 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 	/*
 	 * the last segment is used as test set, and is excluded from all other calculations
 	 */
+	IF_FULLY_VERBOSE(arma::urowvec(rowNumbers).raw_print(Rcpp::Rcout, "EVALUATOR - Shuffled row numbers:");)
 
 	for(; seg < this->numSegments - 1; ++seg) {
-		/*
-		 * Determine segment
-		 * Randomly permute the last (numSegments - seg) * segmentLength elements
-		 * in rowNumbers and swap them with the first segmentLength elements
-		 * --> first segmentLength elements are the left out elements
-		 * all other elements are included elements
-		 */
-		for(i = 0; i < segmentLength; ++i) {
-			/*
-			 * find a random position in the back of the array
-			 * (first elements are already used elements or current ones)
-			 */
-			std::swap(this->rowNumbers[n + i], this->rowNumbers[(arma::uword) this->rng(n + i, this->nrows)]);
-			std::swap(this->rowNumbers[i], this->rowNumbers[n + i]);
-		}
-//		segment = rowNumbers.rows(0, segmentLength - 1);
-//		notSegment = rowNumbers.rows(segmentLength, this->nrows - lastSegmentLength - 1);
-
-		arma::uvec segment(&this->rowNumbers[0], segmentLength, false);
-		arma::uvec notSegment(&this->rowNumbers[segmentLength], this->nrows - segmentLength - lastSegmentLength, false);
+		arma::uvec segment(&rowNumbers[0], segmentLength, false);
+		arma::uvec notSegment(&rowNumbers[segmentLength], this->nrows - segmentLength - lastSegmentLength, false);
 		
 		if(--completeSegments == 0) {
 			--segmentLength;
 		}
 		
 		IF_FULLY_VERBOSE(
-			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t";
-			segment.t().raw_print(Rcpp::Rcout);
-			Rcpp::Rcout << std::endl << "\t";
-			notSegment.t().raw_print(Rcpp::Rcout);
-			Rcpp::Rcout << std::endl << std::endl;
+			segment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Segment");
+			notSegment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Remaining");
 		)
 
 		/*
@@ -186,11 +162,14 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 	/*
 	 * The last segment is used as test set
 	 */
-//	segment = rowNumbers.rows(this->nrows - segmentLength, this->nrows - 1);
-//	notSegment = rowNumbers.rows(0, this->nrows - segmentLength - 1);
 
-	arma::uvec segment(&this->rowNumbers[this->nrows - lastSegmentLength], lastSegmentLength, false);
-	arma::uvec notSegment(&this->rowNumbers[0], this->nrows - lastSegmentLength, false);
+	arma::uvec segment(&rowNumbers[this->nrows - lastSegmentLength], lastSegmentLength, false);
+	arma::uvec notSegment(&rowNumbers[0], this->nrows - lastSegmentLength, false);
+	
+	IF_FULLY_VERBOSE(
+		segment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Validation Segment");
+		notSegment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Validation Remaining");
+	)
 	
 	leftOutX = this->pls->getXColumnView().rows(segment);
 	leftOutY = this->pls->getY().rows(segment);
