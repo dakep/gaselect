@@ -17,6 +17,7 @@
 #include <errno.h>
 
 #include "RNG.h"
+#include "ShuffledSet.h"
 #include "MultiThreadedPopulation.h"
 
 using namespace Rcpp;
@@ -263,7 +264,7 @@ void MultiThreadedPopulation::run() {
 	int i = 0, j = 0;
 	RNG rng(this->seed);
 	Chromosome* tmpChromosome;
-	VariablePositionPopulation varPosPop(this->ctrl.chromosomeSize);
+	ShuffledSet shuffledSet(this->ctrl.chromosomeSize);
 	MultiThreadedPopulation::ThreadArgsWrapper* threadArgs;
 	uint16_t maxThreadsToSpawn = this->ctrl.numThreads - 1;
 	uint16_t mainThreadMatingCouples = this->ctrl.populationSize / 2;
@@ -282,7 +283,7 @@ void MultiThreadedPopulation::run() {
 	}
 	
 	for(i = this->ctrl.populationSize; i > 0; --i) {
-		tmpChromosome = new Chromosome(this->ctrl, varPosPop, rng);
+		tmpChromosome = new Chromosome(this->ctrl, shuffledSet, rng);
 		
 		this->currentGenFitnessMap.push_back(this->evaluator.evaluate(*tmpChromosome));
 		if(tmpChromosome->getFitness() < this->minCurrentGenFitness) {
@@ -296,7 +297,7 @@ void MultiThreadedPopulation::run() {
 		this->currentGeneration.push_back(tmpChromosome);
 		
 		// Full next generation with dummies
-		this->nextGeneration.push_back(new Chromosome(this->ctrl, varPosPop, rng, false));
+		this->nextGeneration.push_back(new Chromosome(this->ctrl, shuffledSet, rng, false));
 		
 		if(check_interrupt()) {
 			throw InterruptException();

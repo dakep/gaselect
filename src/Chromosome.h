@@ -16,7 +16,7 @@
 
 #include "Control.h"
 #include "TruncatedGeomGenerator.h"
-#include "VariablePositionPopulation.h"
+#include "ShuffledSet.h"
 #include "RNG.h"
 
 class InvalidCopulationException : public Rcpp::exception {
@@ -28,7 +28,7 @@ public:
 class Chromosome {
 
 public:
-	Chromosome(const Control &ctrl, VariablePositionPopulation &varPosPop, RNG& rng, bool randomInit = true);
+	Chromosome(const Control &ctrl, ShuffledSet &shuffledSet, RNG& rng, bool randomInit = true);
 	Chromosome(const Chromosome &other, bool copyChromosomeParts = true);
 //	~Chromosome();
 	
@@ -50,7 +50,7 @@ public:
 	bool operator!=(const Chromosome &ch) const;
 	Chromosome& operator=(const Chromosome &ch);
 	
-	uint16_t getVariableCount() const;
+	uint16_t getVariableCount() const { return this->currentlySetBits; };
 
 	friend std::ostream& operator<<(std::ostream &os, const Chromosome &ch);
 private:
@@ -73,20 +73,23 @@ private:
 
 	uint16_t numParts;
 	uint16_t unusedBits;
+	uint16_t currentlySetBits;
 	
-	// Array with the chromosome parts
-	// If not all bits are used, the k least significant bits of the 1st(!) part are not used (k = this->unusedBits)
+	/*
+	 * Array with the chromosome parts
+	 * If not all bits are used, the k least significant bits of the 1st(!) part are not used (k = this->unusedBits)
+	 */
 	std::vector<IntChromosome> chromosomeParts;
 	double fitness;
 
-	std::vector<uint16_t> shuffledSet(const uint16_t setSize, const uint16_t shuffleSize, RNG& rng) const;
+//	std::vector<uint16_t> shuffledSet(uint16_t setSize, uint16_t shuffleSize, RNG& rng) const;
 	
 	/*
 	 * Init the internal used chromosome parts completely random taking
 	 * the minimum and maximum number of set bits specified by the
 	 * control object into account
 	 */
-	void initChromosomeParts(RNG& rng, VariablePositionPopulation &varPosPop);
+	void initChromosomeParts(RNG& rng, ShuffledSet &shuffledSet);
 
 	/*
 	 * The RNG only returns 32 random bits
@@ -97,24 +100,16 @@ private:
 
 	std::ostream& printBits(std::ostream &os, IntChromosome bits, uint16_t leaveOut = 0) const;
 
+	inline void updateCurrentlySetBits();
 	/*
 	 * count trailing zeros
 	 */
-	uint16_t ctz(IntChromosome mask) const;
+	inline uint16_t ctz(IntChromosome mask) const;
 
 	void copyFrom(const Chromosome& ch, bool copyChromosomeParts);
 
 #if !(defined HAVE_BUILTIN_POPCOUNTLL | defined HAVE_BUILTIN_POPCOUNTL)
-	uint16_t popcount(IntChromosome x) const {
-		if(x == 0) {
-			return 0;
-		}
-		
-		x -= (x >> 1) & Chromosome::M1;								// put count of each 2 bits into those 2 bits
-		x = (x & Chromosome::M2) + ((x >> 2) & Chromosome::M2);	// put count of each 4 bits into those 4 bits
-		x = (x + (x >> 4)) & Chromosome::M4;						// put count of each 8 bits into those 8 bits
-		return ((x * Chromosome::H01) >> 56);							// adds left 8 bits of tmp + (tmp << 8) + (tmp << 16) + (tmp << 24) + ...
-	}
+	static uint16_t popcount(IntChromosome x);
 #endif
 
 

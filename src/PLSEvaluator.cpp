@@ -35,7 +35,8 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 	arma::uword rep = 0;
 
 	// Seed RNG again so that equal columnSubsets have the same estimated SEP
-	this->initRowNumbers();
+//	this->initRowNumbers();
+	this->rowNumbers.reset();
 	this->rng.seed(this->seed);
 	
 	this->pls->setSubmatrixViewColumns(columnSubset);
@@ -76,8 +77,6 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 	arma::uword segmentLength = this->segmentLength;
 	arma::sword completeSegments = this->completeSegments;
 	arma::uword lastSegmentLength = segmentLength; // if not all segments are the same length, the last segment is always one short
-	arma::uvec segment;
-	arma::uvec notSegment;
 
 	arma::mat residuals;
 	arma::mat leftOutX;
@@ -107,13 +106,26 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 			 * find a random position in the back of the array
 			 * (first elements are already used elements or current ones)
 			 */
-			std::swap(rowNumbers[n + i], rowNumbers[(arma::uword) this->rng(n + i, this->nrows)]);
-			std::swap(rowNumbers[i], rowNumbers[n + i]);
+			std::swap(this->rowNumbers[n + i], this->rowNumbers[(arma::uword) this->rng(n + i, this->nrows)]);
+			std::swap(this->rowNumbers[i], this->rowNumbers[n + i]);
 		}
-		segment = rowNumbers.rows(0, segmentLength - 1);
-		notSegment = rowNumbers.rows(segmentLength, this->nrows - lastSegmentLength - 1);
+//		segment = rowNumbers.rows(0, segmentLength - 1);
+//		notSegment = rowNumbers.rows(segmentLength, this->nrows - lastSegmentLength - 1);
 
-		IF_FULLY_VERBOSE(Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t" << segment.t() << std::endl << "\t" << notSegment.t() << std::endl << std::endl;)
+		arma::uvec segment(&this->rowNumbers[0], segmentLength, false);
+		arma::uvec notSegment(&this->rowNumbers[segmentLength], this->nrows - segmentLength - lastSegmentLength, false);
+		
+		if(--completeSegments == 0) {
+			--segmentLength;
+		}
+		
+		IF_FULLY_VERBOSE(
+			Rcpp::Rcout << "EVALUATOR: " << seg << ". (not)segment:" << std::endl << "\t";
+			segment.t().raw_print(Rcpp::Rcout);
+			Rcpp::Rcout << std::endl << "\t";
+			notSegment.t().raw_print(Rcpp::Rcout);
+			Rcpp::Rcout << std::endl << std::endl;
+		)
 
 		/*
 		 * Segment the data and fit the PLS model with up to
@@ -124,10 +136,6 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 		leftOutY = this->pls->getY().rows(segment);
 		this->pls->setSubmatrixViewRows(notSegment, true);
 
-		if(--completeSegments == 0) {
-			--segmentLength;
-		}
-
 		this->pls->fit(ncomp);
 
 		/*
@@ -136,7 +144,6 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 		 */
 		for(comp = 0; comp < ncomp; ++comp) {
 			residuals = arma::square(leftOutY - this->pls->predict(leftOutX, comp + 1));
-//			RSS[comp] += arma::sum(arma::square(residuals.col(0)));
 			
 			/* Only consider multiple PLS (not multivariate), i.e. only use first response vector */
 			for (nSeg = 0; nSeg < residuals.n_rows; ++nSeg) {
@@ -158,9 +165,6 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 	double cutoff = RSS[0];
 	arma::uword Aopt = 0;
 	
-//	Rcpp::Rcout << "RSS: " << RSS.t() << std::endl;
-//	Rcpp::Rcout << "SD: " << sqrt(RSSSDm2n.t() / (this->nrows - segmentLength)) << std::endl;
-	
 	for(comp = 1; comp < ncomp; ++comp) {
 		if(RSS[comp] < cutoff) {
 			Aopt = comp;
@@ -168,11 +172,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 		}
 	}
 	
-//	Rcpp::Rcout << "Cutoff: " << cutoff;
-	
 	cutoff += sqrt(RSSSDm2n[Aopt] / (this->nrows - segmentLength));
-
-//	Rcpp::Rcout << " --> " << cutoff << std::endl;
 	
 	Aopt = 0;
 	while(RSS[Aopt] > cutoff) {
@@ -184,14 +184,15 @@ double PLSEvaluator::estSEP(uint16_t ncomp) {
 	}
 	++Aopt;
 	
-//	Rcpp::Rcout << "--> Aopt: " << Aopt << std::endl << std::endl;
-
 	/*
 	 * The last segment is used as test set
 	 */
-	segment = rowNumbers.rows(this->nrows - segmentLength, this->nrows - 1);
-	notSegment = rowNumbers.rows(0, this->nrows - segmentLength - 1);
+//	segment = rowNumbers.rows(this->nrows - segmentLength, this->nrows - 1);
+//	notSegment = rowNumbers.rows(0, this->nrows - segmentLength - 1);
 
+	arma::uvec segment(&this->rowNumbers[this->nrows - lastSegmentLength], lastSegmentLength, false);
+	arma::uvec notSegment(&this->rowNumbers[0], this->nrows - lastSegmentLength, false);
+	
 	leftOutX = this->pls->getXColumnView().rows(segment);
 	leftOutY = this->pls->getY().rows(segment);
 	this->pls->setSubmatrixViewRows(notSegment, true);

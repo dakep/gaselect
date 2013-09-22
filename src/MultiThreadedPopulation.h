@@ -11,6 +11,7 @@
 #include "config.h"
 
 #ifdef HAVE_PTHREAD_H
+#include <stdexcept>
 #include <iostream>
 #include <vector>
 #include <set>
@@ -44,7 +45,7 @@ private:
 	struct ThreadArgsWrapper {
 		MultiThreadedPopulation* popObj;
 		Evaluator* evalObj;
-		unsigned int seed;
+		uint32_t seed;
 		uint16_t numMatingCouples;
 		uint16_t offset;
 	};

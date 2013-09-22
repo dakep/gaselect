@@ -15,6 +15,7 @@
 
 #include "RNG.h"
 #include "SingleThreadPopulation.h"
+#include "ShuffledSet.h"
 
 using namespace Rcpp;
 
@@ -42,7 +43,7 @@ void SingleThreadPopulation::run() {
 	int i = 0, j = 0;
 	uint8_t matingTries = 0;
 	int popSizeHalf = this->ctrl.populationSize / 2;
-	VariablePositionPopulation varPosPop(this->ctrl.chromosomeSize);
+	ShuffledSet shuffledSet(this->ctrl.chromosomeSize);
 	RNG rng(this->seed);
 	
 	double sumFitness = 0.0;
@@ -58,8 +59,8 @@ void SingleThreadPopulation::run() {
 	Chromosome* tmpChromosome2;
 	Chromosome** child1;
 	Chromosome** child2;
-	Chromosome* proposalChild1 = new Chromosome(this->ctrl, varPosPop, rng, false);
-	Chromosome* proposalChild2 = new Chromosome(this->ctrl, varPosPop, rng, false);
+	Chromosome* proposalChild1 = new Chromosome(this->ctrl, shuffledSet, rng, false);
+	Chromosome* proposalChild2 = new Chromosome(this->ctrl, shuffledSet, rng, false);
 	
 	newGeneration.reserve(this->ctrl.populationSize);
 	newFitnessMap.reserve(this->ctrl.populationSize);
@@ -69,7 +70,7 @@ void SingleThreadPopulation::run() {
 	}
 	
 	for(i = this->ctrl.populationSize; i > 0; --i) {
-		tmpChromosome1 = new Chromosome(this->ctrl, varPosPop, rng);
+		tmpChromosome1 = new Chromosome(this->ctrl, shuffledSet, rng);
 		
 		this->currentGenFitnessMap.push_back(this->evaluator.evaluate(*tmpChromosome1));
 		if(tmpChromosome1->getFitness() < minFitness) {
@@ -81,7 +82,7 @@ void SingleThreadPopulation::run() {
 		}
 		this->addChromosomeToElite(*tmpChromosome1);
 		this->currentGeneration.push_back(tmpChromosome1);
-		newGeneration.push_back(new Chromosome(this->ctrl, varPosPop, rng, false));
+		newGeneration.push_back(new Chromosome(this->ctrl, shuffledSet, rng, false));
 		
 		if(check_interrupt()) {
 			throw InterruptException();
