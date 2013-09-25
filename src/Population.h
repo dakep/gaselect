@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <vector>
 #include <set>
+#include <utility>
 
 #include "RNG.h"
 #include "Chromosome.h"
@@ -26,7 +27,8 @@
 
 class Population {
 public:
-	struct ChromosomeComparator {
+	class ChromosomeComparator : public std::binary_function<Chromosome, Chromosome, bool> {
+	public:
 		bool operator() (const Chromosome &lhs, const Chromosome &rhs) const {
 			return rhs.isFitterThan(lhs);
 		}
@@ -40,31 +42,31 @@ public:
 			return "Interrupted";
 		}
 	};
-
+	
 	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) : ctrl(ctrl), evaluator(evaluator), seed(seed) {
 		this->currentGeneration.reserve(this->ctrl.populationSize);
 		this->currentGenFitnessMap.reserve(this->ctrl.populationSize);
 		this->minEliteFitness = 0.0;
 		this->cutoffPoint = this->ctrl.populationSize * this->ctrl.cutoffQuantile / 100;
 	}
-
+	
 	virtual ~Population() {
 		for(std::vector<Chromosome*>::iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
 			delete *it;
 		}
 	}
-
+	
 	virtual void run() = 0;
-
-	std::multiset<Chromosome, Population::ChromosomeComparator> getResult() const {
-		std::multiset<Chromosome, Population::ChromosomeComparator> result;
+	
+	std::set<Chromosome, Population::ChromosomeComparator> getResult() const {
+		std::set<Chromosome, Population::ChromosomeComparator> result(this->elite);
 		
+		/*
+		 * result.insert(begin(), end()) can not be used because we need to
+		 * insert the VALUE and not the pointer to a chromosome
+		 */
 		for(std::vector<Chromosome*>::const_iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
 			result.insert(**it);
-		}
-		
-		if(this->ctrl.elitism > 0 && this->elite.size() > 0) {
-			result.insert(this->elite.begin(), this->elite.end());
 		}
 		
 		return result;
@@ -72,11 +74,12 @@ public:
 private:
 	uint16_t cutoffPoint;
 protected:
+	static const uint8_t MAX_DUPLICATE_TRIES = 5;
 	const Control& ctrl;
 	::Evaluator& evaluator;
 	const std::vector<uint32_t> &seed;
-
-	std::multiset<Chromosome, Population::ChromosomeComparator> elite;
+	
+	std::set<Chromosome, Population::ChromosomeComparator> elite;
 	std::vector<Chromosome*> currentGeneration;
 	std::vector<double> currentGenFitnessMap;
 	double minEliteFitness;
@@ -104,14 +107,18 @@ protected:
 		return this->currentGeneration[imid];
 	};
 	
-	static bool comp(Chromosome* c1, Chromosome* c2) {
+	static bool compEqual(Chromosome* c1, Chromosome* c2) {
 		return ((*c1) == (*c2));
+	}
+	
+	static bool compLT(const Chromosome* const c1, const Chromosome* const c2) {
+		return c1->isFitterThan(*c2);
 	}
 	
 	uint16_t countUniques() {
 		std::vector<Chromosome*> gen = this->currentGeneration;
-		std::vector<Chromosome*>::iterator end = std::unique(gen.begin(), gen.end(), Population::comp);
-		return std::distance(gen.begin(), end);
+		std::sort(gen.begin(), gen.end(), Population::compLT);
+		return std::distance(gen.begin(), std::unique(gen.begin(), gen.end(), Population::compEqual));
 	};
 	
 	double getQuantileFitness() {
@@ -120,7 +127,7 @@ protected:
 		std::nth_element(copyFitnessMap.begin(), cutoffIt, copyFitnessMap.end());
 		return (*cutoffIt);
 	};
-
+	
 	std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch) {
 		os << ch << TAB_DELIMITER << std::fixed
 		<< std::setw(WIDTH) << std::setprecision(PRECISION) << ch.getFitness() << std::endl;
@@ -129,22 +136,38 @@ protected:
 	};
 	
 	void addChromosomeToElite(Chromosome &ch) {
-		// Add chromosome to elite if better than the worst elite-chromosome
+		/* Add chromosome to elite if better than the worst elite-chromosome */
 		if(this->ctrl.elitism > 0 && (ch.getFitness() > this->minEliteFitness || this->elite.size() < this->ctrl.elitism)) {
-			if(this->elite.size() >= this->ctrl.elitism) {
+			/* Insert a copy of the chromosome. If the chromosome is a duplicate, it is not inserted */
+			this->elite.insert(ch);
+			
+			/*
+			 * If the chromosome was inserted and the elite-set was already `full`
+			 * the last worst chromosome is removed
+			 */
+			if(this->elite.size() > this->ctrl.elitism) {
 				this->elite.erase(this->elite.begin());
 			}
-
-			this->elite.insert(ch); // The insert copies the chromosome!
 			
 			this->minEliteFitness = this->elite.begin()->getFitness();
 			
 			IF_DEBUG(
-				Rcpp::Rcout << "Adding chromosome to elite. New minimum fitness for elite is " << this->minEliteFitness << std::endl;
-			)
+					 Rcpp::Rcout << "Adding chromosome to elite. New minimum fitness for elite is " << this->minEliteFitness << std::endl;
+					 )
 		}
+	};
+
+	class CompChromsomePtr : public std::unary_function<Chromosome*, bool> {
+	public:
+		CompChromsomePtr(const Chromosome* const ch) : ch(ch) {}
+		bool operator()(const Chromosome* const ch) const {
+			return ((*this->ch) == (*ch));
+		}
+		
+	private:
+		const Chromosome* const ch;
 	};
 };
 
-typedef std::multiset<Chromosome, Population::ChromosomeComparator> SortedChromosomes;
+typedef std::set<Chromosome, Population::ChromosomeComparator> SortedChromosomes;
 #endif

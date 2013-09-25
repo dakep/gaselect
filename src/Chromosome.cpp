@@ -453,7 +453,7 @@ bool Chromosome::isFitterThan(const Chromosome &ch) const {
 	}
 
 	// Both chromosomes have (almost) same fitness
-	// so check if this chormosome has less bits set than the other chromosome
+	// so check if this chromosome has less bits set than the other chromosome
 	return (this->currentlySetBits < ch.currentlySetBits);
 }
 
