@@ -6,7 +6,7 @@
     minVariables, maxVariables, maxMatingTries = 5L,
     elitism = 10L, mutationProbability = 0.01,
     crossover = c("single", "random"),
-    fitnessCutoffQuantile = 0, verbosity = 0L)
+    maxDuplicateEliminationTries = 5L, verbosity = 0L)
 }
 \arguments{
   \item{populationSize}{The number of "chromosomes" in the
@@ -40,9 +40,8 @@
   \item{crossover}{The crossover type to use during mating
   (see details). Partial matching is performed}
 
-  \item{fitnessCutoffQuantile}{The quantile (between 0 and
-  50) of chromosomes with worst fitness that are not
-  considered for mutation}
+  \item{maxDuplicateEliminationTries}{The maximum number of
+  tries to eliminate duplicates}
 
   \item{verbosity}{The level of verbosity. 0 means no
   output at all, 3 is very verbose.}

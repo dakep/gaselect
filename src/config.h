@@ -61,13 +61,6 @@
 
 
 //#undef HAVE_PTHREAD_H
-#define HAVE_PTHREAD_H 1
-
-
-#ifdef ENABLE_DEBUG_VERBOSITY
-#define CHECK_PTHREAD_RETURN_CODE(rc) if((rc) != 0) { Rcpp::Rcout << "Warning: Call to pthread function failed with error code " << (rc) << " in " << __FILE__ << ":" << __LINE__ << std::endl; }
-#else
-#define CHECK_PTHREAD_RETURN_CODE(rc)
-#endif
+//#define HAVE_PTHREAD_H 1
 
 #endif

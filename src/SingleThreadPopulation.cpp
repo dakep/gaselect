@@ -50,20 +50,18 @@ void SingleThreadPopulation::run() {
 	double minFitness = 0.0;
 	double minParentFitness = 0.0;
 	
-	std::vector<Chromosome*> newGeneration;
+	ChromosomeVec newGeneration;
 	
 	Chromosome* tmpChromosome1;
 	Chromosome* tmpChromosome2;
-	std::vector<Chromosome*>::iterator child1It;
-	std::vector<Chromosome*>::reverse_iterator child2It;
+	ChromosomeVecIter child1It;
+	ChromosomeVecRevIter child2It;
 	Chromosome* proposalChild1 = new Chromosome(this->ctrl, shuffledSet, rng, false);
 	Chromosome* proposalChild2 = new Chromosome(this->ctrl, shuffledSet, rng, false);
 	uint8_t child1Tries = 0;
 	uint8_t child2Tries = 0;
 	bool child1Mutated, child2Mutated;
-	bool child1Dup, child2Dup;
-	std::vector<Chromosome*>::iterator findIt;
-	std::vector<Chromosome*>::reverse_iterator revFindIt;
+	std::pair<bool, bool> duplicated;
 	
 	newGeneration.reserve(this->ctrl.populationSize);
 	
@@ -89,6 +87,8 @@ void SingleThreadPopulation::run() {
 			
 			newGeneration.push_back(tmpChromosome1);
 			this->currentGeneration.push_back(new Chromosome(this->ctrl, shuffledSet, rng, false));		
+		} else {
+			delete tmpChromosome1;
 		}
 
 		if(check_interrupt()) {
@@ -115,8 +115,11 @@ void SingleThreadPopulation::run() {
 		IF_DEBUG(Rcout << std::endl)
 
 		minFitness = 0.0;
-		
-		Rcpp::Rcout << "Unique chromosomes: " << this->countUniques() << std::endl;
+
+		IF_DEBUG(
+			Rcpp::Rcout << "Unique chromosomes: " << this->countUniques() << std::endl;
+		)
+
 		if(this->ctrl.verbosity > OFF) {
 			Rcout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
@@ -210,31 +213,9 @@ void SingleThreadPopulation::run() {
 			 * The manual loop is faster than find_if because both children
 			 * can be checked at once
 			 */
-			child1Dup = false;
-			child2Dup = (**child1It == **child2It);
-			findIt = newGeneration.begin();
-			revFindIt = newGeneration.rbegin();
-
-			while(findIt != child1It && (child1Dup == false || child2Dup == false)) {
-				if(child1Dup == false && (**findIt == **child1It)) {
-					child1Dup = true;
-				}
-				if(child2Dup == false && (**findIt == **child2It)) {
-					child2Dup = true;
-				}
-				++findIt;
-			}
-			while(revFindIt != child2It && (child1Dup == false || child2Dup == false)) {
-				if(child1Dup == false && (**revFindIt == **child1It)) {
-					child1Dup = true;
-				}
-				if(child2Dup == false && (**revFindIt == **child2It)) {
-					child2Dup = true;
-				}
-				++revFindIt;
-			}
+			duplicated = Population::checkDuplicated(newGeneration.begin(), newGeneration.rbegin(), child1It, child2It);
 			
-			if(child1Dup == false || (++child1Tries > Population::MAX_DUPLICATE_TRIES)) {
+			if(duplicated.first == false || (++child1Tries > this->ctrl.maxDuplicateEliminationTries)) {
 				if(child1Mutated == true) {
 					this->evaluator.evaluate(**child1It);
 				}
@@ -251,14 +232,14 @@ void SingleThreadPopulation::run() {
 				++child1It;
 
 				IF_DEBUG(
-					if(child1Tries > MAX_DUPLICATE_TRIES) {
+					if(child1Tries > 0) {
 						Rcpp::Rcout << "Needed " << (int) child1Tries << " tries to find unique chromosome" << std::endl;
 					}
 				)
 				child1Tries = 0;
 			}
 			
-			if(child2Dup == false || (++child2Tries > Population::MAX_DUPLICATE_TRIES)) {
+			if(duplicated.second == false || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
 				if(child2Mutated == true) {
 					this->evaluator.evaluate(**child2It);
 				}
@@ -275,7 +256,7 @@ void SingleThreadPopulation::run() {
 				++child2It;
 
 				IF_DEBUG(
-					if(child2Tries > MAX_DUPLICATE_TRIES) {
+					if(child2Tries > 0) {
 						Rcpp::Rcout << "Needed " << (int) child2Tries << " tries to find unique chromosome" << std::endl;
 					}
 				)
@@ -290,7 +271,7 @@ void SingleThreadPopulation::run() {
 	
 	delete proposalChild1;
 	delete proposalChild2;
-	for(std::vector<Chromosome*>::iterator it = newGeneration.begin(); it != newGeneration.end(); ++it) {
+	for(ChromosomeVecIter it = newGeneration.begin(); it != newGeneration.end(); ++it) {
 		delete *it;
 	}
 }

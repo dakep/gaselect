@@ -38,6 +38,7 @@ enum EvaluatorClass {
  *		uint16_t elitism ... The number of "elite" chromosomes to keep accross all generations (>= 0)
  *		double mutationProb ... The probability of using a new variable (0 <= onesRatio < 1)
  *		uint16_t numThreads ... The maximum number of threads to spawn
+ *		uint16_t maxDuplicateEliminationTries ... The maximum number of tries to eliminate duplicates
  *		CrossoverType crossover ... Type of crossover to use
  *		VerbosityLevel verbosity ... Level of verbosity
  *		EvaluatorClass evaluatorClass ... The evaluator to use

@@ -13,8 +13,11 @@
 #ifdef HAVE_PTHREAD_H
 #include <stdexcept>
 #include <iostream>
+#include <streambuf>
 #include <vector>
 #include <set>
+#include <string>
+#include <utility>
 
 #include "Chromosome.h"
 #include "Evaluator.h"
@@ -42,24 +45,57 @@ public:
 	
 	void run();
 private:
+	class SafeRstreambuf : public std::streambuf {
+	public:
+		SafeRstreambuf();
+		~SafeRstreambuf();
+		void realFlush();
+	protected:
+		virtual std::streamsize xsputn(const char* s, std::streamsize n);
+		virtual int	overflow(int c = EOF);
+		virtual int sync();
+	private:
+		std::string buffer;
+		pthread_mutex_t printMutex;
+	};
+	
+	class SafeRostream : public std::ostream {
+	public:
+		SafeRostream() : std::ostream(new SafeRstreambuf()) {
+			this->buf = static_cast<SafeRstreambuf*>(this->rdbuf());
+		};
+		
+		void realFlush() {
+			if(this->buf != NULL) {
+				this->buf->realFlush();
+			}
+		};
+
+		~SafeRostream() {
+			if(this->buf != NULL) {
+				delete this->buf;
+				this->buf = NULL;
+			}
+		}
+   private:
+	   SafeRstreambuf* buf;
+   };
+	
 	struct ThreadArgsWrapper {
 		MultiThreadedPopulation* popObj;
 		Evaluator* evalObj;
 		uint32_t seed;
-		uint16_t numMatingCouples;
+		uint16_t numChildren;
 		uint16_t offset;
 	};
 	
-	std::vector<Chromosome*> nextGeneration;
-	std::vector<double> nextGenFitnessMap;
+	ChromosomeVec nextGeneration;
 	double sumCurrentGenFitness;
 	double minCurrentGenFitness; // Minimum fitness value in the current generation
 	
 	/*
 	 * Mutex and condition variables
 	 */
-	pthread_mutex_t printMutex;
-	pthread_mutex_t updateMutex;
 	pthread_mutex_t syncMutex;
 	pthread_cond_t startMatingCond;
 	pthread_cond_t allThreadsFinishedMatingCond;
@@ -68,21 +104,24 @@ private:
 	bool killThreads;
 	bool allThreadsFinishedMating;
 	
+	SafeRostream Rout;
+	
 	uint16_t actuallySpawnedThreads;
 	uint16_t numThreadsFinishedMating;
 		
-	void mate(uint16_t numMatingCouples, ::Evaluator& evaluator, RNG& rng, uint16_t offset, bool checkUserInterrupt = true);
-	
-	/**
-	 * Transform the given fitness map to start at 0 and only have positive values
-	 */
-	void transformCurrentGenFitnessMap();
+	void mate(uint16_t numChildren, ::Evaluator& evaluator, RNG& rng, uint16_t offset, bool checkUserInterrupt = true);
 	
 	static void* matingThreadStart(void* obj);
 	
 	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator, RNG& rng, uint16_t offset);
-//	void finishedMating();
 	void waitForAllThreadsToFinishMating();
+	
+	class OrderChromosomePtr : public std::binary_function<Chromosome*, Chromosome*, bool> {
+	public:
+		bool operator()(const Chromosome* const ch1, const Chromosome* const ch2) {
+			return (ch1->getFitness() < ch2->getFitness());
+		};
+	};
 };
 
 

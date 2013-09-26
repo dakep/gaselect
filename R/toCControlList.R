@@ -61,7 +61,7 @@ setMethod("toCControlList", signature(object = "GenAlgControl"), function(object
 		"elitism" = object@elitism,
 		"mutationProb" = object@mutationProbability,
 		"crossover" = object@crossoverId,
-		"cutoffQuantile" = object@cutoffQuantile,
+		"maxDuplicateEliminationTries" = object@maxDuplicateEliminationTries,
 		"verbosity" = object@verbosity
 	));
 });

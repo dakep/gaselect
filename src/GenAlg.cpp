@@ -66,7 +66,7 @@ BEGIN_RCPP
 				 as<uint16_t>(control["maxMatingTries"]),
 				 as<double>(control["mutationProb"]),
 				 numThreads,
-				 as<uint8_t>(control["cutoffQuantile"]),
+				 as<uint16_t>(control["maxDuplicateEliminationTries"]),
 				 (CrossoverType) as<int>(control["crossover"]),
 				 verbosity);
 
@@ -137,17 +137,17 @@ BEGIN_RCPP
 		}
 	}
 #else
-	pop = new SingleThreadPopulation(ctrl, *eval);
+	pop = new SingleThreadPopulation(ctrl, *eval, seed);
 	toFree |= 8;
 	pop->run();
 #endif
-	SortedChromosomes result = pop->getResult();
+	Population::SortedChromosomes result = pop->getResult();
 
 	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());
 	Rcpp::NumericVector retFitnesses((const int) result.size());
 	uint16_t i = (uint16_t) result.size() - 1;
 
-	for(SortedChromosomes::iterator it = result.begin(); it != result.end(); ++it, --i) {
+	for(Population::SortedChromosomes::iterator it = result.begin(); it != result.end(); ++it, --i) {
 		retFitnesses[i] = it->getFitness();
 		retMatrix.column(i) = it->toLogicalVector();
 	}

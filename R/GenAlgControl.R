@@ -13,7 +13,7 @@
 #' 		\item{\code{mutationProbability}:}{The probability of mutation (between 0 and 1).}
 #' 		\item{\code{crossover}:}{The crossover method to use}
 #' 		\item{\code{crossoverId}:}{The numeric ID of the crossover method to use}
-#' 		\item{\code{cutoffQuantile}:}{The percentage of worst chromosomes to not consider for mating}
+#' 		\item{\code{maxDuplicateEliminationTries}:}{The maximum number of tries to eliminate duplicates}
 #' 		\item{\code{verbosity}:}{The level of verbosity. 0 means no output at all, 3 is very verbose.}
 #' 	}
 setClass("GenAlgControl", representation(
@@ -26,7 +26,7 @@ setClass("GenAlgControl", representation(
 	mutationProbability = "numeric",
 	crossover = "character",
 	crossoverId = "integer",
-	cutoffQuantile = "integer",
+	maxDuplicateEliminationTries = "integer",
 	verbosity = "integer"
 ), validity = function(object) {
 	errors <- character(0);
@@ -71,8 +71,8 @@ setClass("GenAlgControl", representation(
 		errors <- c(errors, "The mutation probability must be between 0 and 1 (excluded).");
 	}
 
-	if(object@cutoffQuantile < 0L || object@cutoffQuantile > 50L) {
-		errors <- c(errors, "The fitness cutoff quantile must be between 0 and 50");
+	if(object@maxDuplicateEliminationTries < 0L) {
+		errors <- c(errors, "The maximum number of tries to eliminate duplicates must be greater or equal 0");
 	}
 
 	if(object@verbosity < 0L || object@verbosity > 4L) {
@@ -121,11 +121,13 @@ setClass("GenAlgControl", representation(
 #' @param elitism The number of absolute best chromosomes to keep across all generations (between 1 and min(\code{populationSize} * \code{numGenerations}, 2^16))
 #' @param mutationProbability The probability of mutation (between 0 and 1)
 #' @param crossover The crossover type to use during mating (see details). Partial matching is performed
-#' @param fitnessCutoffQuantile The quantile (between 0 and 50) of chromosomes with worst fitness that are not considered for mutation
+#' @param maxDuplicateEliminationTries The maximum number of tries to eliminate duplicates
 #' @param verbosity The level of verbosity. 0 means no output at all, 3 is very verbose.
 #' @export
 #' @example examples/genAlg.R
-genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, maxMatingTries = 5L, elitism = 10L, mutationProbability = 0.01, crossover = c("single", "random"), fitnessCutoffQuantile = 0, verbosity = 0L) {
+genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, maxMatingTries = 5L,
+							elitism = 10L, mutationProbability = 0.01, crossover = c("single", "random"),
+							maxDuplicateEliminationTries = 5L, verbosity = 0L) {
 	if(is.numeric(populationSize)) {
 		populationSize <- as.integer(populationSize);
 	}
@@ -171,6 +173,6 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 				mutationProbability = mutationProbability,
 				crossover = crossover,
 				crossoverId = crossoverId,
-				cutoffQuantile = as.integer(fitnessCutoffQuantile),
+				maxDuplicateEliminationTries = as.integer(maxDuplicateEliminationTries),
 				verbosity = verbosity));
 };

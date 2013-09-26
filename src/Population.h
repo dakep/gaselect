@@ -26,6 +26,11 @@
 #endif
 
 class Population {
+protected:
+	typedef std::vector<Chromosome*> ChromosomeVec;
+	typedef std::vector<Chromosome*>::iterator ChromosomeVecIter;
+	typedef std::vector<Chromosome*>::reverse_iterator ChromosomeVecRevIter;
+
 public:
 	class ChromosomeComparator : public std::binary_function<Chromosome, Chromosome, bool> {
 	public:
@@ -33,6 +38,8 @@ public:
 			return rhs.isFitterThan(lhs);
 		}
 	};
+	
+	typedef std::set<Chromosome, Population::ChromosomeComparator> SortedChromosomes;
 	
 	class InterruptException : public std::exception {
 	public:
@@ -47,40 +54,36 @@ public:
 		this->currentGeneration.reserve(this->ctrl.populationSize);
 		this->currentGenFitnessMap.reserve(this->ctrl.populationSize);
 		this->minEliteFitness = 0.0;
-		this->cutoffPoint = this->ctrl.populationSize * this->ctrl.cutoffQuantile / 100;
 	}
 	
 	virtual ~Population() {
-		for(std::vector<Chromosome*>::iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
+		for(ChromosomeVecIter it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
 			delete *it;
 		}
 	}
 	
 	virtual void run() = 0;
 	
-	std::set<Chromosome, Population::ChromosomeComparator> getResult() const {
-		std::set<Chromosome, Population::ChromosomeComparator> result(this->elite);
+	inline SortedChromosomes getResult() const {
+		SortedChromosomes result(this->elite);
 		
 		/*
 		 * result.insert(begin(), end()) can not be used because we need to
 		 * insert the VALUE and not the pointer to a chromosome
 		 */
-		for(std::vector<Chromosome*>::const_iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
+		for(ChromosomeVec::const_iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
 			result.insert(**it);
 		}
 		
 		return result;
 	}
-private:
-	uint16_t cutoffPoint;
 protected:
-	static const uint8_t MAX_DUPLICATE_TRIES = 5;
 	const Control& ctrl;
 	::Evaluator& evaluator;
 	const std::vector<uint32_t> &seed;
 	
-	std::set<Chromosome, Population::ChromosomeComparator> elite;
-	std::vector<Chromosome*> currentGeneration;
+	SortedChromosomes elite;
+	ChromosomeVec currentGeneration;
 	std::vector<double> currentGenFitnessMap;
 	double minEliteFitness;
 	
@@ -89,7 +92,7 @@ protected:
 	 * where the probability to pick a chromosome is taken from
 	 * the currentGenFitnessMap
 	 */
-	Chromosome* drawChromosomeFromCurrentGeneration(double rand) {
+	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand) {
 		int imin = 0, imax = this->ctrl.populationSize - 1;
 		int imid = 0;
 		
@@ -106,7 +109,8 @@ protected:
 		
 		return this->currentGeneration[imid];
 	};
-	
+
+#ifdef ENABLE_DEBUG_VERBOSITY
 	static bool compEqual(Chromosome* c1, Chromosome* c2) {
 		return ((*c1) == (*c2));
 	}
@@ -115,27 +119,21 @@ protected:
 		return c1->isFitterThan(*c2);
 	}
 	
-	uint16_t countUniques() {
+	inline uint16_t countUniques() {
 		std::vector<Chromosome*> gen = this->currentGeneration;
 		std::sort(gen.begin(), gen.end(), Population::compLT);
 		return std::distance(gen.begin(), std::unique(gen.begin(), gen.end(), Population::compEqual));
 	};
+#endif
 	
-	double getQuantileFitness() {
-		std::vector<double> copyFitnessMap = this->currentGenFitnessMap;
-		std::vector<double>::iterator cutoffIt = copyFitnessMap.begin() + this->cutoffPoint;
-		std::nth_element(copyFitnessMap.begin(), cutoffIt, copyFitnessMap.end());
-		return (*cutoffIt);
-	};
-	
-	std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch) {
+	inline std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch) {
 		os << ch << TAB_DELIMITER << std::fixed
 		<< std::setw(WIDTH) << std::setprecision(PRECISION) << ch.getFitness() << std::endl;
 		
 		return os;
 	};
 	
-	void addChromosomeToElite(Chromosome &ch) {
+	inline void addChromosomeToElite(Chromosome &ch) {
 		/* Add chromosome to elite if better than the worst elite-chromosome */
 		if(this->ctrl.elitism > 0 && (ch.getFitness() > this->minEliteFitness || this->elite.size() < this->ctrl.elitism)) {
 			/* Insert a copy of the chromosome. If the chromosome is a duplicate, it is not inserted */
@@ -152,9 +150,34 @@ protected:
 			this->minEliteFitness = this->elite.begin()->getFitness();
 			
 			IF_DEBUG(
-					 Rcpp::Rcout << "Adding chromosome to elite. New minimum fitness for elite is " << this->minEliteFitness << std::endl;
-					 )
+				Rcpp::Rcout << "Adding chromosome to elite. New minimum fitness for elite is " << this->minEliteFitness << std::endl;
+			)
 		}
+	};
+	
+	inline static std::pair<bool, bool> checkDuplicated(ChromosomeVecIter begin, ChromosomeVecRevIter rbegin, const ChromosomeVecIter &child1It, const ChromosomeVecRevIter &child2It) {
+		std::pair<bool, bool> duplicated(false, **child1It == **child2It);
+		
+		while(begin != child1It && (duplicated.first == false || duplicated.second == false)) {
+			if(duplicated.first == false && (**begin == **child1It)) {
+				duplicated.first = true;
+			}
+			if(duplicated.second == false && (**begin == **child2It)) {
+				duplicated.second = true;
+			}
+			++begin;
+		}
+		while(rbegin != child2It && (duplicated.first == false || duplicated.second == false)) {
+			if(duplicated.first == false && (**rbegin == **child1It)) {
+				duplicated.first = true;
+			}
+			if(duplicated.second == false && (**rbegin == **child2It)) {
+				duplicated.second = true;
+			}
+			++rbegin;
+		}
+		
+		return duplicated;
 	};
 
 	class CompChromsomePtr : public std::unary_function<Chromosome*, bool> {
@@ -168,6 +191,4 @@ protected:
 		const Chromosome* const ch;
 	};
 };
-
-typedef std::set<Chromosome, Population::ChromosomeComparator> SortedChromosomes;
 #endif
