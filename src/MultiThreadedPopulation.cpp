@@ -7,7 +7,6 @@
 //
 #include "config.h"
 
-#define HAVE_PTHREAD_H 1
 #ifdef HAVE_PTHREAD_H
 
 #include <exception>
