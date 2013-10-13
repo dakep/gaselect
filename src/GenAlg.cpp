@@ -43,10 +43,6 @@ BEGIN_RCPP
 		if(evalClass == USER) {
 			Rcout << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
 		}
-		
-		if(verbosity >= MORE_VERBOSE) {
-			verbosity = MORE_VERBOSE;
-		}
 #else
 		Rcout << "Warning: Threads are not supported on this system" << std::endl;
 		numThreads = 1;
@@ -67,6 +63,7 @@ BEGIN_RCPP
 				 as<double>(control["mutationProb"]),
 				 numThreads,
 				 as<uint16_t>(control["maxDuplicateEliminationTries"]),
+				 as<double>(control["badSolutionThreshold"]),
 				 (CrossoverType) as<int>(control["crossover"]),
 				 verbosity);
 
@@ -116,7 +113,7 @@ BEGIN_RCPP
 	
 	toFree |= 1; // eval has to be freed
 
-	if(ctrl.verbosity >= MORE_VERBOSE) {
+	if(ctrl.verbosity >= VERBOSE) {
 		Rcout << ctrl << std::endl;
 	}
 
@@ -130,7 +127,7 @@ BEGIN_RCPP
 		toFree |= 8;
 		pop->run();
 	} catch(MultiThreadedPopulation::ThreadingError& te) {
-		if(ctrl.verbosity >= DEBUG_VERBOSE) {
+		if(ctrl.verbosity >= DEBUG_GA) {
 			throw te;
 		} else {
 			throw Rcpp::exception("Multithreading could not be initialized. Set numThreads to 0 to avoid this problem.", __FILE__, __LINE__);

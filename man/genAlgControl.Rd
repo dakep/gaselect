@@ -6,7 +6,8 @@
     minVariables, maxVariables, maxMatingTries = 5L,
     elitism = 10L, mutationProbability = 0.01,
     crossover = c("single", "random"),
-    maxDuplicateEliminationTries = 5L, verbosity = 0L)
+    maxDuplicateEliminationTries = 5L, verbosity = 0L,
+    badSolutionThreshold = 2)
 }
 \arguments{
   \item{populationSize}{The number of "chromosomes" in the
@@ -40,11 +41,15 @@
   \item{crossover}{The crossover type to use during mating
   (see details). Partial matching is performed}
 
+  \item{badSolutionThreshold}{The worst child must not be
+  more than \code{badSolutionThreshold} percent worse than
+  the worse parent (greater or equal 0).}
+
   \item{maxDuplicateEliminationTries}{The maximum number of
   tries to eliminate duplicates}
 
   \item{verbosity}{The level of verbosity. 0 means no
-  output at all, 3 is very verbose.}
+  output at all, 2 is very verbose.}
 }
 \description{
   The population must be large enough to allow the
@@ -90,7 +95,7 @@ ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,
 	minVariables = 5, maxVariables = 15)
 evaluator <- evaluatorPLS(numReplications = 3L, numSegments = 4L, numThreads = 2L)
 
-\dontrun{
+\\dontrun{
 result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
 }
 }

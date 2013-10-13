@@ -7,3 +7,4 @@ autoconfig.h
 GenAlgPLS.Rproj
 .Rbuildignore
 .Rhistory
+.Renviron

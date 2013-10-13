@@ -23,6 +23,12 @@ public:
 	}
 
 private:
+	/*
+	 * The first BURNIN random numbers are discarded as they do not provide
+	 * reliable results
+	 */
+	static const uint16_t BURNIN = 500;
+
 	static const uint32_t W = 32;
 	static const uint32_t R = 624;
 	static const uint32_t DISCARD = 31;

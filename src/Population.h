@@ -20,7 +20,7 @@
 #include "Control.h"
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-#define IF_DEBUG(expr) if(this->ctrl.verbosity >= DEBUG_VERBOSE) { expr; }
+#define IF_DEBUG(expr) if(this->ctrl.verbosity == DEBUG_GA || this->ctrl.verbosity == DEBUG_ALL) { expr; }
 #else
 #define IF_DEBUG(expr)
 #endif
@@ -93,21 +93,27 @@ protected:
 	 * the currentGenFitnessMap
 	 */
 	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand) {
-		int imin = 0, imax = this->ctrl.populationSize - 1;
+		int imin = 0, imax = this->ctrl.populationSize;
 		int imid = 0;
 		
-		// Search for the chromosome whose fitness range surrounds the random number
-		while(imin <= imax) {
+		/*
+		 * Search for the index in the currentGenFitnessMap
+		 * that holds a value that is GREATER or EQUAL than
+		 * the given random number
+		 */
+		while(imin < imax) {
 			imid = (imax + imin) / 2;
 			
-			if(this->currentGenFitnessMap[imid] > rand) {
-				imax = imid - 1;
-			} else {
+			if(this->currentGenFitnessMap[imid] < rand) {
 				imin = imid + 1;
+			} else {
+				imax = imid;
 			}
 		}
 		
-		return this->currentGeneration[imid];
+		IF_DEBUG(Rcpp::Rcout << "Selected chromosome " << imin << " for mating (rand = " << rand << ")" << std::endl);
+		
+		return this->currentGeneration[imin];
 	};
 
 #ifdef ENABLE_DEBUG_VERBOSITY
@@ -127,8 +133,8 @@ protected:
 #endif
 	
 	inline std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch) {
-		os << ch << TAB_DELIMITER << std::fixed
-		<< std::setw(WIDTH) << std::setprecision(PRECISION) << ch.getFitness() << std::endl;
+		os << (std::stringstream() << std::fixed << std::setw(WIDTH) << std::setprecision(PRECISION) << ch.getFitness()).rdbuf()
+		<< TAB_DELIMITER << ch << std::endl;
 		
 		return os;
 	};

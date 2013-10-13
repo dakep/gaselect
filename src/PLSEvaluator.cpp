@@ -12,11 +12,9 @@
 #include "PLSEvaluator.h"
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-#define IF_DEBUG(expr) if(this->verbosity >= DEBUG_VERBOSE) { expr; }
-#define IF_FULLY_VERBOSE(expr) if(this->verbosity >= FULLY_VERBOSE) { expr; }
+#define IF_DEBUG(expr) if(this->verbosity == DEBUG_EVAL || this->verbosity == DEBUG_ALL) { expr; }
 #else
 #define IF_DEBUG(expr)
-#define IF_FULLY_VERBOSE(expr)
 #endif
 
 PLSEvaluator::PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const std::vector<uint32_t> &seed, const VerbosityLevel verbosity) :
@@ -87,7 +85,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 	/*
 	 * the last segment is used as test set, and is excluded from all other calculations
 	 */
-	IF_FULLY_VERBOSE(arma::urowvec(rowNumbers).raw_print(Rcpp::Rcout, "EVALUATOR - Shuffled row numbers:");)
+	IF_DEBUG(arma::urowvec(rowNumbers).raw_print(Rcpp::Rcout, "EVALUATOR - Shuffled row numbers:");)
 
 	for(; seg < this->numSegments - 1; ++seg) {
 		arma::uvec segment(&rowNumbers[0], segmentLength, false);
@@ -97,7 +95,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 			--segmentLength;
 		}
 		
-		IF_FULLY_VERBOSE(
+		IF_DEBUG(
 			segment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Segment");
 			notSegment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Remaining");
 		)
@@ -166,7 +164,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 	arma::uvec segment(&rowNumbers[this->nrows - lastSegmentLength], lastSegmentLength, false);
 	arma::uvec notSegment(&rowNumbers[0], this->nrows - lastSegmentLength, false);
 	
-	IF_FULLY_VERBOSE(
+	IF_DEBUG(
 		segment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Validation Segment");
 		notSegment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Validation Remaining");
 	)
@@ -177,7 +175,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 	this->pls->fit(Aopt);
 	residuals = leftOutY - this->pls->predict(leftOutX, Aopt);
 	
-	IF_FULLY_VERBOSE(Rcpp::Rcout << "EVALUATOR: Resulting SEP:" << std::endl << arma::stddev(residuals.col(0)) << std::endl)
+	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Resulting SEP:" << std::endl << arma::stddev(residuals.col(0)) << std::endl)
 	
 	return arma::stddev(residuals.col(0));
 }
