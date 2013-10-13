@@ -111,7 +111,7 @@ void SingleThreadPopulation::run() {
 		)
 
 		if(this->ctrl.verbosity > OFF) {
-			Rcout << std::endl << std::endl << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
+			Rcout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
 		
 		child1It = newGeneration.begin();
