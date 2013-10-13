@@ -41,7 +41,6 @@ SingleThreadPopulation::SingleThreadPopulation(const Control &ctrl, ::Evaluator 
 
 void SingleThreadPopulation::run() {
 	int i = 0;
-	uint16_t j = 0;
 	uint8_t matingTries = 0;
 	ShuffledSet shuffledSet(this->ctrl.chromosomeSize);
 	RNG rng(this->seed);
@@ -74,19 +73,15 @@ void SingleThreadPopulation::run() {
 		
 		/* Check if chromosome is already in the initial population */
 		if(std::find_if(newGeneration.begin(), newGeneration.end(), CompChromsomePtr(tmpChromosome1)) == newGeneration.end()) {
-			this->currentGenFitnessMap.push_back(this->evaluator.evaluate(*tmpChromosome1));
+			this->evaluator.evaluate(*tmpChromosome1);
+
 			if(tmpChromosome1->getFitness() < minFitness) {
 				minFitness = tmpChromosome1->getFitness();
-			}
-			
-			if(this->ctrl.verbosity == VERBOSE) {
-				this->printChromosomeFitness(Rcout, *tmpChromosome1);
 			}
 			
 			this->addChromosomeToElite(*tmpChromosome1);
 			
 			newGeneration.push_back(tmpChromosome1);
-			this->currentGeneration.push_back(new Chromosome(this->ctrl, shuffledSet, rng, false));		
 		} else {
 			delete tmpChromosome1;
 		}
@@ -95,37 +90,20 @@ void SingleThreadPopulation::run() {
 			throw InterruptException();
 		}
 	}
+
+	this->initCurrentGeneration(shuffledSet, rng);
+
+	/*
+	 * Transform the fitness map of the current generation to start at 0
+	 * and copy old generation to new generation
+	 */
+	sumFitness = this->updateCurrentGeneration(newGeneration, minFitness);
+
+	if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
+		this->printCurrentGeneration();
+	}
 	
 	for(i = this->ctrl.numGenerations; i > 0; --i) {
-		
-		IF_DEBUG(
-			Rcout << std::endl << "Generated generation: " << std::endl;
-			for(j = 0; j < this->ctrl.populationSize; ++j) {
-				Rcout << (std::stringstream() << std::fixed << std::setw(4) << j).rdbuf();
-				this->printChromosomeFitness(Rcout, *newGeneration[j]);
-			}
-			Rcout << std::endl << std::endl;
-		)
-		/*
-		 *
-		 * Transform the fitness map of the current generation to start at 0
-		 * and copy old generation to new generation
-		 */
-		sumFitness = 0.0;
-		
-		IF_DEBUG(Rcout << "Fitness map:\n")
-	
-		for(j = 0; j < this->ctrl.populationSize; ++j) {
-			*(this->currentGeneration[j]) = *(newGeneration[j]);
-			sumFitness += (this->currentGeneration[j]->getFitness() - minFitness);
-			this->currentGenFitnessMap[j] = sumFitness;
-			IF_DEBUG(
-				Rcout << (std::stringstream() << std::fixed << std::setw(4) << j).rdbuf()
-				<< TAB_DELIMITER << this->currentGenFitnessMap[j] << "\n";
-			)
-		}
-		IF_DEBUG(Rcout << std::endl)
-
 		minFitness = 0.0;
 
 		IF_DEBUG(
@@ -133,19 +111,11 @@ void SingleThreadPopulation::run() {
 		)
 
 		if(this->ctrl.verbosity > OFF) {
-			Rcout << std::endl << std::endl << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
+			Rcout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
 		
 		child1It = newGeneration.begin();
 		child2It = newGeneration.rbegin();
-		
-		if(i == this->ctrl.numGenerations) {
-			Rcout << "x <- c(";
-			for(int k = 0; k < 10000; ++k) {
-				Rcout << ", " << rng(0.0, sumFitness);
-			}
-			Rcout << ")" << std::endl;
-		}
 		
 		while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
 			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
@@ -286,6 +256,16 @@ void SingleThreadPopulation::run() {
 			if(check_interrupt()) {
 				throw InterruptException();
 			}
+		}
+
+		/*
+		 * Transform the fitness map of the current generation to start at 0
+		 * and copy old generation to new generation
+		 */		
+		sumFitness = this->updateCurrentGeneration(newGeneration, minFitness, false);
+
+		if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
+			this->printCurrentGeneration();
 		}
 
 	}

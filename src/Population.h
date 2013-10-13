@@ -50,9 +50,9 @@ public:
 		}
 	};
 	
-	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) : ctrl(ctrl), evaluator(evaluator), seed(seed) {
-		this->currentGeneration.reserve(this->ctrl.populationSize);
-		this->currentGenFitnessMap.reserve(this->ctrl.populationSize);
+	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) : ctrl(ctrl), evaluator(evaluator), seed(seed), currentGenFitnessMap(ctrl.populationSize + ctrl.elitism, 0.0) {
+		this->currentGeneration.reserve(this->ctrl.populationSize + this->ctrl.elitism);
+
 		this->minEliteFitness = 0.0;
 	}
 	
@@ -77,23 +77,81 @@ public:
 		
 		return result;
 	}
+private:
+	ChromosomeVec currentGeneration;
 protected:
 	const Control& ctrl;
 	::Evaluator& evaluator;
 	const std::vector<uint32_t> &seed;
-	
+
 	SortedChromosomes elite;
-	ChromosomeVec currentGeneration;
 	std::vector<double> currentGenFitnessMap;
 	double minEliteFitness;
+
+	inline void initCurrentGeneration(ShuffledSet &shuffledSet, RNG &rng) {
+		for(uint32_t i = this->ctrl.elitism + this->ctrl.populationSize; i > 0; --i) {
+			this->currentGeneration.push_back(new Chromosome(this->ctrl, shuffledSet, rng, false));
+		}
+	}
+
+	/**
+	 * Update the current generation as well as the fitness map of the current generation
+	 *
+	 * @param const ChromosomeVec &newGeneration The newly generated generation that will be copied to the currentGeneration
+	 * @param double minFitness The minimum fitness of the new generation
+	 * @param bool updateElite Set to true if the elite should be updated as well
+	 */
+	inline double updateCurrentGeneration(const ChromosomeVec &newGeneration, double minFitness, bool updateElite = false) {
+		uint16_t i = 0;
+		double sumFitness = 0.0;
+
+		if(this->ctrl.elitism > 0 && minFitness > this->elite.rbegin()->getFitness()) {
+			minFitness = this->elite.rbegin()->getFitness();
+		}
+		
+		IF_DEBUG(Rcpp::Rcout << "Fitness map:\n")
+
+
+		for(; i < this->ctrl.populationSize; ++i) {
+			if(this->elite.find(*(newGeneration[i])) == this->elite.end()) {
+				*(this->currentGeneration[i]) = *(newGeneration[i]);
+
+				if(updateElite == true) {
+					this->addChromosomeToElite(*this->currentGeneration[i]);
+				}
+				
+				sumFitness += (this->currentGeneration[i]->getFitness() - minFitness);
+			}
+			this->currentGenFitnessMap[i] = sumFitness;
+			IF_DEBUG(
+				Rcpp::Rcout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
+				<< TAB_DELIMITER << sumFitness << "\n";
+			)
+		}
+		
+		for(SortedChromosomes::iterator eliteIt = this->elite.begin(); eliteIt != this->elite.end(); ++eliteIt, ++i) {
+			*(this->currentGeneration[i]) = *(eliteIt);
+
+			sumFitness += (eliteIt->getFitness() - minFitness);
+			this->currentGenFitnessMap[i] = sumFitness;
+			IF_DEBUG(
+				Rcpp::Rcout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
+				<< TAB_DELIMITER << this->currentGenFitnessMap[i] << "\n";
+			)
+		}
+
+		IF_DEBUG(Rcpp::Rcout << std::endl)
+		
+		return sumFitness;
+	}
 	
 	/**
 	 * Pick a chromosome from the current generation at random
 	 * where the probability to pick a chromosome is taken from
 	 * the currentGenFitnessMap
 	 */
-	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand) {
-		int imin = 0, imax = this->ctrl.populationSize;
+	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand, std::ostream &os = Rcpp::Rcout) {
+		int imin = 0, imax = static_cast<int>(this->currentGenFitnessMap.size());
 		int imid = 0;
 		
 		/*
@@ -111,8 +169,8 @@ protected:
 			}
 		}
 		
-		IF_DEBUG(Rcpp::Rcout << "Selected chromosome " << imin << " for mating (rand = " << rand << ")" << std::endl);
-		
+		IF_DEBUG(os << "Selected chromosome " << imin << " for mating (rand = " << rand << ")" << std::endl);
+
 		return this->currentGeneration[imin];
 	};
 
@@ -131,7 +189,16 @@ protected:
 		return std::distance(gen.begin(), std::unique(gen.begin(), gen.end(), Population::compEqual));
 	};
 #endif
-	
+
+	inline void printCurrentGeneration() {
+		int i = 0;
+		for(ChromosomeVec::iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
+			Rcpp::Rcout << (std::stringstream() << std::fixed << std::setw(4) << i++).rdbuf();
+			this->printChromosomeFitness(Rcpp::Rcout, **it);
+		}
+		Rcpp::Rcout << "\n" << std::endl;
+	}
+
 	inline std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch) {
 		os << (std::stringstream() << std::fixed << std::setw(WIDTH) << std::setprecision(PRECISION) << ch.getFitness()).rdbuf()
 		<< TAB_DELIMITER << ch << std::endl;

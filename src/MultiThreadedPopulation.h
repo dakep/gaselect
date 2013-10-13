@@ -11,6 +11,7 @@
 #include "config.h"
 
 #ifdef HAVE_PTHREAD_H
+
 #include <stdexcept>
 #include <iostream>
 #include <streambuf>
@@ -91,7 +92,6 @@ private:
 	
 	ChromosomeVec nextGeneration;
 	double sumCurrentGenFitness;
-	double minCurrentGenFitness; // Minimum fitness value in the current generation
 	
 	/*
 	 * Mutex and condition variables
