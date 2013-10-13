@@ -19,8 +19,7 @@
 #include <stdint.h>
 #endif
 
-
-// #define ENABLE_DEBUG_VERBOSITY
+#define ENABLE_DEBUG_VERBOSITY
 
 //#define TIMING_BENCHMARK
 

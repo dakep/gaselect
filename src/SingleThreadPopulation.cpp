@@ -20,7 +20,7 @@
 using namespace Rcpp;
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-#define IF_DEBUG(expr) if(this->ctrl.verbosity >= DEBUG_VERBOSE) { expr; }
+#define IF_DEBUG(expr) if(this->ctrl.verbosity == DEBUG_GA || this->ctrl.verbosity == DEBUG_ALL) { expr; }
 #else
 #define IF_DEBUG(expr)
 #endif
@@ -79,7 +79,7 @@ void SingleThreadPopulation::run() {
 				minFitness = tmpChromosome1->getFitness();
 			}
 			
-			if(this->ctrl.verbosity >= MORE_VERBOSE) {
+			if(this->ctrl.verbosity == VERBOSE) {
 				this->printChromosomeFitness(Rcout, *tmpChromosome1);
 			}
 			
@@ -97,20 +97,32 @@ void SingleThreadPopulation::run() {
 	}
 	
 	for(i = this->ctrl.numGenerations; i > 0; --i) {
+		
+		IF_DEBUG(
+			Rcout << std::endl << "Generated generation: " << std::endl;
+			for(j = 0; j < this->ctrl.populationSize; ++j) {
+				Rcout << (std::stringstream() << std::fixed << std::setw(4) << j).rdbuf();
+				this->printChromosomeFitness(Rcout, *newGeneration[j]);
+			}
+			Rcout << std::endl << std::endl;
+		)
 		/*
 		 *
 		 * Transform the fitness map of the current generation to start at 0
 		 * and copy old generation to new generation
 		 */
 		sumFitness = 0.0;
-		IF_DEBUG(Rcout << "Fitness map: ")
 		
+		IF_DEBUG(Rcout << "Fitness map:\n")
+	
 		for(j = 0; j < this->ctrl.populationSize; ++j) {
 			*(this->currentGeneration[j]) = *(newGeneration[j]);
 			sumFitness += (this->currentGeneration[j]->getFitness() - minFitness);
 			this->currentGenFitnessMap[j] = sumFitness;
-			
-			IF_DEBUG(Rcout << sumFitness << " | ")
+			IF_DEBUG(
+				Rcout << (std::stringstream() << std::fixed << std::setw(4) << j).rdbuf()
+				<< TAB_DELIMITER << this->currentGenFitnessMap[j] << "\n";
+			)
 		}
 		IF_DEBUG(Rcout << std::endl)
 
@@ -121,89 +133,97 @@ void SingleThreadPopulation::run() {
 		)
 
 		if(this->ctrl.verbosity > OFF) {
-			Rcout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
+			Rcout << std::endl << std::endl << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
 		
 		child1It = newGeneration.begin();
 		child2It = newGeneration.rbegin();
 		
+		if(i == this->ctrl.numGenerations) {
+			Rcout << "x <- c(";
+			for(int k = 0; k < 10000; ++k) {
+				Rcout << ", " << rng(0.0, sumFitness);
+			}
+			Rcout << ")" << std::endl;
+		}
+		
 		while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
 			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
-			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
+			do {
+				tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
+			} while(tmpChromosome1 == tmpChromosome2);
 
 			tmpChromosome1->mateWith(*tmpChromosome2, rng, *(*child1It), *(*child2It));
 			
 			minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 
 			/*
-			 * If both children have no variables, mate again
+			 * If any of the two children has no variables, mate again
 			 */
-			while((*child1It)->getVariableCount() == 0 && (*child2It)->getVariableCount() == 0) {
+			while((*child1It)->getVariableCount() == 0 || (*child2It)->getVariableCount() == 0) {
 				tmpChromosome1->mateWith(*tmpChromosome2, rng, *(*child1It), *(*child2It));
-			}
-
-			if((*child1It)->getVariableCount() == 0) {
-				delete *child1It;
-				*child1It = new Chromosome(**child2It);
-			} else if((*child2It)->getVariableCount() == 0) {
-				delete *child2It;
-				*child2It = new Chromosome(**child1It);
 			}
 
 			this->evaluator.evaluate(**child1It);
 			this->evaluator.evaluate(**child2It);
+
 			// Make sure the first child is "better" than the second child
 			if((*child1It)->getFitness() < (*child2It)->getFitness()) {
 				std::swap(*child1It, *child2It);
 			}
-			
-			IF_DEBUG(
-				Rcout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and" << std::endl << *tmpChromosome2 << std::endl
-					 << "with minimal fitness " << minParentFitness << std::endl << "First two proposals have fitness " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << std::endl;
-			)
-			
-			// At least the first child should be better than the worse parent
+
 			matingTries = 0;
-			while(((*child1It)->getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
+			while(((*child1It)->getFitness() < minParentFitness) && (matingTries++ < this->ctrl.maxMatingTries)) {
 				tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2);
 				
-				/*
-				 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
-				 * greater than 0, otherwise the evaluation step would fail
-				 */
-				if(proposalChild1->getVariableCount() > 0) {
-					if(this->evaluator.evaluate(*proposalChild1) > (*child2It)->getFitness()) { // better as 2nd child
-						if(proposalChild1->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
-							std::swap(*child1It, *child2It);
-							delete *child1It;
-							*child1It = new Chromosome(*proposalChild1);
-						} else {
-							delete *child2It;
-							*child2It = new Chromosome(*proposalChild1);
+				if((*child1It)->getFitness() < minParentFitness && matingTries++ < this->ctrl.maxMatingTries) {
+					/*
+					 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
+					 * greater than 0, otherwise the evaluation step would fail
+					 * The better child is worse than the worst parent and we have some tries left
+					 */
+					if(proposalChild1->getVariableCount() > 0) {
+						if(this->evaluator.evaluate(*proposalChild1) > (*child2It)->getFitness()) { // better as 2nd child
+							if(proposalChild1->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
+								std::swap(*child1It, *child2It);
+								delete *child1It;
+								*child1It = new Chromosome(*proposalChild1);
+							} else {
+								delete *child2It;
+								*child2It = new Chromosome(*proposalChild1);
+							}
 						}
 					}
-				}
-				
-				// Check 2nd new child
-				if(proposalChild2->getVariableCount() > 0) {
-					if(this->evaluator.evaluate(*proposalChild2) > (*child2It)->getFitness()) { // better as 2nd child
-						if(proposalChild2->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
-							std::swap(*child1It, *child2It);
-							delete *child1It;
-							*child1It = new Chromosome(*proposalChild2);
-						} else {
-							delete *child2It;
-							*child2It = new Chromosome(*proposalChild2);
+					
+					// Check 2nd new child
+					if(proposalChild2->getVariableCount() > 0) {
+						if(this->evaluator.evaluate(*proposalChild2) > (*child2It)->getFitness()) { // better as 2nd child
+							if(proposalChild2->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
+								std::swap(*child1It, *child2It);
+								delete *child1It;
+								*child1It = new Chromosome(*proposalChild2);
+							} else {
+								delete *child2It;
+								*child2It = new Chromosome(*proposalChild2);
+							}
 						}
 					}
+					
+					IF_DEBUG(
+						Rcout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness() << std::endl
+						<< "Currently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << std::endl;
+					)
 				}
-				
-				IF_DEBUG(
-					Rcout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness() << std::endl
-					<< "Currently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << std::endl;
-				)
 			}
 			
+			if((*child1It)->getFitness() < (minParentFitness - this->ctrl.badSolutionThreshold * fabs(minParentFitness))) {
+				/*
+				 * The fitness of the better child is more than x% less than the worst parent's
+				 * fitness so cancel mating of the two parents and choose two new parents
+				 */
+				continue;
+			}
+
 			child1Mutated = (*child1It)->mutate(rng);
 			child2Mutated = (*child2It)->mutate(rng);
 			
@@ -225,7 +245,7 @@ void SingleThreadPopulation::run() {
 				}
 
 				this->addChromosomeToElite(**child1It);
-				if(this->ctrl.verbosity >= MORE_VERBOSE) {
+				if(this->ctrl.verbosity >= VERBOSE) {
 					this->printChromosomeFitness(Rcout, **child1It);
 				}
 
@@ -249,7 +269,7 @@ void SingleThreadPopulation::run() {
 				}
 
 				this->addChromosomeToElite(**child2It);
-				if(this->ctrl.verbosity >= MORE_VERBOSE) {
+				if(this->ctrl.verbosity >= VERBOSE) {
 					this->printChromosomeFitness(Rcout, **child2It);
 				}
 
@@ -267,8 +287,8 @@ void SingleThreadPopulation::run() {
 				throw InterruptException();
 			}
 		}
+
 	}
-	
 	delete proposalChild1;
 	delete proposalChild2;
 	for(ChromosomeVecIter it = newGeneration.begin(); it != newGeneration.end(); ++it) {

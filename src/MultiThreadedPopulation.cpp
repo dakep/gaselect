@@ -24,7 +24,7 @@ using namespace Rcpp;
 
 #ifdef ENABLE_DEBUG_VERBOSITY
 
-#define IF_DEBUG(expr) if(this->ctrl.verbosity >= DEBUG_VERBOSE) { expr; }
+#define IF_DEBUG(expr) if(this->ctrl.verbosity == DEBUG_GA || this->ctrl.verbosity == DEBUG_ALL) { expr; }
 #define CHECK_PTHREAD_RETURN_CODE(expr) {int rc = expr; if((rc) != 0) { Rcpp::Rcout << "Warning: Call to pthread function failed with error code " << (rc) << " in " << __FILE__ << ":" << __LINE__ << std::endl; }}
 
 #else
@@ -150,7 +150,9 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	
 	while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
 		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
-		tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
+		do {
+			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
+		} while (tmpChromosome1 == tmpChromosome2);
 		
 		tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It);
 		
@@ -220,9 +222,17 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			}
 			
 			IF_DEBUG(
-					 this->Rout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness()
-					 << "\nCurrently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n";
-					 )
+				this->Rout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness()
+				<< "\nCurrently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n";
+			)
+		}
+		
+		if((*child1It)->getFitness() < (minParentFitness - this->ctrl.badSolutionThreshold * fabs(minParentFitness))) {
+			/*
+			 * The fitness of the better child is more than x% less than the worst parent's
+			 * fitness so cancel mating of the two parents and choose two new parents
+			 */
+			continue;
 		}
 		
 		child1Mutated = (*child1It)->mutate(rng);
@@ -241,10 +251,10 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			++child1It;
 			
 			IF_DEBUG(
-					 if(child1Tries > 0) {
-						 this->Rout << "Needed " << (int) child1Tries << " tries to find unique chromosome\n";
-					 }
-					 )
+				if(child1Tries > 0) {
+					this->Rout << "Needed " << (int) child1Tries << " tries to find unique chromosome\n";
+				}
+			)
 			child1Tries = 0;
 		}
 		
@@ -255,10 +265,10 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			++child2It;
 			
 			IF_DEBUG(
-					 if(child2Tries > 0) {
-						 this->Rout << "Needed " << (int) child2Tries << " tries to find unique chromosome\n";
-					 }
-					 )
+				if(child2Tries > 0) {
+					this->Rout << "Needed " << (int) child2Tries << " tries to find unique chromosome\n";
+				}
+			)
 			child2Tries = 0;
 		}
 		
@@ -308,7 +318,7 @@ void MultiThreadedPopulation::run() {
 				this->minCurrentGenFitness = tmpChromosome->getFitness();
 			}
 			
-			if(this->ctrl.verbosity >= MORE_VERBOSE) {
+			if(this->ctrl.verbosity >= VERBOSE) {
 				this->printChromosomeFitness(Rcout, *tmpChromosome);
 			}
 			
@@ -390,7 +400,7 @@ void MultiThreadedPopulation::run() {
 		this->minCurrentGenFitness = (*(std::min_element(this->nextGeneration.begin(), this->nextGeneration.end(), MultiThreadedPopulation::OrderChromosomePtr())))->getFitness();
 		IF_DEBUG(Rcout << "Fitness map: ")
 		
-		if(this->ctrl.verbosity >= MORE_VERBOSE) { /* Print chromosomes - faster do not check the condition in the loop */
+		if(this->ctrl.verbosity >= VERBOSE) { /* Print chromosomes - faster do not check the condition in the loop */
 			for(j = 0; j < this->ctrl.populationSize; ++j) {
 				*(this->currentGeneration[j]) = *(this->nextGeneration[j]);
 				this->addChromosomeToElite(*this->currentGeneration[j]);

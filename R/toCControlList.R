@@ -62,6 +62,7 @@ setMethod("toCControlList", signature(object = "GenAlgControl"), function(object
 		"mutationProb" = object@mutationProbability,
 		"crossover" = object@crossoverId,
 		"maxDuplicateEliminationTries" = object@maxDuplicateEliminationTries,
+		"badSolutionThreshold" = object@badSolutionThreshold,
 		"verbosity" = object@verbosity
 	));
 });

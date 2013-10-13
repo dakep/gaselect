@@ -81,46 +81,40 @@ setClass("GenAlg", representation(
 #' @docType methods
 #' @useDynLib GenAlgPLS
 #' @example examples/genAlg.R
-setGeneric("genAlg", function(y, X, control, evaluator, seed) { standardGeneric("genAlg") });
+setGeneric("genAlg", function(y, X, control, evaluator = evaluatorPLS(), seed = NULL) { standardGeneric("genAlg") });
 
 #' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,missing,missing-method
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "missing", seed = "missing"),
-function(y, X, control, evaluator) {
-	genAlg(y, X, control, evaluatorPLS(), as.integer(sample.int(2^30, 1)));
+#' @aliases genAlg,numeric,data.frame,GenAlgControl,ANY,ANY-method
+setMethod("genAlg", signature(y = "numeric", X = "data.frame", control = "GenAlgControl", evaluator = "ANY", seed = "ANY"),
+function(y, X, control, evaluator, seed) {
+    genAlg(y, as.matrix(X), control, evaluator, seed);
 });
 
 #' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,missing,ANY-method
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "missing", seed = "ANY"),
+#' @aliases genAlg,numeric,matrix,GenAlgControl,ANY,ANY-method
+setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "ANY", seed = "ANY"),
 function(y, X, control, evaluator, seed) {
-	genAlg(y, X, control, evaluatorPLS(), seed);
+    genAlg(y, as.matrix(X), control, evaluator, seed);
 });
 
 #' @rdname genAlg-methods
 #' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,NULL-method
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "NULL"),
-function(y, X, control, evaluator = evaluatorPLS(), seed) {
-	genAlg(y, X, control, evaluator, as.integer(sample.int(2^30, 1)));
-});
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,NULL-method
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "missing"),
-function(y, X, control, evaluator = evaluatorPLS(), seed) {
+function(y, X, control, evaluator, seed) {
 	genAlg(y, X, control, evaluator, as.integer(sample.int(2^30, 1)));
 });
 
 #' @rdname genAlg-methods
 #' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,numeric-method
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "numeric"),
-function(y, X, control, evaluator = evaluatorPLS(), seed) {
+function(y, X, control, evaluator, seed) {
 	genAlg(y, X, control, evaluator, as.integer(seed));
 });
 
 #' @rdname genAlg-methods
 #' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,integer-method
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "integer"),
-function(y, X, control, evaluator = evaluatorPLS(), seed) {
+function(y, X, control, evaluator, seed) {
 	ret <- new("GenAlg",
 		response = y,
 		covariates = X,

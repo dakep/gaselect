@@ -11,10 +11,11 @@
 #'				children are generated as long as they are not fitter than one parent or \code{maxMatingTries} children have been generated.}
 #' 		\item{\code{elitism}:}{The number of absolute best chromosomes to keep across all generations (between 1 and min(\code{populationSize} * \code{numGenerations}, 2^16)).}
 #' 		\item{\code{mutationProbability}:}{The probability of mutation (between 0 and 1).}
+#' 		\item{\code{badSolutionThreshold}:}{The worst child must not be more than \code{badSolutionThreshold} percent worse than the worse parent (must be greater or equal 0).}
 #' 		\item{\code{crossover}:}{The crossover method to use}
 #' 		\item{\code{crossoverId}:}{The numeric ID of the crossover method to use}
 #' 		\item{\code{maxDuplicateEliminationTries}:}{The maximum number of tries to eliminate duplicates}
-#' 		\item{\code{verbosity}:}{The level of verbosity. 0 means no output at all, 3 is very verbose.}
+#' 		\item{\code{verbosity}:}{The level of verbosity. 0 means no output at all, 2 is very verbose.}
 #' 	}
 setClass("GenAlgControl", representation(
 	populationSize = "integer",
@@ -26,6 +27,7 @@ setClass("GenAlgControl", representation(
 	mutationProbability = "numeric",
 	crossover = "character",
 	crossoverId = "integer",
+	badSolutionThreshold = "numeric",
 	maxDuplicateEliminationTries = "integer",
 	verbosity = "integer"
 ), validity = function(object) {
@@ -71,11 +73,15 @@ setClass("GenAlgControl", representation(
 		errors <- c(errors, "The mutation probability must be between 0 and 1 (excluded).");
 	}
 
+	if(object@badSolutionThreshold < 0) {
+		errors <- c(errors, "The bad solution threshold must be greater or equal than 0");
+	}
+
 	if(object@maxDuplicateEliminationTries < 0L) {
 		errors <- c(errors, "The maximum number of tries to eliminate duplicates must be greater or equal 0");
 	}
 
-	if(object@verbosity < 0L || object@verbosity > 4L) {
+	if(object@verbosity < 0L || object@verbosity > 5L) {
 		errors <- c(errors, "The verbosity level can not be less than 0 or greater than 4");
 	}
 
@@ -121,13 +127,14 @@ setClass("GenAlgControl", representation(
 #' @param elitism The number of absolute best chromosomes to keep across all generations (between 1 and min(\code{populationSize} * \code{numGenerations}, 2^16))
 #' @param mutationProbability The probability of mutation (between 0 and 1)
 #' @param crossover The crossover type to use during mating (see details). Partial matching is performed
+#' @param badSolutionThreshold The worst child must not be more than \code{badSolutionThreshold} percent worse than the worse parent (greater or equal 0).
 #' @param maxDuplicateEliminationTries The maximum number of tries to eliminate duplicates
-#' @param verbosity The level of verbosity. 0 means no output at all, 3 is very verbose.
+#' @param verbosity The level of verbosity. 0 means no output at all, 2 is very verbose.
 #' @export
 #' @example examples/genAlg.R
 genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, maxMatingTries = 5L,
 							elitism = 10L, mutationProbability = 0.01, crossover = c("single", "random"),
-							maxDuplicateEliminationTries = 5L, verbosity = 0L) {
+							maxDuplicateEliminationTries = 5L, verbosity = 0L, badSolutionThreshold = 2) {
 	if(is.numeric(populationSize)) {
 		populationSize <- as.integer(populationSize);
 	}
@@ -174,5 +181,6 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 				crossover = crossover,
 				crossoverId = crossoverId,
 				maxDuplicateEliminationTries = as.integer(maxDuplicateEliminationTries),
+				badSolutionThreshold = badSolutionThreshold,
 				verbosity = verbosity));
 };
