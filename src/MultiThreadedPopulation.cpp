@@ -23,15 +23,12 @@
 using namespace Rcpp;
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-
 #define IF_DEBUG(expr) if(this->ctrl.verbosity == DEBUG_GA || this->ctrl.verbosity == DEBUG_ALL) { expr; }
 #define CHECK_PTHREAD_RETURN_CODE(expr) {int rc = expr; if((rc) != 0) { Rcpp::Rcout << "Warning: Call to pthread function failed with error code " << (rc) << " in " << __FILE__ << ":" << __LINE__ << std::endl; }}
 
 #else
-
 #define IF_DEBUG(expr)
 #define CHECK_PTHREAD_RETURN_CODE(expr) {expr;}
-
 #endif
 
 
@@ -97,9 +94,7 @@ MultiThreadedPopulation::MultiThreadedPopulation(const Control &ctrl, ::Evaluato
 	}
 	
 	this->nextGeneration.reserve(this->ctrl.populationSize);
-	
-	this->minCurrentGenFitness = 0.0;
-	
+
 	int pthreadRC = pthread_mutex_init(&this->syncMutex, NULL);
 	if(pthreadRC != 0) {
 		throw ThreadingError("Mutex for synchronization could not be initialized");
@@ -149,12 +144,12 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	std::pair<bool, bool> duplicated;
 	
 	while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
-		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
+		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness), this->Rout);
 		do {
-			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
+			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness), this->Rout);
 		} while (tmpChromosome1 == tmpChromosome2);
 		
-		tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It);
+		tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It, this->Rout);
 		
 		minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 		
@@ -162,7 +157,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		 * If both children have no variables, mate again
 		 */
 		while((*child1It)->getVariableCount() == 0 && (*child2It)->getVariableCount() == 0) {
-			tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It);
+			tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It, this->Rout);
 		}
 		
 		if((*child1It)->getVariableCount() == 0) {
@@ -181,14 +176,14 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		}
 		
 		IF_DEBUG(
-				 this->Rout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and\n" << *tmpChromosome2
-				 << "\nwith minimal fitness " << minParentFitness << "\nFirst two proposals have fitness " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n";
-				 )
+			this->Rout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and\n" << *tmpChromosome2
+			<< "\nwith minimal fitness " << minParentFitness << "\nFirst two proposals have fitness " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n";
+		)
 		
 		// At least the first child should be better than the worse parent
 		matingTries = 0;
 		while(((*child1It)->getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
-			tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2);
+			tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2, this->Rout);
 			
 			/*
 			 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
@@ -235,8 +230,8 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			continue;
 		}
 		
-		child1Mutated = (*child1It)->mutate(rng);
-		child2Mutated = (*child2It)->mutate(rng);
+		child1Mutated = (*child1It)->mutate(rng, this->Rout);
+		child2Mutated = (*child2It)->mutate(rng, this->Rout);
 		
 		/*
 		 * Check if the child is a duplicate of another chromosome
@@ -287,9 +282,13 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	delete proposalChild2;
 }
 
+/**
+ * Start the evolution
+ */
 void MultiThreadedPopulation::run() {
 	int i = 0, j = 0;
 	RNG rng(this->seed);
+	double minFitness = 0.0;
 	Chromosome* tmpChromosome;
 	ShuffledSet shuffledSet(this->ctrl.chromosomeSize);
 	MultiThreadedPopulation::ThreadArgsWrapper* threadArgs;
@@ -313,19 +312,13 @@ void MultiThreadedPopulation::run() {
 		
 		/* Check if chromosome is already in the initial population */
 		if(std::find_if(this->nextGeneration.begin(), this->nextGeneration.end(), CompChromsomePtr(tmpChromosome)) == this->nextGeneration.end()) {
-			this->currentGenFitnessMap.push_back(this->evaluator.evaluate(*tmpChromosome));
-			if(tmpChromosome->getFitness() < this->minCurrentGenFitness) {
-				this->minCurrentGenFitness = tmpChromosome->getFitness();
+			this->evaluator.evaluate(*tmpChromosome);
+			if(tmpChromosome->getFitness() < minFitness) {
+				minFitness = tmpChromosome->getFitness();
 			}
-			
-			if(this->ctrl.verbosity >= VERBOSE) {
-				this->printChromosomeFitness(Rcout, *tmpChromosome);
-			}
-			
+
 			this->addChromosomeToElite(*tmpChromosome);
-			
 			this->nextGeneration.push_back(tmpChromosome);
-			this->currentGeneration.push_back(new Chromosome(this->ctrl, shuffledSet, rng, false));
 		} else {
 			delete tmpChromosome;
 		}
@@ -333,6 +326,18 @@ void MultiThreadedPopulation::run() {
 		if(check_interrupt()) {
 			throw InterruptException();
 		}
+	}
+
+	this->initCurrentGeneration(shuffledSet, rng);
+
+	/***********************************************************************
+	 * Update minFitness, the current generation and the sumFitness
+	 * and print the generation if requested
+	 **********************************************************************/
+	this->sumCurrentGenFitness = this->updateCurrentGeneration(this->nextGeneration, minFitness, false);
+
+	if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
+		this->printCurrentGeneration();
 	}
 	
 	/*****************************************************************************************
@@ -391,42 +396,7 @@ void MultiThreadedPopulation::run() {
 	 *****************************************************************************************/
 	
 	for(i = this->ctrl.numGenerations; i > 0 && !interrupted; --i) {
-		/*
-		 * Copy values from next to current generation
-		 * Transform the fitness map of the current generation to start at 0
-		 * and have cumulative values
-		 */
-		this->sumCurrentGenFitness = 0.0;
-		this->minCurrentGenFitness = (*(std::min_element(this->nextGeneration.begin(), this->nextGeneration.end(), MultiThreadedPopulation::OrderChromosomePtr())))->getFitness();
-		IF_DEBUG(Rcout << "Fitness map: ")
-		
-		if(this->ctrl.verbosity >= VERBOSE) { /* Print chromosomes - faster do not check the condition in the loop */
-			for(j = 0; j < this->ctrl.populationSize; ++j) {
-				*(this->currentGeneration[j]) = *(this->nextGeneration[j]);
-				this->addChromosomeToElite(*this->currentGeneration[j]);
-				
-				this->sumCurrentGenFitness += (this->currentGeneration[j]->getFitness() - this->minCurrentGenFitness);
-				this->currentGenFitnessMap[j] = this->sumCurrentGenFitness;
-				this->printChromosomeFitness(Rcout, *(this->currentGeneration[j]));
-				IF_DEBUG(Rcout << this->sumCurrentGenFitness << " | ")
-			}
-		} else { /* Do not print chromosomes */
-			for(j = 0; j < this->ctrl.populationSize; ++j) {
-				*(this->currentGeneration[j]) = *(this->nextGeneration[j]);
-				this->addChromosomeToElite(*this->currentGeneration[j]);
-	
-				this->sumCurrentGenFitness += (this->currentGeneration[j]->getFitness() - this->minCurrentGenFitness);
-				this->currentGenFitnessMap[j] = this->sumCurrentGenFitness;
-				IF_DEBUG(Rcout << this->sumCurrentGenFitness << " | ")
-			}
-		}
-		IF_DEBUG(Rcout << std::endl)
-		
-		this->minCurrentGenFitness = 0.0;
-		
-		IF_DEBUG(
-				 Rcpp::Rcout << "Unique chromosomes: " << this->countUniques() << std::endl;
-				 )
+		IF_DEBUG(Rcpp::Rcout << "Unique chromosomes: " << this->countUniques() << std::endl;)
 		
 		if(this->ctrl.verbosity > OFF) {
 			Rcout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
@@ -461,6 +431,18 @@ void MultiThreadedPopulation::run() {
 		 * Write all buffered output to the R console
 		 *****************************************************************************************/
 		this->Rout.realFlush();
+
+		/***********************************************************************
+		 * Update minFitness, the current generation and the sumFitness
+		 * and print the generation if requested
+		 **********************************************************************/
+		minFitness = (*(std::min_element(this->nextGeneration.begin(), this->nextGeneration.end(), MultiThreadedPopulation::OrderChromosomePtr())))->getFitness();
+
+		this->sumCurrentGenFitness = this->updateCurrentGeneration(this->nextGeneration, minFitness, true);
+
+		if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
+			this->printCurrentGeneration();
+		}
 	}
 	
 	/*****************************************************************************************
@@ -495,9 +477,7 @@ void MultiThreadedPopulation::run() {
 	 *****************************************************************************************/
 	
 	for(j = 0; j < this->ctrl.populationSize; ++j) {
-		delete this->currentGeneration[j];
-		this->currentGeneration[j] = this->nextGeneration[j]; // Only dereference pointer
-		this->addChromosomeToElite(*this->currentGeneration[j]);
+		delete this->nextGeneration[j];
 	}
 	
 	if(interrupted) {

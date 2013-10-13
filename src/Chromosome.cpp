@@ -116,7 +116,7 @@ inline void Chromosome::initChromosomeParts(RNG& rng, ShuffledSet &shuffledSet) 
 	)
 }
 
-void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1, Chromosome& child2) {
+void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1, Chromosome& child2, std::ostream &os) {
 	if(other.ctrl.chromosomeSize != this->ctrl.chromosomeSize) {
 		throw InvalidCopulationException(__FILE__, __LINE__);
 	}
@@ -140,7 +140,7 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 					 */
 					child1.chromosomeParts[i] = child2.chromosomeParts[i] = this->chromosomeParts[i];
 					IF_DEBUG(
-						Rcout << "Chromosome part is the same for both parents -- copy part to both children" << std::endl;
+						os << "Chromosome part is the same for both parents -- copy part to both children" << std::endl;
 					)
 				} else {
 					/*
@@ -159,8 +159,8 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 					child2.chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
 					
 					IF_DEBUG(
-						Rcout << "Mask for part " << i << ": ";
-						this->printBits(Rcout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
+						os << "Mask for part " << i << ": ";
+						this->printBits(os, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
 					)
 				}
 			}
@@ -177,7 +177,7 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 			IntChromosome coMask = (INT_CHROMOSOME_MAX >> crossoverBit);
 
 			IF_DEBUG(
-				Rcout << "Crossover at position " << randPos << " (= part " << chosenPart << ", bit " << crossoverBit << ")" << std::endl;
+				os << "Crossover at position " << randPos << " (= part " << chosenPart << ", bit " << crossoverBit << ")" << std::endl;
 			)
 					
 			std::copy(this->chromosomeParts.begin(), this->chromosomeParts.begin() + chosenPart, child1.chromosomeParts.begin());
@@ -194,15 +194,15 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 	}
 
 	IF_DEBUG(
-		Rcout << "1st child: " << child1 << std::endl;
-		Rcout << "2nd child: " << child2 << std::endl;
+		os << "1st child: " << child1 << std::endl;
+		os << "2nd child: " << child2 << std::endl;
 	)
 
 	child1.updateCurrentlySetBits();
 	child2.updateCurrentlySetBits();
 }
 
-bool Chromosome::mutate(RNG& rng) {
+bool Chromosome::mutate(RNG& rng, std::ostream &os) {
 	if(this->ctrl.mutationProbability == 0.0) {
 		return false;
 	}
@@ -220,7 +220,7 @@ bool Chromosome::mutate(RNG& rng) {
 
 	IF_DEBUG(
 		if(numChangeBits != 0) {
-			Rcout << "The number of set bits (" << this->currentlySetBits << ") is not within the valid range. MUST change " << numChangeBits << std::endl;
+			os << "The number of set bits (" << this->currentlySetBits << ") is not within the valid range. MUST change " << numChangeBits << std::endl;
 		}
 	)
 
@@ -247,9 +247,9 @@ bool Chromosome::mutate(RNG& rng) {
 
 	IF_DEBUG(
 		if(numChangeBits != 0) {
-			Rcout << "Changing " << numChangeBits << " bits" << std::endl;
+			os << "Changing " << numChangeBits << " bits" << std::endl;
 		} else {
-			Rcout << "No mutation" << std::endl;
+			os << "No mutation" << std::endl;
 		}
 	)
 
@@ -356,7 +356,7 @@ bool Chromosome::mutate(RNG& rng) {
 	
 	this->currentlySetBits += numChangeBits;
 	
-	IF_DEBUG(Rcout << "After mutation:\n" << *this << std::endl)
+	IF_DEBUG(os << "After mutation:\n" << *this << std::endl)
 	
 	return true;
 }
