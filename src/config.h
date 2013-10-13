@@ -19,10 +19,6 @@
 #include <stdint.h>
 #endif
 
-#define ENABLE_DEBUG_VERBOSITY
-
-//#define TIMING_BENCHMARK
-
 #define MIN_MUTATION_PROBABILITY 0.000001 // 1e-6
 #define TAB_DELIMITER "    "
 #define PRECISION 8
