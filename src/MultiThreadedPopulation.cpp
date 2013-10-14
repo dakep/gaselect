@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <errno.h>
 
+#include "Logger.h"
 #include "RNG.h"
 #include "ShuffledSet.h"
 #include "MultiThreadedPopulation.h"
@@ -24,7 +25,7 @@ using namespace Rcpp;
 
 #ifdef ENABLE_DEBUG_VERBOSITY
 #define IF_DEBUG(expr) if(this->ctrl.verbosity == DEBUG_GA || this->ctrl.verbosity == DEBUG_ALL) { expr; }
-#define CHECK_PTHREAD_RETURN_CODE(expr) {int rc = expr; if((rc) != 0) { Rcpp::Rcout << "Warning: Call to pthread function failed with error code " << (rc) << " in " << __FILE__ << ":" << __LINE__ << std::endl; }}
+#define CHECK_PTHREAD_RETURN_CODE(expr) {int rc = expr; if((rc) != 0) { GAerr << "Warning: Call to pthread function failed with error code " << (rc) << " in " << __FILE__ << ":" << __LINE__ << std::endl; }}
 
 #else
 #define IF_DEBUG(expr)
@@ -41,50 +42,6 @@ static inline void check_interrupt_impl(void* /*dummy*/) {
 
 inline bool check_interrupt() {
 	return (R_ToplevelExec(check_interrupt_impl, NULL) == FALSE);
-}
-
-/*****************************************************************************************
- *
- * Thread safe stream buffer for SafeRstreambuf
- *
- *****************************************************************************************/
-MultiThreadedPopulation::SafeRstreambuf::SafeRstreambuf() {
-	int pthreadRC = pthread_mutex_init(&this->printMutex, NULL);
-	if(pthreadRC != 0) {
-		throw ThreadingError("Mutex to synchronize printing could not be initialized");
-	}
-}
-
-MultiThreadedPopulation::SafeRstreambuf::~SafeRstreambuf() {
-	pthread_mutex_destroy(&this->printMutex);
-}
-
-std::streamsize MultiThreadedPopulation::SafeRstreambuf::xsputn(const char* s, std::streamsize n) {
-	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
-	this->buffer.append(s, n);
-	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
-	return n;
-}
-
-int MultiThreadedPopulation::SafeRstreambuf::overflow(int c) {
-	if(c != EOF) {
-		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
-		this->buffer.append(1, (char) c);
-		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
-	}
-	return c;
-}
-
-int MultiThreadedPopulation::SafeRstreambuf::sync() {
-	return 0;
-}
-
-void MultiThreadedPopulation::SafeRstreambuf::realFlush() {
-	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
-	Rprintf("%.*s", this->buffer.length(), this->buffer.c_str());
-	R_FlushConsole();
-	this->buffer.clear();
-	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
 }
 
 MultiThreadedPopulation::MultiThreadedPopulation(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) : Population(ctrl, evaluator, seed) {
@@ -144,12 +101,12 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	std::pair<bool, bool> duplicated;
 	
 	while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
-		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness), this->Rout);
+		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
 		do {
-			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness), this->Rout);
+			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
 		} while (tmpChromosome1 == tmpChromosome2);
 		
-		tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It, this->Rout);
+		tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It);
 		
 		minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 		
@@ -157,7 +114,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		 * If both children have no variables, mate again
 		 */
 		while((*child1It)->getVariableCount() == 0 && (*child2It)->getVariableCount() == 0) {
-			tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It, this->Rout);
+			tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It);
 		}
 		
 		if((*child1It)->getVariableCount() == 0) {
@@ -176,14 +133,14 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		}
 		
 		IF_DEBUG(
-			this->Rout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and\n" << *tmpChromosome2
+			GAout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and\n" << *tmpChromosome2
 			<< "\nwith minimal fitness " << minParentFitness << "\nFirst two proposals have fitness " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n";
 		)
 		
 		// At least the first child should be better than the worse parent
 		matingTries = 0;
 		while(((*child1It)->getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
-			tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2, this->Rout);
+			tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2);
 			
 			/*
 			 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
@@ -217,7 +174,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			}
 			
 			IF_DEBUG(
-				this->Rout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness()
+				GAout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness()
 				<< "\nCurrently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n";
 			)
 		}
@@ -230,8 +187,8 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			continue;
 		}
 		
-		child1Mutated = (*child1It)->mutate(rng, this->Rout);
-		child2Mutated = (*child2It)->mutate(rng, this->Rout);
+		child1Mutated = (*child1It)->mutate(rng);
+		child2Mutated = (*child2It)->mutate(rng);
 		
 		/*
 		 * Check if the child is a duplicate of another chromosome
@@ -247,7 +204,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			
 			IF_DEBUG(
 				if(child1Tries > 0) {
-					this->Rout << "Needed " << (int) child1Tries << " tries to find unique chromosome\n";
+					GAout << "Needed " << (int) child1Tries << " tries to find unique chromosome\n";
 				}
 			)
 			child1Tries = 0;
@@ -261,7 +218,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			
 			IF_DEBUG(
 				if(child2Tries > 0) {
-					this->Rout << "Needed " << (int) child2Tries << " tries to find unique chromosome\n";
+					GAout << "Needed " << (int) child2Tries << " tries to find unique chromosome\n";
 				}
 			)
 			child2Tries = 0;
@@ -271,7 +228,8 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		 * The main thread has to check for a user interrupt
 		 */
 		if(checkUserInterrupt == true) {
-			this->Rout.flush();
+			GAout.flushThreadSafeBuffer();
+			GAerr.flushThreadSafeBuffer();
 			if(check_interrupt()) {
 				throw InterruptException();
 			}
@@ -301,7 +259,7 @@ void MultiThreadedPopulation::run() {
 	pthread_t* threads;
 	
 	if(this->ctrl.verbosity > OFF) {
-		Rcout << "Generating initial population" << std::endl;
+		GAout << "Generating initial population" << std::endl;
 	}
 	
 	/*****************************************************************************************
@@ -377,16 +335,16 @@ void MultiThreadedPopulation::run() {
 			offset += threadArgs[i].numChildren;
 		} else {
 			numChildrenMainThread += threadArgs[i].numChildren;
-			IF_DEBUG(Rcout << "Warning: Thread " << i << " could not be created: " << strerror(pthreadRC) << std::endl;)
+			IF_DEBUG(GAerr << "Warning: Thread " << i << " could not be created: " << strerror(pthreadRC) << std::endl;)
 		}
 	}
 	
 	CHECK_PTHREAD_RETURN_CODE(pthread_attr_destroy(&threadAttr))
 	
 	if(this->actuallySpawnedThreads < maxThreadsToSpawn) {
-		Rcout << "Warning: Only " << this->actuallySpawnedThreads << " threads could be spawned" << std::endl;
+		GAerr << "Warning: Only " << this->actuallySpawnedThreads << " threads could be spawned" << std::endl;
 	} else if(this->ctrl.verbosity >= ON) {
-		Rcout << "Spawned " << this->actuallySpawnedThreads << " threads" << std::endl;
+		GAout << "Spawned " << this->actuallySpawnedThreads << " threads" << std::endl;
 	}
 	
 	bool interrupted = false;
@@ -396,12 +354,18 @@ void MultiThreadedPopulation::run() {
 	 *****************************************************************************************/
 	
 	for(i = this->ctrl.numGenerations; i > 0 && !interrupted; --i) {
-		IF_DEBUG(Rcpp::Rcout << "Unique chromosomes: " << this->countUniques() << std::endl;)
+		IF_DEBUG(GAout << "Unique chromosomes: " << this->countUniques() << std::endl;)
 		
 		if(this->ctrl.verbosity > OFF) {
-			Rcout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
+			GAout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
-		
+
+		/*
+		 * Prepare output streams for multithreading again
+		 */
+		GAout.enableThreadSafety(true);
+		GAerr.enableThreadSafety(true);
+
 		/*****************************************************************************************
 		 * broadcast to all threads to start mating
 		 *****************************************************************************************/
@@ -426,11 +390,11 @@ void MultiThreadedPopulation::run() {
 		}
 		
 		this->waitForAllThreadsToFinishMating();
-		
-		/*****************************************************************************************
-		 * Write all buffered output to the R console
-		 *****************************************************************************************/
-		this->Rout.realFlush();
+		/*
+		 * Signal output streams that multithreading is over
+		 */
+		GAout.enableThreadSafety(false);
+		GAerr.enableThreadSafety(false);
 
 		/***********************************************************************
 		 * Update minFitness, the current generation and the sumFitness
@@ -448,6 +412,8 @@ void MultiThreadedPopulation::run() {
 	/*****************************************************************************************
 	 * Signal threads to end
 	 *****************************************************************************************/
+	GAout.enableThreadSafety(true);
+	GAerr.enableThreadSafety(true);
 	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->syncMutex))
 	
 	this->startMating = true;
@@ -470,7 +436,10 @@ void MultiThreadedPopulation::run() {
 	
 	delete threadArgs;
 	delete threads;
-	
+
+	GAout.enableThreadSafety(false);
+	GAerr.enableThreadSafety(false);
+
 	/*****************************************************************************************
 	 * Update elite and the generation
 	 * and delete the old `nextGeneration`

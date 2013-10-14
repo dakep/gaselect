@@ -8,6 +8,7 @@
 #include <RcppArmadillo.h>
 #include <set>
 
+#include "Logger.h"
 #include "Chromosome.h"
 #include "Control.h"
 #include "PLS.h"
@@ -41,10 +42,10 @@ BEGIN_RCPP
 	if(numThreads > 1) {
 #ifdef HAVE_PTHREAD_H
 		if(evalClass == USER) {
-			Rcout << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
+			GAerr << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
 		}
 #else
-		Rcout << "Warning: Threads are not supported on this system" << std::endl;
+		GAerr << "Warning: Threads are not supported on this system" << std::endl;
 		numThreads = 1;
 #endif
 	} else if(numThreads < 1) {
@@ -114,7 +115,7 @@ BEGIN_RCPP
 	toFree |= 1; // eval has to be freed
 
 	if(ctrl.verbosity >= VERBOSE) {
-		Rcout << ctrl << std::endl;
+		GAout << ctrl << std::endl;
 	}
 
 #ifdef HAVE_PTHREAD_H

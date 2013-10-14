@@ -46,42 +46,6 @@ public:
 	
 	void run();
 private:
-	class SafeRstreambuf : public std::streambuf {
-	public:
-		SafeRstreambuf();
-		~SafeRstreambuf();
-		void realFlush();
-	protected:
-		virtual std::streamsize xsputn(const char* s, std::streamsize n);
-		virtual int	overflow(int c = EOF);
-		virtual int sync();
-	private:
-		std::string buffer;
-		pthread_mutex_t printMutex;
-	};
-	
-	class SafeRostream : public std::ostream {
-	public:
-		SafeRostream() : std::ostream(new SafeRstreambuf()) {
-			this->buf = static_cast<SafeRstreambuf*>(this->rdbuf());
-		};
-		
-		void realFlush() {
-			if(this->buf != NULL) {
-				this->buf->realFlush();
-			}
-		};
-
-		~SafeRostream() {
-			if(this->buf != NULL) {
-				delete this->buf;
-				this->buf = NULL;
-			}
-		}
-   private:
-	   SafeRstreambuf* buf;
-   };
-	
 	struct ThreadArgsWrapper {
 		MultiThreadedPopulation* popObj;
 		Evaluator* evalObj;
@@ -103,9 +67,7 @@ private:
 	bool startMating;
 	bool killThreads;
 	bool allThreadsFinishedMating;
-	
-	SafeRostream Rout;
-	
+
 	uint16_t actuallySpawnedThreads;
 	uint16_t numThreadsFinishedMating;
 		

@@ -35,8 +35,8 @@ public:
 	/**
 	 * @return bool Returns true if mutation occurred, false otherwise
 	 */
-	bool mutate(RNG& rng, std::ostream &os = Rcpp::Rcout);
-	void mateWith(const Chromosome &other, RNG& rng, Chromosome& child1, Chromosome& child2, std::ostream &os = Rcpp::Rcout);
+	bool mutate(RNG& rng);
+	void mateWith(const Chromosome &other, RNG& rng, Chromosome& child1, Chromosome& child2);
 
 	void setFitness(double fitness) { this->fitness = fitness; };
 	double getFitness() const { return this->fitness; };

@@ -9,6 +9,7 @@
 #include "config.h"
 
 #include <algorithm>
+#include "Logger.h"
 #include "PLSEvaluator.h"
 
 #ifdef ENABLE_DEBUG_VERBOSITY
@@ -39,7 +40,7 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 		sumSEP += this->estSEP(maxNComp, this->shuffledRowNumbers[rep]);
 	}
 
-	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
+	IF_DEBUG(GAout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
 	return -sumSEP;
 }
 
@@ -85,7 +86,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 	/*
 	 * the last segment is used as test set, and is excluded from all other calculations
 	 */
-	IF_DEBUG(arma::urowvec(rowNumbers).raw_print(Rcpp::Rcout, "EVALUATOR - Shuffled row numbers:");)
+	IF_DEBUG(arma::urowvec(rowNumbers).raw_print(GAout, "EVALUATOR - Shuffled row numbers:");)
 
 	for(; seg < this->numSegments - 1; ++seg) {
 		arma::uvec segment(&rowNumbers[0], segmentLength, false);
@@ -96,8 +97,8 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 		}
 		
 		IF_DEBUG(
-			segment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Segment");
-			notSegment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Remaining");
+			segment.t().raw_print(GAout, "EVALUATOR - Segment");
+			notSegment.t().raw_print(GAout, "EVALUATOR - Remaining");
 		)
 
 		/*
@@ -165,8 +166,8 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 	arma::uvec notSegment(&rowNumbers[0], this->nrows - lastSegmentLength, false);
 	
 	IF_DEBUG(
-		segment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Validation Segment");
-		notSegment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Validation Remaining");
+		segment.t().raw_print(GAout, "EVALUATOR - Validation Segment");
+		notSegment.t().raw_print(GAout, "EVALUATOR - Validation Remaining");
 	)
 	
 	leftOutX = this->pls->getXColumnView().rows(segment);
@@ -175,7 +176,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 	this->pls->fit(Aopt);
 	residuals = leftOutY - this->pls->predict(leftOutX, Aopt);
 	
-	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Resulting SEP:" << std::endl << arma::stddev(residuals.col(0)) << std::endl)
+	IF_DEBUG(GAout << "EVALUATOR: Resulting SEP:" << std::endl << arma::stddev(residuals.col(0)) << std::endl)
 	
 	return arma::stddev(residuals.col(0));
 }
