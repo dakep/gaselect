@@ -111,24 +111,31 @@ protected:
 		
 		IF_DEBUG(Rcpp::Rcout << "Fitness map:\n")
 
-
+		/*
+		 * Add newly generated chromosomes to the current generation
+		 * this may introduce some duplicates but the number is usually
+		 * neglectable, as the number of chromosomes is usally much greater than
+		 * the number of elite chromosomes
+		 */
 		for(; i < this->ctrl.populationSize; ++i) {
-			if(this->elite.find(*(newGeneration[i])) == this->elite.end()) {
-				*(this->currentGeneration[i]) = *(newGeneration[i]);
-
-				if(updateElite == true) {
-					this->addChromosomeToElite(*this->currentGeneration[i]);
-				}
-				
-				sumFitness += (this->currentGeneration[i]->getFitness() - minFitness);
+			if(updateElite == true) {
+				this->addChromosomeToElite(*newGeneration[i]);
 			}
+
+			*(this->currentGeneration[i]) = *(newGeneration[i]);
+			sumFitness += (this->currentGeneration[i]->getFitness() - minFitness);
+
 			this->currentGenFitnessMap[i] = sumFitness;
+
 			IF_DEBUG(
 				Rcpp::Rcout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
 				<< TAB_DELIMITER << sumFitness << "\n";
 			)
 		}
-		
+
+		/*
+		 * Add all chromosomes from the elite
+		 */
 		for(SortedChromosomes::iterator eliteIt = this->elite.begin(); eliteIt != this->elite.end(); ++eliteIt, ++i) {
 			*(this->currentGeneration[i]) = *(eliteIt);
 
