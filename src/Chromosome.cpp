@@ -12,6 +12,7 @@
 #include <set>
 #include <RcppArmadillo.h>
 
+#include "Logger.h"
 #include "Chromosome.h"
 #include "GenAlg.h"
 
@@ -112,11 +113,11 @@ inline void Chromosome::initChromosomeParts(RNG& rng, ShuffledSet &shuffledSet) 
 		this->chromosomeParts[part] |= (((IntChromosome) 1) << offset);
 	}
 	IF_DEBUG(
-		Rcout << "Initialized chromosome with " << this->currentlySetBits << " bits set" << std::endl;
+		GAout << "Initialized chromosome with " << this->currentlySetBits << " bits set" << std::endl;
 	)
 }
 
-void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1, Chromosome& child2, std::ostream &os) {
+void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1, Chromosome& child2) {
 	if(other.ctrl.chromosomeSize != this->ctrl.chromosomeSize) {
 		throw InvalidCopulationException(__FILE__, __LINE__);
 	}
@@ -140,7 +141,7 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 					 */
 					child1.chromosomeParts[i] = child2.chromosomeParts[i] = this->chromosomeParts[i];
 					IF_DEBUG(
-						os << "Chromosome part is the same for both parents -- copy part to both children" << std::endl;
+						GAout << GAout.lock() << "Chromosome part is the same for both parents -- copy part to both children" << std::endl << GAout.unlock();
 					)
 				} else {
 					/*
@@ -159,8 +160,8 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 					child2.chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
 					
 					IF_DEBUG(
-						os << "Mask for part " << i << ": ";
-						this->printBits(os, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
+						GAout << GAout.lock() << "Mask for part " << i << ": ";
+						this->printBits(GAout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl << GAout.unlock()
 					)
 				}
 			}
@@ -177,7 +178,7 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 			IntChromosome coMask = (INT_CHROMOSOME_MAX >> crossoverBit);
 
 			IF_DEBUG(
-				os << "Crossover at position " << randPos << " (= part " << chosenPart << ", bit " << crossoverBit << ")" << std::endl;
+				GAout << GAout.lock() << "Crossover at position " << randPos << " (= part " << chosenPart << ", bit " << crossoverBit << ")" << std::endl << GAout.unlock()
 			)
 					
 			std::copy(this->chromosomeParts.begin(), this->chromosomeParts.begin() + chosenPart, child1.chromosomeParts.begin());
@@ -194,15 +195,15 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 	}
 
 	IF_DEBUG(
-		os << "1st child: " << child1 << std::endl;
-		os << "2nd child: " << child2 << std::endl;
+		GAout << GAout.lock() << "1st child: " << child1 << std::endl
+		<< "2nd child: " << child2 << std::endl << GAout.unlock();
 	)
 
 	child1.updateCurrentlySetBits();
 	child2.updateCurrentlySetBits();
 }
 
-bool Chromosome::mutate(RNG& rng, std::ostream &os) {
+bool Chromosome::mutate(RNG& rng) {
 	if(this->ctrl.mutationProbability == 0.0) {
 		return false;
 	}
@@ -220,7 +221,7 @@ bool Chromosome::mutate(RNG& rng, std::ostream &os) {
 
 	IF_DEBUG(
 		if(numChangeBits != 0) {
-			os << "The number of set bits (" << this->currentlySetBits << ") is not within the valid range. MUST change " << numChangeBits << std::endl;
+			GAout << GAout.lock() << "The number of set bits (" << this->currentlySetBits << ") is not within the valid range. MUST change " << numChangeBits << std::endl << GAout.unlock();
 		}
 	)
 
@@ -246,11 +247,13 @@ bool Chromosome::mutate(RNG& rng, std::ostream &os) {
 	}
 
 	IF_DEBUG(
+		GAout << GAout.lock();
 		if(numChangeBits != 0) {
-			os << "Changing " << numChangeBits << " bits" << std::endl;
+			GAout << "Changing " << numChangeBits << " bits" << std::endl;
 		} else {
-			os << "No mutation" << std::endl;
+			GAout << "No mutation" << std::endl;
 		}
+		GAout << GAout.unlock();
 	)
 
 	if(numChangeBits == 0) {
@@ -356,7 +359,9 @@ bool Chromosome::mutate(RNG& rng, std::ostream &os) {
 	
 	this->currentlySetBits += numChangeBits;
 	
-	IF_DEBUG(os << "After mutation:\n" << *this << std::endl)
+	IF_DEBUG(
+		GAout << GAout.lock() << "After mutation:\n" << *this << std::endl << GAout.unlock();
+	)
 	
 	return true;
 }

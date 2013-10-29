@@ -7,6 +7,7 @@
 //
 
 #include "config.h"
+#include "Logger.h"
 #include "PLS.h"
 
 void PLS::subviewChanged() {
@@ -56,7 +57,7 @@ arma::mat PLS::predict(const arma::mat &newX, uint16_t ncomp) const {
 	const arma::cube& coefs = this->getCoefficients();
 	const arma::mat& intercepts = this->getIntercepts();
 	if(ncomp > coefs.n_slices) {
-		Rcpp::Rcout << "Trying to predict with " << ncomp << " components when only " << coefs.n_slices << " components are available" << std::endl;
+		GAerr << "Trying to predict with " << ncomp << " components when only " << coefs.n_slices << " components are available" << std::endl;
 		throw Rcpp::exception("Can not predict values for a model with more components than fit components", __FILE__, __LINE__);
 	}
 	

@@ -14,6 +14,7 @@
 #include <set>
 #include <utility>
 
+#include "Logger.h"
 #include "RNG.h"
 #include "Chromosome.h"
 #include "Evaluator.h"
@@ -109,7 +110,7 @@ protected:
 			minFitness = this->elite.rbegin()->getFitness();
 		}
 		
-		IF_DEBUG(Rcpp::Rcout << "Fitness map:\n")
+		IF_DEBUG(GAout << "Fitness map:\n")
 
 		/*
 		 * Add newly generated chromosomes to the current generation
@@ -128,7 +129,7 @@ protected:
 			this->currentGenFitnessMap[i] = sumFitness;
 
 			IF_DEBUG(
-				Rcpp::Rcout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
+				GAout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
 				<< TAB_DELIMITER << sumFitness << "\n";
 			)
 		}
@@ -142,12 +143,12 @@ protected:
 			sumFitness += (eliteIt->getFitness() - minFitness);
 			this->currentGenFitnessMap[i] = sumFitness;
 			IF_DEBUG(
-				Rcpp::Rcout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
+				GAout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
 				<< TAB_DELIMITER << this->currentGenFitnessMap[i] << "\n";
 			)
 		}
 
-		IF_DEBUG(Rcpp::Rcout << std::endl)
+		IF_DEBUG(GAout << std::endl)
 		
 		return sumFitness;
 	}
@@ -157,7 +158,7 @@ protected:
 	 * where the probability to pick a chromosome is taken from
 	 * the currentGenFitnessMap
 	 */
-	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand, std::ostream &os = Rcpp::Rcout) {
+	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand) {
 		int imin = 0, imax = static_cast<int>(this->currentGenFitnessMap.size());
 		int imid = 0;
 		
@@ -176,7 +177,9 @@ protected:
 			}
 		}
 		
-		IF_DEBUG(os << "Selected chromosome " << imin << " for mating (rand = " << rand << ")" << std::endl);
+		IF_DEBUG(
+			GAout << GAout.lock() << "Selected chromosome " << imin << " for mating (rand = " << rand << ")" << std::endl << GAout.unlock();
+		);
 
 		return this->currentGeneration[imin];
 	};
@@ -200,10 +203,10 @@ protected:
 	inline void printCurrentGeneration() {
 		int i = 0;
 		for(ChromosomeVec::iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
-			Rcpp::Rcout << (std::stringstream() << std::fixed << std::setw(4) << i++).rdbuf();
-			this->printChromosomeFitness(Rcpp::Rcout, **it);
+			GAout << (std::stringstream() << std::fixed << std::setw(4) << i++).rdbuf();
+			this->printChromosomeFitness(GAout, **it);
 		}
-		Rcpp::Rcout << "\n" << std::endl;
+		GAout << "\n" << std::endl;
 	}
 
 	inline std::ostream& printChromosomeFitness(std::ostream &os, Chromosome &ch) {
@@ -230,7 +233,7 @@ protected:
 			this->minEliteFitness = this->elite.begin()->getFitness();
 			
 			IF_DEBUG(
-				Rcpp::Rcout << "Adding chromosome to elite. New minimum fitness for elite is " << this->minEliteFitness << std::endl;
+				GAout << "Adding chromosome to elite. New minimum fitness for elite is " << this->minEliteFitness << std::endl;
 			)
 		}
 	};

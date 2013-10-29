@@ -84,7 +84,7 @@ public:
 		<< "Verbosity Level: " << ctrl.verbosity << std::endl;
 		
 		return os;
-		};
+	};
 };
 
 #endif

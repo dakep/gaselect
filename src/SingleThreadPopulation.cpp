@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <RcppArmadillo.h>
 
+#include "Logger.h"
 #include "RNG.h"
 #include "SingleThreadPopulation.h"
 #include "ShuffledSet.h"
@@ -65,7 +66,7 @@ void SingleThreadPopulation::run() {
 	newGeneration.reserve(this->ctrl.populationSize);
 	
 	if(this->ctrl.verbosity > OFF) {
-		Rcout << "Generating initial population" << std::endl;
+		GAout << "Generating initial population" << std::endl;
 	}
 	
 	while(newGeneration.size() < this->ctrl.populationSize) {
@@ -107,11 +108,11 @@ void SingleThreadPopulation::run() {
 		minFitness = 0.0;
 
 		IF_DEBUG(
-			Rcpp::Rcout << "Unique chromosomes: " << this->countUniques() << std::endl;
+			GAout << "Unique chromosomes: " << this->countUniques() << std::endl;
 		)
 
 		if(this->ctrl.verbosity > OFF) {
-			Rcout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
+			GAout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
 		
 		child1It = newGeneration.begin();
@@ -180,7 +181,7 @@ void SingleThreadPopulation::run() {
 					}
 					
 					IF_DEBUG(
-						Rcout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness() << std::endl
+						GAout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness() << std::endl
 						<< "Currently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << std::endl;
 					)
 				}
@@ -216,14 +217,14 @@ void SingleThreadPopulation::run() {
 
 				this->addChromosomeToElite(**child1It);
 				if(this->ctrl.verbosity >= VERBOSE) {
-					this->printChromosomeFitness(Rcout, **child1It);
+					this->printChromosomeFitness(GAout, **child1It);
 				}
 
 				++child1It;
 
 				IF_DEBUG(
 					if(child1Tries > 0) {
-						Rcpp::Rcout << "Needed " << (int) child1Tries << " tries to find unique chromosome" << std::endl;
+						GAout << "Needed " << (int) child1Tries << " tries to find unique chromosome" << std::endl;
 					}
 				)
 				child1Tries = 0;
@@ -240,14 +241,14 @@ void SingleThreadPopulation::run() {
 
 				this->addChromosomeToElite(**child2It);
 				if(this->ctrl.verbosity >= VERBOSE) {
-					this->printChromosomeFitness(Rcout, **child2It);
+					this->printChromosomeFitness(GAout, **child2It);
 				}
 
 				++child2It;
 
 				IF_DEBUG(
 					if(child2Tries > 0) {
-						Rcpp::Rcout << "Needed " << (int) child2Tries << " tries to find unique chromosome" << std::endl;
+						GAout << "Needed " << (int) child2Tries << " tries to find unique chromosome" << std::endl;
 					}
 				)
 				child2Tries = 0;
