@@ -141,7 +141,7 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 					 */
 					child1.chromosomeParts[i] = child2.chromosomeParts[i] = this->chromosomeParts[i];
 					IF_DEBUG(
-						GAout << "Chromosome part is the same for both parents -- copy part to both children" << std::endl;
+						GAout << GAout.lock() << "Chromosome part is the same for both parents -- copy part to both children" << std::endl << GAout.unlock();
 					)
 				} else {
 					/*
@@ -160,8 +160,8 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 					child2.chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
 					
 					IF_DEBUG(
-						GAout << "Mask for part " << i << ": ";
-						this->printBits(GAout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
+						GAout << GAout.lock() << "Mask for part " << i << ": ";
+						this->printBits(GAout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl << GAout.unlock()
 					)
 				}
 			}
@@ -178,7 +178,7 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 			IntChromosome coMask = (INT_CHROMOSOME_MAX >> crossoverBit);
 
 			IF_DEBUG(
-				GAout << "Crossover at position " << randPos << " (= part " << chosenPart << ", bit " << crossoverBit << ")" << std::endl;
+				GAout << GAout.lock() << "Crossover at position " << randPos << " (= part " << chosenPart << ", bit " << crossoverBit << ")" << std::endl << GAout.unlock()
 			)
 					
 			std::copy(this->chromosomeParts.begin(), this->chromosomeParts.begin() + chosenPart, child1.chromosomeParts.begin());
@@ -195,8 +195,8 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 	}
 
 	IF_DEBUG(
-		GAout << "1st child: " << child1 << std::endl;
-		GAout << "2nd child: " << child2 << std::endl;
+		GAout << GAout.lock() << "1st child: " << child1 << std::endl
+		<< "2nd child: " << child2 << std::endl << GAout.unlock();
 	)
 
 	child1.updateCurrentlySetBits();
@@ -221,7 +221,7 @@ bool Chromosome::mutate(RNG& rng) {
 
 	IF_DEBUG(
 		if(numChangeBits != 0) {
-			GAout << "The number of set bits (" << this->currentlySetBits << ") is not within the valid range. MUST change " << numChangeBits << std::endl;
+			GAout << GAout.lock() << "The number of set bits (" << this->currentlySetBits << ") is not within the valid range. MUST change " << numChangeBits << std::endl << GAout.unlock();
 		}
 	)
 
@@ -247,11 +247,13 @@ bool Chromosome::mutate(RNG& rng) {
 	}
 
 	IF_DEBUG(
+		GAout << GAout.lock();
 		if(numChangeBits != 0) {
 			GAout << "Changing " << numChangeBits << " bits" << std::endl;
 		} else {
 			GAout << "No mutation" << std::endl;
 		}
+		GAout << GAout.unlock();
 	)
 
 	if(numChangeBits == 0) {
@@ -357,7 +359,9 @@ bool Chromosome::mutate(RNG& rng) {
 	
 	this->currentlySetBits += numChangeBits;
 	
-	IF_DEBUG(GAout << "After mutation:\n" << *this << std::endl)
+	IF_DEBUG(
+		GAout << GAout.lock() << "After mutation:\n" << *this << std::endl << GAout.unlock();
+	)
 	
 	return true;
 }

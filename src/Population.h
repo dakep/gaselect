@@ -177,7 +177,9 @@ protected:
 			}
 		}
 		
-		IF_DEBUG(GAout << "Selected chromosome " << imin << " for mating (rand = " << rand << ")" << std::endl);
+		IF_DEBUG(
+			GAout << GAout.lock() << "Selected chromosome " << imin << " for mating (rand = " << rand << ")" << std::endl << GAout.unlock();
+		);
 
 		return this->currentGeneration[imin];
 	};

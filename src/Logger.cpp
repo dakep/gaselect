@@ -22,37 +22,9 @@
 #endif
 
 template <>
-LoggerStreamBuffer<false>::LoggerStreamBuffer() : threadSafe(false) {
-	int pthreadRC = pthread_mutex_init(&this->printMutex, NULL);
-	if(pthreadRC != 0) {
-		throw std::runtime_error("Mutex to synchronize printing could not be initialized");
-	}
-}
-
-template <>
-LoggerStreamBuffer<true>::LoggerStreamBuffer() : threadSafe(false) {
-	int pthreadRC = pthread_mutex_init(&this->printMutex, NULL);
-	if(pthreadRC != 0) {
-		throw std::runtime_error("Mutex to synchronize printing could not be initialized");
-	}
-}
-
-template <>
-LoggerStreamBuffer<false>::~LoggerStreamBuffer() {
-	pthread_mutex_destroy(&this->printMutex);
-}
-
-template <>
-LoggerStreamBuffer<true>::~LoggerStreamBuffer() {
-	pthread_mutex_destroy(&this->printMutex);
-}
-
-template <>
 inline std::streamsize LoggerStreamBuffer<false>::xsputn(const char *s, std::streamsize n) {
 	if(this->threadSafe) {
-		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
 		this->tsBuffer.append(s, n);
-		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
 	} else {
 		Rprintf("%.*s", n, s);
 	}
@@ -62,9 +34,7 @@ inline std::streamsize LoggerStreamBuffer<false>::xsputn(const char *s, std::str
 template <>
 inline std::streamsize LoggerStreamBuffer<true>::xsputn(const char *s, std::streamsize n) {
 	if(this->threadSafe) {
-		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
 		this->tsBuffer.append(s, n);
-		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
 	} else {
 		REprintf("%.*s", n, s);
 	}
@@ -72,12 +42,10 @@ inline std::streamsize LoggerStreamBuffer<true>::xsputn(const char *s, std::stre
 }
 
 template <>
-int LoggerStreamBuffer<false>::overflow(int c) {
+inline int LoggerStreamBuffer<false>::overflow(int c) {
 	if(c != EOF) {
 		if(this->threadSafe) {
-			CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
 			this->tsBuffer.append(1, (char) c);
-			CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
 		} else {
 			Rprintf("%.1s", &c);
 		}
@@ -86,12 +54,10 @@ int LoggerStreamBuffer<false>::overflow(int c) {
 }
 
 template <>
-int LoggerStreamBuffer<true>::overflow(int c) {
+inline int LoggerStreamBuffer<true>::overflow(int c) {
 	if(c != EOF) {
 		if(this->threadSafe) {
-			CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
 			this->tsBuffer.append(1, (char) c);
-			CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
 		} else {
 			Rprintf("%.1s", &c);
 		}
@@ -100,7 +66,7 @@ int LoggerStreamBuffer<true>::overflow(int c) {
 }
 
 template <>
-int LoggerStreamBuffer<false>::sync() {
+inline int LoggerStreamBuffer<false>::sync() {
 	if(!this->threadSafe) {
 		R_FlushConsole();
 	}
@@ -108,7 +74,7 @@ int LoggerStreamBuffer<false>::sync() {
 }
 
 template <>
-int LoggerStreamBuffer<true>::sync() {
+inline int LoggerStreamBuffer<true>::sync() {
 	if(!this->threadSafe) {
 		R_FlushConsole();
 	}
@@ -117,35 +83,108 @@ int LoggerStreamBuffer<true>::sync() {
 
 template <>
 void LoggerStreamBuffer<false>::flushThreadSafeBuffer() {
-	if(this->threadSafe) {
-		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
+	if(this->tsBuffer.length() > 0) {
 		Rprintf("%.*s", this->tsBuffer.length(), this->tsBuffer.c_str());
 		R_FlushConsole();
 		this->tsBuffer.clear();
-		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
 	}
 }
 
 template <>
 void LoggerStreamBuffer<true>::flushThreadSafeBuffer() {
-	if(this->threadSafe) {
-		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
+	if(this->tsBuffer.length() > 0) {
 		Rprintf("%.*s", this->tsBuffer.length(), this->tsBuffer.c_str());
 		R_FlushConsole();
 		this->tsBuffer.clear();
+	}
+}
+
+/*
+ * Logger
+ * if pthreads are available
+ */
+template <>
+Logger<false>::Logger() : std::ostream(new Buffer()), buf(static_cast<Buffer*>(rdbuf())), threadSafe(false) {
+	int pthreadRC = pthread_mutex_init(&this->printMutex, NULL);
+	if(pthreadRC != 0) {
+		throw std::runtime_error("Mutex to synchronize printing could not be initialized");
+	}
+}
+
+template <>
+Logger<true>::Logger() : std::ostream(new Buffer()), buf(static_cast<Buffer*>(rdbuf())), threadSafe(false) {
+	int pthreadRC = pthread_mutex_init(&this->printMutex, NULL);
+	if(pthreadRC != 0) {
+		throw std::runtime_error("Mutex to synchronize printing could not be initialized");
+	}
+}
+
+template <>
+Logger<false>::~Logger()  {
+	if(this->buf != NULL) {
+		delete this->buf;
+		this->buf = NULL;
+	}
+	pthread_mutex_destroy(&this->printMutex);
+}
+
+template <>
+Logger<true>::~Logger()  {
+	if(this->buf != NULL) {
+		delete this->buf;
+		this->buf = NULL;
+	}
+	pthread_mutex_destroy(&this->printMutex);
+}
+
+template <>
+void Logger<false>::flushThreadSafeBuffer() {
+	if(this->buf != NULL) {
+		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
+		this->buf->flushThreadSafeBuffer();
 		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
 	}
 }
 
+template <>
+void Logger<true>::flushThreadSafeBuffer() {
+	if(this->buf != NULL) {
+		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
+		this->buf->flushThreadSafeBuffer();
+		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
+	}
+}
+
+template <>
+void Logger<false>::placeMutexLock(bool lock) {
+	if(this->threadSafe) {
+		if(lock) {
+			CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
+		} else {
+			this->flush();
+			CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
+		}
+	}
+}
+
+
+template <>
+void Logger<true>::placeMutexLock(bool lock) {
+	if(this->threadSafe) {
+		if(lock) {
+			CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->printMutex))
+		} else {
+			this->flush();
+			CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->printMutex))
+		}
+	}
+}
+
 #else
-
-template <> LoggerStreamBuffer<false>::LoggerStreamBuffer() : threadSafe(false) {}
-template <> LoggerStreamBuffer<true>::LoggerStreamBuffer() : threadSafe(false) {}
-
-template <> LoggerStreamBuffer<false>::~LoggerStreamBuffer() {}
-template <> LoggerStreamBuffer<true>::~LoggerStreamBuffer() {}
-
-
+/*
+ * LoggerStreamBuffer
+ * if pthreads are NOT available
+ */
 template <>
 inline std::streamsize LoggerStreamBuffer<false>::xsputn(const char *s, std::streamsize n) {
 	Rprintf("%.*s", n, s);
@@ -175,13 +214,13 @@ inline int LoggerStreamBuffer<true>::overflow(int c) {
 }
 
 template <>
-int LoggerStreamBuffer<false>::sync() {
+inline int LoggerStreamBuffer<false>::sync() {
 	R_FlushConsole();
 	return 0;
 }
 
 template <>
-int LoggerStreamBuffer<true>::sync() {
+inline int LoggerStreamBuffer<true>::sync() {
 	R_FlushConsole();
 	return 0;
 }
@@ -193,6 +232,54 @@ void LoggerStreamBuffer<false>::flushThreadSafeBuffer() {
 template <>
 void LoggerStreamBuffer<true>::flushThreadSafeBuffer() {
 }
+
+/*
+ * Logger
+ * if pthreads are NOT available
+ */
+
+template <>
+Logger<false>::Logger() : std::ostream(new Buffer()), buf(static_cast<Buffer*>(rdbuf())), threadSafe(false) {}
+
+template <>
+Logger<true>::Logger() : std::ostream(new Buffer()), buf(static_cast<Buffer*>(rdbuf())), threadSafe(false) {}
+
+template <>
+Logger<false>::~Logger()  {
+	if(this->buf != NULL) {
+		delete this->buf;
+		this->buf = NULL;
+	}
+}
+
+template <>
+Logger<true>::~Logger()  {
+	if(this->buf != NULL) {
+		delete this->buf;
+		this->buf = NULL;
+	}
+}
+
+template <>
+void Logger<false>::flushThreadSafeBuffer() {
+	if(this->buf != NULL) {
+		this->buf->flushThreadSafeBuffer();
+	}
+}
+
+template <>
+void Logger<true>::flushThreadSafeBuffer() {
+	if(this->buf != NULL) {
+		this->buf->flushThreadSafeBuffer();
+	}
+}
+
+template <>
+void Logger<false>::placeMutexLock(bool) {}
+
+
+template <>
+void Logger<true>::placeMutexLock(bool) {}
 
 #endif
 Logger<false> GAout;

@@ -133,8 +133,8 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		}
 		
 		IF_DEBUG(
-			GAout << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and\n" << *tmpChromosome2
-			<< "\nwith minimal fitness " << minParentFitness << "\nFirst two proposals have fitness " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n";
+			GAout << GAout.lock() << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and\n" << *tmpChromosome2
+			<< "\nwith minimal fitness " << minParentFitness << "\nFirst two proposals have fitness " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n" << GAout.unlock();
 		)
 		
 		// At least the first child should be better than the worse parent
@@ -174,8 +174,8 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			}
 			
 			IF_DEBUG(
-				GAout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness()
-				<< "\nCurrently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n";
+				GAout << GAout.lock() << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness()
+				<< "\nCurrently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n" << GAout.unlock();
 			)
 		}
 		
@@ -204,7 +204,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			
 			IF_DEBUG(
 				if(child1Tries > 0) {
-					GAout << "Needed " << (int) child1Tries << " tries to find unique chromosome\n";
+					GAout << GAout.lock() << "Needed " << (int) child1Tries << " tries to find unique chromosome\n" << GAout << GAout.unlock();
 				}
 			)
 			child1Tries = 0;
@@ -218,7 +218,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			
 			IF_DEBUG(
 				if(child2Tries > 0) {
-					GAout << "Needed " << (int) child2Tries << " tries to find unique chromosome\n";
+					GAout << GAout.lock() << "Needed " << (int) child2Tries << " tries to find unique chromosome\n" << GAout.unlock();
 				}
 			)
 			child2Tries = 0;

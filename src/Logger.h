@@ -14,10 +14,11 @@
 #include <string>
 
 template <bool ERROR_STREAM>
-class LoggerStreamBuffer : public std::streambuf {
+class LoggerStreamBuffer : public std::streambuf
+{
 public:
-	LoggerStreamBuffer();
-	virtual ~LoggerStreamBuffer();
+	LoggerStreamBuffer() : threadSafe(false) {};
+	virtual ~LoggerStreamBuffer() {};
 
 	void flushThreadSafeBuffer();
 
@@ -33,39 +34,55 @@ protected:
 private:
 	bool threadSafe;
 	std::string tsBuffer;
-#ifdef HAVE_PTHREAD_H
-	pthread_mutex_t printMutex;
-#endif
 };
 
-
 template <bool ERROR_STREAM>
-class Logger : public std::ostream {
+class Logger : public std::ostream
+{
 private:
 	typedef LoggerStreamBuffer<ERROR_STREAM> Buffer;
 	Buffer* buf;
-
+	bool threadSafe;
+#ifdef HAVE_PTHREAD_H
+	pthread_mutex_t printMutex;
+#endif
 public:
-	Logger() : std::ostream(new Buffer()), buf(static_cast<Buffer*>(rdbuf())) {};
-	~Logger() {
-		if(this->buf != NULL) {
-			delete this->buf;
-			this->buf = NULL;
-		}
-	}
+	Logger();
+	~Logger();
 
-	void flushThreadSafeBuffer() {
-		if(this->buf != NULL) {
-			this->buf->flushThreadSafeBuffer();
-		}
-
-	}
+	void flushThreadSafeBuffer();
+	
+	void placeMutexLock(bool lock);
 
 	void enableThreadSafety(bool threadSafe = true) {
+		this->threadSafe = threadSafe;
 		if(this->buf != NULL) {
 			this->buf->enableThreadSafety(threadSafe);
 		}
 	}
+
+	class LogLocker {
+	public:
+		LogLocker(Logger& logger, bool lock) : logger(logger), lock(lock) {}
+
+		friend std::ostream& operator<<(std::ostream& os, const LogLocker& locker) {
+			locker.logger.placeMutexLock(locker.lock);
+			return os;
+		}
+
+	private:
+		Logger& logger;
+		bool lock;
+	};
+
+	LogLocker lock() {
+		return LogLocker(*this, true);
+	}
+
+	LogLocker unlock() {
+		return LogLocker(*this, false);
+	}
+
 };
 
 extern Logger<false> GAout;
