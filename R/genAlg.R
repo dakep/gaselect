@@ -126,7 +126,10 @@ function(y, X, control, evaluator, seed) {
 	numPossibleSubsets <- sum(choose(ncol(ret@covariates), seq.int(ret@control@minVariables, ret@control@maxVariables)));
 
 	if(ret@control@populationSize > possSubsetCutoff * numPossibleSubsets) {
-		stop(paste("Requested a population that is almost as large as the number of all possible subsets. The population size can be at most ", floor(possSubsetCutoff * 100) , " of the total number of possible subsets (i.e., ", floor(possSubsetCutoff * numPossibleSubsets), ").", sep = "")));
+		stop(paste("Requested a population that is almost as large as the number of all possible subsets. The population size can be at most ",
+			floor(possSubsetCutoff * 100),
+			" of the total number of possible subsets (i.e., ",
+			floor(possSubsetCutoff * numPossibleSubsets), ").", sep = ""));
 	}
 
 	ctrlArg <- c(toCControlList(ret@control), toCControlList(ret@evaluator));
