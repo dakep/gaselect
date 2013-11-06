@@ -95,6 +95,10 @@ void Chromosome::copyFrom(const Chromosome &other, bool copyChromosomeParts) {
 	}
 }
 
+void Chromosome::randomlyReset(RNG& rng, ShuffledSet &shuffledSet) {
+	this->fitness = 0.0;
+	this->initChromosomeParts(rng, shuffledSet);
+}
 
 inline void Chromosome::initChromosomeParts(RNG& rng, ShuffledSet &shuffledSet) {
 	this->currentlySetBits = rng(this->ctrl.minVariables, this->ctrl.maxVariables + 1);

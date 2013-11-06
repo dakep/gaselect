@@ -207,6 +207,10 @@ void SingleThreadPopulation::run() {
 			duplicated = Population::checkDuplicated(newGeneration.begin(), newGeneration.rbegin(), child1It, child2It);
 			
 			if(duplicated.first == false || (++child1Tries > this->ctrl.maxDuplicateEliminationTries)) {
+				if(child1Tries > this->ctrl.maxDuplicateEliminationTries) {
+					(*child1It)->randomlyReset(rng, shuffledSet);
+				}
+
 				if(child1Mutated == true) {
 					this->evaluator.evaluate(**child1It);
 				}
@@ -231,6 +235,10 @@ void SingleThreadPopulation::run() {
 			}
 			
 			if(duplicated.second == false || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
+				if(child2Tries > this->ctrl.maxDuplicateEliminationTries) {
+					(*child2It)->randomlyReset(rng, shuffledSet);
+				}
+
 				if(child2Mutated == true) {
 					this->evaluator.evaluate(**child2It);
 				}

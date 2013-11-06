@@ -7,6 +7,7 @@
 //
 #include "config.h"
 
+#define HAVE_PTHREAD_H 1
 #ifdef HAVE_PTHREAD_H
 
 #include <exception>
@@ -81,7 +82,10 @@ MultiThreadedPopulation::~MultiThreadedPopulation() {
 	pthread_cond_destroy(&this->allThreadsFinishedMatingCond);
 }
 
-void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator, RNG& rng, uint16_t offset, bool checkUserInterrupt) {
+void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
+	RNG& rng, ShuffledSet& shuffledSet, uint16_t offset,
+	bool checkUserInterrupt) {
+
 	double minParentFitness = 0.0;
 	uint8_t matingTries = 0;
 	
@@ -197,6 +201,9 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		duplicated = Population::checkDuplicated(rangeBeginIt, rangeEndIt, child1It, child2It);
 		
 		if(duplicated.first == false || (++child1Tries > this->ctrl.maxDuplicateEliminationTries)) {
+			if(child1Tries > this->ctrl.maxDuplicateEliminationTries) {
+				(*child1It)->randomlyReset(rng, shuffledSet);
+			}
 			if(child1Mutated == true) {
 				evaluator.evaluate(**child1It);
 			}
@@ -211,6 +218,9 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		}
 		
 		if(duplicated.second == false || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
+			if(child2Tries > this->ctrl.maxDuplicateEliminationTries) {
+				(*child2It)->randomlyReset(rng, shuffledSet);
+			}
 			if(child2Mutated == true) {
 				evaluator.evaluate(**child2It);
 			}
@@ -327,6 +337,7 @@ void MultiThreadedPopulation::run() {
 		threadArgs[i].popObj = this;
 		threadArgs[i].seed = rng();
 		threadArgs[i].evalObj = this->evaluator.clone();
+		threadArgs[i].chromosomeSize = this->ctrl.chromosomeSize;
 		
 		pthreadRC = pthread_create((threads + i), &threadAttr, &MultiThreadedPopulation::matingThreadStart, (void *) (threadArgs + i));
 		
@@ -384,7 +395,7 @@ void MultiThreadedPopulation::run() {
 		 *
 		 */
 		try {
-			this->mate(numChildrenMainThread, this->evaluator, rng, offset, true);
+			this->mate(numChildrenMainThread, this->evaluator, rng, shuffledSet, offset, true);
 		} catch (InterruptException) {
 			interrupted = true;
 		}
@@ -457,11 +468,13 @@ void MultiThreadedPopulation::run() {
 void* MultiThreadedPopulation::matingThreadStart(void* obj) {
 	ThreadArgsWrapper* args = static_cast<ThreadArgsWrapper*>(obj);
 	RNG rng(args->seed);
-	args->popObj->runMating(args->numChildren, *args->evalObj, rng, args->offset);
+	ShuffledSet shuffledSet(args->chromosomeSize);
+	args->popObj->runMating(args->numChildren, *args->evalObj, rng, shuffledSet, args->offset);
 	return NULL;
 }
 
-void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& evaluator, RNG& rng, uint16_t offset) {
+void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& evaluator,
+		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset) {
 	while(true) {
 		/*****************************************************************************************
 		 * Wait until the thread is started
@@ -485,7 +498,7 @@ void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& 
 		/*****************************************************************************************
 		 * Do actual mating
 		 *****************************************************************************************/
-		this->mate(numMatingCouples, evaluator, rng, offset, false);
+		this->mate(numMatingCouples, evaluator, rng, shuffledSet, offset, false);
 		
 		/*****************************************************************************************
 		 * Signal that the thread has finished mating

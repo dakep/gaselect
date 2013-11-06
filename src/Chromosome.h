@@ -31,7 +31,12 @@ public:
 	Chromosome(const Control &ctrl, ShuffledSet &shuffledSet, RNG& rng, bool randomInit = true);
 	Chromosome(const Chromosome &other, bool copyChromosomeParts = true);
 //	~Chromosome();
-	
+
+	/**
+	 * Re-initialize the chromosome randomly
+	 */
+	void randomlyReset(RNG& rng, ShuffledSet &shuffledSet);
+
 	/**
 	 * @return bool Returns true if mutation occurred, false otherwise
 	 */

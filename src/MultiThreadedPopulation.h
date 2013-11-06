@@ -9,7 +9,7 @@
 #ifndef GenAlgPLS_ThreadedPopulation_h
 #define GenAlgPLS_ThreadedPopulation_h
 #include "config.h"
-
+#define HAVE_PTHREAD_H 1
 #ifdef HAVE_PTHREAD_H
 
 #include <stdexcept>
@@ -52,6 +52,7 @@ private:
 		uint32_t seed;
 		uint16_t numChildren;
 		uint16_t offset;
+		uint16_t chromosomeSize;
 	};
 	
 	ChromosomeVec nextGeneration;
@@ -71,11 +72,15 @@ private:
 	uint16_t actuallySpawnedThreads;
 	uint16_t numThreadsFinishedMating;
 		
-	void mate(uint16_t numChildren, ::Evaluator& evaluator, RNG& rng, uint16_t offset, bool checkUserInterrupt = true);
+	void mate(uint16_t numChildren, ::Evaluator& evaluator,
+		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset,
+		bool checkUserInterrupt = true);
 	
 	static void* matingThreadStart(void* obj);
 	
-	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator, RNG& rng, uint16_t offset);
+	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator,
+		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset);
+
 	void waitForAllThreadsToFinishMating();
 	
 	class OrderChromosomePtr : public std::binary_function<Chromosome*, Chromosome*, bool> {
