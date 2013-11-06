@@ -21,6 +21,8 @@ public:
 	 * Uses the inversion method for generating a truncated exponential variate and
 	 * than returning the rounded-down value which is truncated geometrically distributed
 	 * cutoff must be > 0 otherwise undefined behaviour!
+	 *
+	 * assert cutoff >= 0!
 	 */
 	inline uint16_t operator()(const uint16_t cutoff, RNG& rng) const {
 		return (uint16_t) (log1p(- rng(0.0, (1. - R_pow_di(1. - this->prob, cutoff + 1)))) / this->commonDenominator);

@@ -15,6 +15,9 @@ public:
 	void seed(uint32_t seed);
 	void seed(const std::vector<uint32_t> &seed);
 
+	/*
+	 * assertion: min <= max!
+	 */
 	double operator()(double min, double max){
 		return min + ((this->*genFun)() / RNG::RANDOM_MAX) * (max - min);
 	}

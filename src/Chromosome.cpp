@@ -225,9 +225,6 @@ bool Chromosome::mutate(RNG& rng) {
 		}
 	)
 
-	// Now set a random number of bits and unset a random number of bits
-	numChangeBits += this->rtgeom(this->ctrl.maxVariables - this->currentlySetBits, rng) - this->rtgeom(this->currentlySetBits - this->ctrl.minVariables, rng);
-
 	if(this->ctrl.maxVariables - this->currentlySetBits > 0) {
 		/*
 		 * We may set some additional bits

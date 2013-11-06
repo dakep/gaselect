@@ -31,6 +31,11 @@ completeSegments(nrows % numSegments), seed(seed), pls(pls), cloned(false)
 };
 
 double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
+	if(columnSubset.n_elem == 0) {
+		GAerr << GAerr.lock() << "Can not evaluate empty variable subset" << GAerr.unlock();
+		throw std::runtime_error("Can not evaluate empty variable subset");
+	}
+
 	uint16_t maxNComp = ((columnSubset.n_elem < (this->nrows - 2 * this->segmentLength - 2)) ? columnSubset.n_elem : this->nrows - 2 * this->segmentLength - 2);
 	double sumSEP = 0;
 	arma::uword rep = 0;
