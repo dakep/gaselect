@@ -122,7 +122,7 @@ function(y, X, control, evaluator, seed) {
 		control = control
 	);
 
-	possSubsetCutoff <- 0.75;
+	possSubsetCutoff <- 0.85;
 	numPossibleSubsets <- sum(choose(ncol(ret@covariates), seq.int(ret@control@minVariables, ret@control@maxVariables)));
 
 	if(ret@control@populationSize > possSubsetCutoff * numPossibleSubsets) {
