@@ -9,7 +9,7 @@
 #ifndef GenAlgPLS_ThreadedPopulation_h
 #define GenAlgPLS_ThreadedPopulation_h
 #include "config.h"
-#define HAVE_PTHREAD_H 1
+
 #ifdef HAVE_PTHREAD_H
 
 #include <stdexcept>
