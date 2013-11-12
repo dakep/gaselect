@@ -207,7 +207,11 @@ void SingleThreadPopulation::run() {
 			duplicated = Population::checkDuplicated(newGeneration.begin(), newGeneration.rbegin(), child1It, child2It);
 			
 			if(duplicated.first == false || (++child1Tries > this->ctrl.maxDuplicateEliminationTries)) {
-				if(child1Tries > this->ctrl.maxDuplicateEliminationTries) {
+				/*
+				 * If the child is a duplicate and we have tried too often
+				 * just reset the chromosome to a random point
+				 */
+				if(duplicated.first == true && child1Tries > this->ctrl.maxDuplicateEliminationTries) {
 					(*child1It)->randomlyReset(rng, shuffledSet);
 					child1Mutated = true;
 				}
@@ -236,7 +240,11 @@ void SingleThreadPopulation::run() {
 			}
 			
 			if(duplicated.second == false || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
-				if(child2Tries > this->ctrl.maxDuplicateEliminationTries) {
+				/*
+				 * If the child is a duplicate and we have tried too often
+				 * just reset the chromosome to a random point
+				 */
+				if(duplicated.second == true && child2Tries > this->ctrl.maxDuplicateEliminationTries) {
 					(*child2It)->randomlyReset(rng, shuffledSet);
 					child2Mutated = true;
 				}
