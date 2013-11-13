@@ -11,7 +11,6 @@
 #include "Logger.h"
 #include <RcppArmadillo.h>
 #include <exception>
-#include <stdio.h>
 
 #ifdef HAVE_PTHREAD_H
 
@@ -44,7 +43,7 @@ inline std::streamsize LoggerStreamBuffer<true>::xsputn(const char *s, std::stre
 
 template <>
 inline int LoggerStreamBuffer<false>::overflow(int c) {
-	if(c != EOF) {
+	if(c != traits_type::eof()) {
 		if(this->threadSafe) {
 			this->tsBuffer.append(1, (char) c);
 		} else {
@@ -56,7 +55,7 @@ inline int LoggerStreamBuffer<false>::overflow(int c) {
 
 template <>
 inline int LoggerStreamBuffer<true>::overflow(int c) {
-	if(c != EOF) {
+	if(c != traits_type::eof()) {
 		if(this->threadSafe) {
 			this->tsBuffer.append(1, (char) c);
 		} else {
@@ -200,7 +199,7 @@ inline std::streamsize LoggerStreamBuffer<true>::xsputn(const char *s, std::stre
 
 template <>
 inline int LoggerStreamBuffer<false>::overflow(int c) {
-	if(c != EOF) {
+	if(c != traits_type::eof()) {
 		Rprintf("%.1s", &c);
 	}
 	return c;
@@ -208,7 +207,7 @@ inline int LoggerStreamBuffer<false>::overflow(int c) {
 
 template <>
 inline int LoggerStreamBuffer<true>::overflow(int c) {
-	if(c != EOF) {
+	if(c != traits_type::eof()) {
 		REprintf("%.1s", &c);
 	}
 	return c;

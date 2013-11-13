@@ -28,7 +28,7 @@ public:
 	}
 protected:
 	virtual std::streamsize xsputn(const char *s, std::streamsize n);
-	virtual int overflow(int c = EOF);
+	virtual int overflow(int c = traits_type::eof());
 	virtual int sync();
 
 private:
