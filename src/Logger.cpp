@@ -11,6 +11,7 @@
 #include "Logger.h"
 #include <RcppArmadillo.h>
 #include <exception>
+#include <stdio.h>
 
 #ifdef HAVE_PTHREAD_H
 
