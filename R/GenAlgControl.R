@@ -61,6 +61,10 @@ setClass("GenAlgControl", representation(
 
 	## Sanity checks:
 
+	if(object@populationSize < object@elitism) {
+		errors <- c(errors, "The population size must be at least as large as the number of elite solutions");
+	}
+
 	if(object@minVariables >= object@maxVariables) {
 		errors <- c(errors, "The minimal number of variables must be strictly less than the maximum number");
 	}
