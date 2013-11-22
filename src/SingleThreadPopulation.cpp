@@ -50,19 +50,19 @@ void SingleThreadPopulation::run() {
 	double minFitness = 0.0;
 	double minParentFitness = 0.0;
 	
-	ChromosomeVec newGeneration;
+	ChVec newGeneration;
 	
 	Chromosome* tmpChromosome1;
 	Chromosome* tmpChromosome2;
-	ChromosomeVecIter child1It;
-	ChromosomeVecRevIter child2It;
+	ChVecIt child1It;
+	ChVecRIt child2It;
 	Chromosome* proposalChild1 = new Chromosome(this->ctrl, shuffledSet, rng, false);
 	Chromosome* proposalChild2 = new Chromosome(this->ctrl, shuffledSet, rng, false);
 	uint8_t child1Tries = 0;
 	uint8_t child2Tries = 0;
 	bool child1Mutated, child2Mutated;
 	std::pair<bool, bool> duplicated;
-	
+
 	newGeneration.reserve(this->ctrl.populationSize);
 	
 	if(this->ctrl.verbosity > OFF) {
@@ -146,47 +146,45 @@ void SingleThreadPopulation::run() {
 			matingTries = 0;
 			while(((*child1It)->getFitness() < minParentFitness) && (matingTries++ < this->ctrl.maxMatingTries)) {
 				tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2);
-				
-				if((*child1It)->getFitness() < minParentFitness && matingTries++ < this->ctrl.maxMatingTries) {
-					/*
-					 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
-					 * greater than 0, otherwise the evaluation step would fail
-					 * The better child is worse than the worst parent and we have some tries left
-					 */
-					if(proposalChild1->getVariableCount() > 0) {
-						if(this->evaluator.evaluate(*proposalChild1) > (*child2It)->getFitness()) { // better as 2nd child
-							if(proposalChild1->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
-								std::swap(*child1It, *child2It);
-								delete *child1It;
-								*child1It = new Chromosome(*proposalChild1);
-							} else {
-								delete *child2It;
-								*child2It = new Chromosome(*proposalChild1);
-							}
+
+				/*
+				 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
+				 * greater than 0, otherwise the evaluation step would fail
+				 * The better child is worse than the worst parent and we have some tries left
+				 */
+				if(proposalChild1->getVariableCount() > 0) {
+					if(this->evaluator.evaluate(*proposalChild1) > (*child2It)->getFitness()) { // better as 2nd child
+						if(proposalChild1->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
+							std::swap(*child1It, *child2It);
+							delete *child1It;
+							*child1It = new Chromosome(*proposalChild1);
+						} else {
+							delete *child2It;
+							*child2It = new Chromosome(*proposalChild1);
 						}
 					}
-					
-					// Check 2nd new child
-					if(proposalChild2->getVariableCount() > 0) {
-						if(this->evaluator.evaluate(*proposalChild2) > (*child2It)->getFitness()) { // better as 2nd child
-							if(proposalChild2->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
-								std::swap(*child1It, *child2It);
-								delete *child1It;
-								*child1It = new Chromosome(*proposalChild2);
-							} else {
-								delete *child2It;
-								*child2It = new Chromosome(*proposalChild2);
-							}
-						}
-					}
-					
-					IF_DEBUG(
-						GAout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness() << std::endl
-						<< "Currently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << std::endl;
-					)
 				}
+				
+				// Check 2nd new child
+				if(proposalChild2->getVariableCount() > 0) {
+					if(this->evaluator.evaluate(*proposalChild2) > (*child2It)->getFitness()) { // better as 2nd child
+						if(proposalChild2->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
+							std::swap(*child1It, *child2It);
+							delete *child1It;
+							*child1It = new Chromosome(*proposalChild2);
+						} else {
+							delete *child2It;
+							*child2It = new Chromosome(*proposalChild2);
+						}
+					}
+				}
+				
+				IF_DEBUG(
+					GAout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness() << std::endl
+					<< "Currently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << std::endl;
+				)
 			}
-			
+
 			if((*child1It)->getFitness() < (minParentFitness - this->ctrl.badSolutionThreshold * fabs(minParentFitness))) {
 				/*
 				 * The fitness of the better child is more than x% less than the worst parent's
@@ -286,11 +284,11 @@ void SingleThreadPopulation::run() {
 		if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
 			this->printCurrentGeneration();
 		}
-
 	}
+
 	delete proposalChild1;
 	delete proposalChild2;
-	for(ChromosomeVecIter it = newGeneration.begin(); it != newGeneration.end(); ++it) {
+	for(ChVecIt it = newGeneration.begin(); it != newGeneration.end(); ++it) {
 		delete *it;
 	}
 }

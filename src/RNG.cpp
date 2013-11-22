@@ -83,6 +83,10 @@ void RNG::seed(uint32_t seed) {
 	}
 
 	this->genFun = &RNG::case1;
+
+	for(int16_t i = RNG::BURNIN; i > 0; --i) {
+		(this->*genFun)();
+	}
 }
 
 uint32_t RNG::case1(void) { // stateIndex = 0

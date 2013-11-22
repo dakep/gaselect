@@ -38,7 +38,11 @@ BEGIN_RCPP
 	uint16_t numThreads = as<uint16_t>(control["numThreads"]);
 	VerbosityLevel verbosity = (VerbosityLevel) as<int>(control["verbosity"]);
 	EvaluatorClass evalClass = (EvaluatorClass) as<int>(control["evaluatorClass"]);
-	
+
+#ifdef ENABLE_DEBUG_VERBOSITY
+	PLSEvaluator::counter = 0;
+#endif
+
 	if(numThreads > 1) {
 #ifdef HAVE_PTHREAD_H
 		if(evalClass == USER) {
@@ -139,6 +143,11 @@ BEGIN_RCPP
 	toFree |= 8;
 	pop->run();
 #endif
+
+#ifdef ENABLE_DEBUG_VERBOSITY
+	Rcpp::Rcout << "Called evaluator " << PLSEvaluator::counter << " times" << std::endl;
+#endif
+
 	Population::SortedChromosomes result = pop->getResult();
 
 	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());
@@ -257,25 +266,17 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 	return R_NilValue;
 }
 
-//RcppExport SEXP WELL19937a(SEXP Sn, SEXP Smin, SEXP Smax, SEXP SnStreams, SEXP Sseed) {
+//RcppExport SEXP WELL19937a(SEXP Sn, SEXP Sseed) {
 //	uint32_t n = as<uint32_t>(Sn);
-//	uint32_t nStreams = as<uint32_t>(SnStreams);
 //	uint32_t seed = as<uint32_t>(Sseed);
-//	double min = as<double>(Smin);
-//	double max = as<double>(Smax);
-//	uint16_t row = 0;
 //	
 //	RNG rng(seed);
 //	
-//	Rcpp::NumericMatrix retMat(n, nStreams);
+//	Rcpp::NumericVector retMat(n);
 //
-//	for(uint16_t col = 0; col < nStreams; ++col) {
-//		for(row = 0; row < n; ++row) {
-//			retMat.column(col)[row] = rng(min, max);
-//		}
+//	for(uint16_t row = 0; row < n; ++row) {
+//		retMat[row] = rng();
 //	}
-//
-//	Rcpp::Rcout << retMat.rows() << " x " << retMat.cols() << std::endl;
 //	
 //	return Rcpp::wrap(retMat);
 //}

@@ -55,7 +55,7 @@ private:
 		uint16_t chromosomeSize;
 	};
 	
-	ChromosomeVec nextGeneration;
+	ChVec nextGeneration;
 	double sumCurrentGenFitness;
 	
 	/*

@@ -28,10 +28,9 @@
 
 class Population {
 protected:
-	typedef std::vector<Chromosome*> ChromosomeVec;
-	typedef std::vector<Chromosome*>::iterator ChromosomeVecIter;
-	typedef std::vector<Chromosome*>::reverse_iterator ChromosomeVecRevIter;
-
+	typedef std::vector<Chromosome*> ChVec;
+	typedef std::vector<Chromosome*>::iterator ChVecIt;
+	typedef std::vector<Chromosome*>::reverse_iterator ChVecRIt;
 public:
 	class ChromosomeComparator : public std::binary_function<Chromosome, Chromosome, bool> {
 	public:
@@ -58,7 +57,7 @@ public:
 	}
 	
 	virtual ~Population() {
-		for(ChromosomeVecIter it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
+		for(ChVecIt it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
 			delete *it;
 		}
 	}
@@ -72,14 +71,14 @@ public:
 		 * result.insert(begin(), end()) can not be used because we need to
 		 * insert the VALUE and not the pointer to a chromosome
 		 */
-		for(ChromosomeVec::const_iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
+		for(ChVec::const_iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
 			result.insert(**it);
 		}
 		
 		return result;
 	}
 private:
-	ChromosomeVec currentGeneration;
+	ChVec currentGeneration;
 protected:
 	const Control& ctrl;
 	::Evaluator& evaluator;
@@ -98,11 +97,11 @@ protected:
 	/**
 	 * Update the current generation as well as the fitness map of the current generation
 	 *
-	 * @param const ChromosomeVec &newGeneration The newly generated generation that will be copied to the currentGeneration
+	 * @param const ChVec &newGeneration The newly generated generation that will be copied to the currentGeneration
 	 * @param double minFitness The minimum fitness of the new generation
 	 * @param bool updateElite Set to true if the elite should be updated as well
 	 */
-	inline double updateCurrentGeneration(const ChromosomeVec &newGeneration, double minFitness, bool updateElite = false) {
+	inline double updateCurrentGeneration(const ChVec &newGeneration, double minFitness, bool updateElite = false) {
 		uint16_t i = 0;
 		double sumFitness = 0.0;
 
@@ -202,7 +201,7 @@ protected:
 
 	inline void printCurrentGeneration() {
 		int i = 0;
-		for(ChromosomeVec::iterator it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
+		for(ChVecIt it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
 			GAout << (std::stringstream() << std::fixed << std::setw(4) << i++).rdbuf();
 			this->printChromosomeFitness(GAout, **it);
 		}
@@ -238,7 +237,7 @@ protected:
 		}
 	};
 	
-	inline static std::pair<bool, bool> checkDuplicated(ChromosomeVecIter begin, ChromosomeVecRevIter rbegin, const ChromosomeVecIter &child1It, const ChromosomeVecRevIter &child2It) {
+	inline static std::pair<bool, bool> checkDuplicated(ChVecIt begin, ChVecRIt rbegin, const ChVecIt &child1It, const ChVecRIt &child2It) {
 		std::pair<bool, bool> duplicated(false, **child1It == **child2It);
 		
 		while(begin != child1It && (duplicated.first == false || duplicated.second == false)) {

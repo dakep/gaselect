@@ -18,6 +18,10 @@
 #define IF_DEBUG(expr)
 #endif
 
+#ifdef ENABLE_DEBUG_VERBOSITY
+uint32_t PLSEvaluator::counter = 0;
+#endif
+
 PLSEvaluator::PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const std::vector<uint32_t> &seed, const VerbosityLevel verbosity) :
 Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
 nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
@@ -35,6 +39,9 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 		GAerr << GAerr.lock() << "Can not evaluate empty variable subset" << GAerr.unlock();
 		throw std::runtime_error("Can not evaluate empty variable subset");
 	}
+#ifdef ENABLE_DEBUG_VERBOSITY
+	++PLSEvaluator::counter;
+#endif
 
 	uint16_t maxNComp = ((columnSubset.n_elem < (this->nrows - 2 * this->segmentLength - 2)) ? columnSubset.n_elem : this->nrows - 2 * this->segmentLength - 2);
 	double sumSEP = 0;

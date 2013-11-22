@@ -42,6 +42,10 @@ public:
 	
 	Evaluator* clone() const;
 
+#ifdef ENABLE_DEBUG_VERBOSITY
+	static uint32_t counter;
+#endif
+
 private:
 	const uint16_t numReplications;
 	const uint16_t numSegments;

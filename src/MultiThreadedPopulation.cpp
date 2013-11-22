@@ -75,12 +75,20 @@ MultiThreadedPopulation::MultiThreadedPopulation(const Control &ctrl, ::Evaluato
 	this->numThreadsFinishedMating = 0;
 }
 
+/**
+ * Destructor (destroy mutexes)
+ *
+ */
 MultiThreadedPopulation::~MultiThreadedPopulation() {
 	pthread_mutex_destroy(&this->syncMutex);
 	pthread_cond_destroy(&this->startMatingCond);
 	pthread_cond_destroy(&this->allThreadsFinishedMatingCond);
 }
 
+/**
+ * Do the actual mating
+ *
+ */
 void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	RNG& rng, ShuffledSet& shuffledSet, uint16_t offset,
 	bool checkUserInterrupt) {
@@ -88,13 +96,13 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	double minParentFitness = 0.0;
 	uint8_t matingTries = 0;
 	
-	ChromosomeVecIter rangeBeginIt = this->nextGeneration.begin() + offset;
-	std::reverse_iterator<ChromosomeVecIter> rangeEndIt(rangeBeginIt + numChildren);
+	ChVecIt rangeBeginIt = this->nextGeneration.begin() + offset;
+	std::reverse_iterator<ChVecIt> rangeEndIt(rangeBeginIt + numChildren);
 	
 	Chromosome* tmpChromosome1;
 	Chromosome* tmpChromosome2;
-	ChromosomeVecIter child1It = rangeBeginIt;
-	std::reverse_iterator<ChromosomeVecIter> child2It = rangeEndIt;
+	ChVecIt child1It = rangeBeginIt;
+	std::reverse_iterator<ChVecIt> child2It = rangeEndIt;
 	Chromosome* proposalChild1 = new Chromosome(**child1It, false);
 	Chromosome* proposalChild2 = new Chromosome(**child1It, false);
 	
@@ -108,8 +116,8 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		do {
 			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
 		} while (tmpChromosome1 == tmpChromosome2);
-		
-		tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It);
+
+		tmpChromosome1->mateWith(*tmpChromosome2, rng, *(*child1It), *(*child2It));
 		
 		minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 		
@@ -130,6 +138,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		
 		evaluator.evaluate(**child1It);
 		evaluator.evaluate(**child2It);
+
 		// Make sure the first child is "better" than the second child
 		if((*child1It)->getFitness() < (*child2It)->getFitness()) {
 			std::swap(*child1It, *child2It);
@@ -142,7 +151,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		
 		// At least the first child should be better than the worse parent
 		matingTries = 0;
-		while(((*child1It)->getFitness() < minParentFitness) && (++matingTries < this->ctrl.maxMatingTries)) {
+		while(((*child1It)->getFitness() < minParentFitness) && (matingTries++ < this->ctrl.maxMatingTries)) {
 			tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2);
 			
 			/*
@@ -476,6 +485,12 @@ void MultiThreadedPopulation::run() {
 	}
 }
 
+
+
+/**
+ * Setup and start the mating threads
+ *
+ */
 void* MultiThreadedPopulation::matingThreadStart(void* obj) {
 	ThreadArgsWrapper* args = static_cast<ThreadArgsWrapper*>(obj);
 	RNG rng(args->seed);
