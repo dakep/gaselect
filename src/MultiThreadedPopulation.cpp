@@ -94,7 +94,6 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	bool checkUserInterrupt) {
 
 	double minParentFitness = 0.0;
-	uint8_t matingTries = 0;
 	
 	ChVecIt rangeBeginIt = this->nextGeneration.begin() + offset;
 	std::reverse_iterator<ChVecIt> rangeEndIt(rangeBeginIt + numChildren);
@@ -103,14 +102,14 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	Chromosome* tmpChromosome2;
 	ChVecIt child1It = rangeBeginIt;
 	std::reverse_iterator<ChVecIt> child2It = rangeEndIt;
-	Chromosome* proposalChild1 = new Chromosome(**child1It, false);
-	Chromosome* proposalChild2 = new Chromosome(**child1It, false);
 	
 	uint8_t child1Tries = 0;
 	uint8_t child2Tries = 0;
-	bool child1Mutated, child2Mutated;
 	std::pair<bool, bool> duplicated;
-	
+	double cutoff = 0.0;
+
+	uint32_t discSol = 0;
+
 	while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
 		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
 		do {
@@ -120,140 +119,68 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		tmpChromosome1->mateWith(*tmpChromosome2, rng, *(*child1It), *(*child2It));
 		
 		minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
-		
-		/*
-		 * If both children have no variables, mate again
-		 */
-		while((*child1It)->getVariableCount() == 0 && (*child2It)->getVariableCount() == 0) {
-			tmpChromosome1->mateWith(*tmpChromosome2, rng, **child1It, **child2It);
-		}
-		
-		if((*child1It)->getVariableCount() == 0) {
-			delete *child1It;
-			*child1It = new Chromosome(**child2It);
-		} else if((*child2It)->getVariableCount() == 0) {
-			delete *child2It;
-			*child2It = new Chromosome(**child1It);
-		}
-		
-		evaluator.evaluate(**child1It);
-		evaluator.evaluate(**child2It);
 
-		// Make sure the first child is "better" than the second child
-		if((*child1It)->getFitness() < (*child2It)->getFitness()) {
-			std::swap(*child1It, *child2It);
-		}
-		
-		IF_DEBUG(
-			GAout << GAout.lock() << "Mating chromosomes " << std::endl << *tmpChromosome1 << " and\n" << *tmpChromosome2
-			<< "\nwith minimal fitness " << minParentFitness << "\nFirst two proposals have fitness " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n" << GAout.unlock();
-		)
-		
-		// At least the first child should be better than the worse parent
-		matingTries = 0;
-		while(((*child1It)->getFitness() < minParentFitness) && (matingTries++ < this->ctrl.maxMatingTries)) {
-			tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2);
-			
-			/*
-			 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
-			 * greater than 0, otherwise the evaluation step would fail
-			 */
-			if(proposalChild1->getVariableCount() > 0) {
-				if(evaluator.evaluate(*proposalChild1) > (*child2It)->getFitness()) { // better as 2nd child
-					if(proposalChild1->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
-						std::swap(*child1It, *child2It);
-						delete *child1It;
-						*child1It = new Chromosome(*proposalChild1);
-					} else {
-						delete *child2It;
-						*child2It = new Chromosome(*proposalChild1);
-					}
-				}
-			}
-			
-			// Check 2nd new child
-			if(proposalChild2->getVariableCount() > 0) {
-				if(evaluator.evaluate(*proposalChild2) > (*child2It)->getFitness()) { // better as 2nd child
-					if(proposalChild2->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
-						std::swap(*child1It, *child2It);
-						delete *child1It;
-						*child1It = new Chromosome(*proposalChild2);
-					} else {
-						delete *child2It;
-						*child2It = new Chromosome(*proposalChild2);
-					}
-				}
-			}
-			
-			IF_DEBUG(
-				GAout << GAout.lock() << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness()
-				<< "\nCurrently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << "\n" << GAout.unlock();
-			)
-		}
-		
-		if((*child1It)->getFitness() < (minParentFitness - this->ctrl.badSolutionThreshold * fabs(minParentFitness))) {
-			/*
-			 * The fitness of the better child is more than x% less than the worst parent's
-			 * fitness so cancel mating of the two parents and choose two new parents
-			 */
-			continue;
-		}
-		
-		child1Mutated = (*child1It)->mutate(rng);
-		child2Mutated = (*child2It)->mutate(rng);
-		
+		(*child1It)->mutate(rng);
+		(*child2It)->mutate(rng);
+
 		/*
-		 * Check if the child is a duplicate of another chromosome
-		 * in this thread's range
+		 * Simple rejection
+		 * Reject either of the child chromosomes if they are worse than the worst parent (times a given percentage)
+		 * or if they are duplicated
 		 */
+		cutoff = minParentFitness - this->ctrl.badSolutionThreshold * fabs(minParentFitness);
+
 		duplicated = Population::checkDuplicated(rangeBeginIt, rangeEndIt, child1It, child2It);
-		
-		if(duplicated.first == false || (++child1Tries > this->ctrl.maxDuplicateEliminationTries)) {
+
+		if((duplicated.first == false) || (++child1Tries > this->ctrl.maxDuplicateEliminationTries)) {
 			/*
 			 * If the child is a duplicate and we have tried too often
 			 * just reset the chromosome to a random point
 			 */
 			if(duplicated.first == true && child1Tries > this->ctrl.maxDuplicateEliminationTries) {
 				(*child1It)->randomlyReset(rng, shuffledSet);
-				child1Mutated = true;
 			}
 
-			if(child1Mutated == true) {
-				evaluator.evaluate(**child1It);
-			}
-			++child1It;
-			
-			IF_DEBUG(
-				if(child1Tries > 0) {
-					GAout << GAout.lock() << "Needed " << (int) child1Tries << " tries to find unique chromosome\n" << GAout << GAout.unlock();
-				}
-			)
 			child1Tries = 0;
+
+			if(evaluator.evaluate(**child1It) > cutoff) {
+				/*
+				 * The child is no duplicate (or accepted as one) and is not too bad,
+				 * so go on to the next one
+				 */
+				++child1It;
+			} else {
+				++discSol;
+			}
 		}
-		
-		if(duplicated.second == false || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
+
+		if((duplicated.second == false) || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
 			/*
 			 * If the child is a duplicate and we have tried too often
 			 * just reset the chromosome to a random point
 			 */
 			if(duplicated.second == true && child2Tries > this->ctrl.maxDuplicateEliminationTries) {
 				(*child2It)->randomlyReset(rng, shuffledSet);
-				child2Mutated = true;
 			}
-		
-			if(child2Mutated == true) {
-				evaluator.evaluate(**child2It);
-			}
-			++child2It;
-			
-			IF_DEBUG(
-				if(child2Tries > 0) {
-					GAout << GAout.lock() << "Needed " << (int) child2Tries << " tries to find unique chromosome\n" << GAout.unlock();
-				}
-			)
+
 			child2Tries = 0;
+
+			if(evaluator.evaluate(**child2It) > cutoff) {
+				/*
+				 * The child is no duplicate (or accepted as one) and is not too bad,
+				 * so go on to the next one
+				 */
+				++child2It;
+			} else {
+				++discSol;
+			}
 		}
-		
+
+		if(discSol > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
+			GAout << GAout.lock() << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!\n" << GAout.unlock();
+			discSol = 0;
+		}
+
 		/*
 		 * The main thread has to check for a user interrupt
 		 */
@@ -265,9 +192,6 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			}
 		}
 	}
-	
-	delete proposalChild1;
-	delete proposalChild2;
 }
 
 /**
@@ -287,6 +211,7 @@ void MultiThreadedPopulation::run() {
 	uint16_t offset = 0;
 	pthread_attr_t threadAttr;
 	pthread_t* threads;
+	bool interrupted = false;
 	
 	if(this->ctrl.verbosity > OFF) {
 		GAout << "Generating initial population" << std::endl;
@@ -358,7 +283,7 @@ void MultiThreadedPopulation::run() {
 		threadArgs[i].seed = rng();
 		threadArgs[i].evalObj = this->evaluator.clone();
 		threadArgs[i].chromosomeSize = this->ctrl.chromosomeSize;
-		
+
 		pthreadRC = pthread_create((threads + i), &threadAttr, &MultiThreadedPopulation::matingThreadStart, (void *) (threadArgs + i));
 		
 		if(pthreadRC == 0) {
@@ -377,9 +302,7 @@ void MultiThreadedPopulation::run() {
 	} else if(this->ctrl.verbosity >= ON) {
 		GAout << "Spawned " << this->actuallySpawnedThreads << " threads" << std::endl;
 	}
-	
-	bool interrupted = false;
-	
+
 	/*****************************************************************************************
 	 * Generate remaining generations
 	 *****************************************************************************************/
@@ -478,10 +401,6 @@ void MultiThreadedPopulation::run() {
 	
 	for(j = 0; j < this->ctrl.populationSize; ++j) {
 		delete this->nextGeneration[j];
-	}
-	
-	if(interrupted) {
-		throw InterruptException();
 	}
 }
 

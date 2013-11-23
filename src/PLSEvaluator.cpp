@@ -23,16 +23,24 @@ uint32_t PLSEvaluator::counter = 0;
 #endif
 
 PLSEvaluator::PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const std::vector<uint32_t> &seed, const VerbosityLevel verbosity) :
-Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
-nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
-completeSegments(nrows % numSegments), seed(seed), pls(pls), cloned(false)
+	Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
+	nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
+	completeSegments(nrows % numSegments), cloned(false), pls(pls)
 {
 	if(pls->getNumberOfResponseVariables() > 1) {
 		throw std::invalid_argument("PLS evaluator only available for models with 1 response variable");
 	}
 
-	this->initRowNumbers();
-};
+	this->initRowNumbers(seed);
+}
+
+PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
+	Evaluator(other.verbosity), numReplications(other.numReplications), numSegments(other.numSegments),
+	nrows(other.nrows), segmentLength(other.segmentLength), completeSegments(other.completeSegments), cloned(true),
+	shuffledRowNumbers(other.shuffledRowNumbers)
+{
+	this->pls = other.pls->clone();
+}
 
 double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 	if(columnSubset.n_elem == 0) {
@@ -56,8 +64,8 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 	return -sumSEP;
 }
 
-inline void PLSEvaluator::initRowNumbers() {
-	RNG rng(this->seed);
+inline void PLSEvaluator::initRowNumbers(const std::vector<uint32_t> &seed) {
+	RNG rng(seed);
 	ShuffledSet rowNumbers(this->nrows);
 	this->shuffledRowNumbers.reserve(this->numReplications);
 
@@ -194,9 +202,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 }
 
 Evaluator* PLSEvaluator::clone() const {
-	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->seed, this->verbosity);
-	that->cloned = true;
-	return that;	
+	return new PLSEvaluator(*this);
 }
 
 
