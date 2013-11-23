@@ -20,7 +20,7 @@ LMEvaluator::LMEvaluator(const arma::mat &X, const arma::colvec &y, const LMEval
 	}
 
 	this->r2denom = arma::sum(arma::square(this->y - arma::mean(this->y)));
-};
+}
 
 double LMEvaluator::evaluate(arma::uvec &columnSubset) {
 	double ret = 0.0;

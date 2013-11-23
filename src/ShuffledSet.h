@@ -36,7 +36,7 @@ public:
 #endif
 		};
 		
-		const arma::uword operator*() const;
+		arma::uword operator*() const;
 		iterator& operator++();
 		bool operator==(const iterator &it) const;
 		bool operator!=(const iterator &it) const;
