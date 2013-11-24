@@ -62,6 +62,7 @@ void SingleThreadPopulation::run() {
 
 	uint32_t discSol1 = 0;
 	uint32_t discSol2 = 0;
+	uint32_t maxDiscardedSolutions = Population::MAX_DISCARDED_SOLUTIONS_RATIO * this->ctrl.populationSize;
 
 	newGeneration.reserve(this->ctrl.populationSize);
 	
@@ -152,7 +153,7 @@ void SingleThreadPopulation::run() {
 
 				child1Tries = 0;
 
-				if(this->evaluator.evaluate(**child1It) > cutoff) {
+				if((this->evaluator.evaluate(**child1It) > cutoff) || (discSol1 > maxDiscardedSolutions)) {
 					if((*child1It)->getFitness() < minFitness) {
 						minFitness = (*child1It)->getFitness();
 					}
@@ -168,10 +169,9 @@ void SingleThreadPopulation::run() {
 					 * so go on to the next one
 					 */
 					++child1It;
-				} else if(++discSol1 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * this->ctrl.populationSize) {
-					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
 					discSol1 = 0;
-					++child1It;
+				} else if(++discSol1 >= maxDiscardedSolutions) {
+					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
 				}
 			}
 
@@ -186,7 +186,7 @@ void SingleThreadPopulation::run() {
 
 				child2Tries = 0;
 
-				if(this->evaluator.evaluate(**child2It) > cutoff) {
+				if((this->evaluator.evaluate(**child2It) > cutoff) || (discSol2 > maxDiscardedSolutions)) {
 					if((*child2It)->getFitness() < minFitness) {
 						minFitness = (*child2It)->getFitness();
 					}
@@ -202,10 +202,9 @@ void SingleThreadPopulation::run() {
 					 * so go on to the next one
 					 */
 					++child2It;
-				} else if(++discSol2 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * this->ctrl.populationSize) {
-					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
 					discSol2 = 0;
-					++child2It;
+				} else if(++discSol2 >= maxDiscardedSolutions) {
+					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
 				}
 			}
 

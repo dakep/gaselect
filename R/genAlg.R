@@ -9,6 +9,7 @@
 #' 		\item{\code{covariates}:}{The original covariates matrix.}
 #' 		\item{\code{evaluator}:}{The evaluator used in the genetic algorithm.}
 #' 		\item{\code{control}:}{The control object.}
+#' 		\item{\code{seed}:}{The seed the algorithm is started with.}
 #' 	}
 #' @rdname GenAlg-class
 setClass("GenAlg", representation(
@@ -17,7 +18,8 @@ setClass("GenAlg", representation(
 	response = "numeric",
 	covariates = "matrix",
 	evaluator = "GenAlgEvaluator",
-	control = "GenAlgControl"
+	control = "GenAlgControl",
+	seed = "integer"
 ), prototype(
 	subsets = matrix(),
 	rawFitness = NA_real_
@@ -119,7 +121,8 @@ function(y, X, control, evaluator, seed) {
 		response = y,
 		covariates = X,
 		evaluator = evaluator,
-		control = control
+		control = control,
+		seed = seed
 	);
 
 	possSubsetCutoff <- 0.85;
@@ -140,7 +143,7 @@ function(y, X, control, evaluator, seed) {
 	if(ctrlArg$evaluatorClass == 0) {
 		res <- .Call("genAlgPLS", ctrlArg, NULL, NULL, seed, PACKAGE = "GenAlgPLS");
 	} else {
-		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), seed, PACKAGE = "GenAlgPLS");
+		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), ret@seed, PACKAGE = "GenAlgPLS");
 	}
 
 	ret@subsets <- res$subsets;
