@@ -57,7 +57,6 @@ setMethod("toCControlList", signature(object = "GenAlgControl"), function(object
 		"numGenerations" = object@numGenerations,
 		"minVariables" = object@minVariables,
 		"maxVariables" = object@maxVariables,
-		"maxMatingTries" = object@maxMatingTries,
 		"elitism" = object@elitism,
 		"mutationProb" = object@mutationProbability,
 		"crossover" = object@crossoverId,

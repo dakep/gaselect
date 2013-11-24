@@ -64,7 +64,6 @@ BEGIN_RCPP
 				 as<uint16_t>(control["elitism"]),
 				 as<uint16_t>(control["minVariables"]),
 				 as<uint16_t>(control["maxVariables"]),
-				 as<uint16_t>(control["maxMatingTries"]),
 				 as<double>(control["mutationProb"]),
 				 numThreads,
 				 as<uint16_t>(control["maxDuplicateEliminationTries"]),
@@ -147,6 +146,10 @@ BEGIN_RCPP
 #ifdef ENABLE_DEBUG_VERBOSITY
 	Rcpp::Rcout << "Called evaluator " << PLSEvaluator::counter << " times" << std::endl;
 #endif
+
+	if(pop->wasInterrupted() == true) {
+		GAout << "Interrupted - returning best solutions found so far" << std::endl;
+	}
 
 	Population::SortedChromosomes result = pop->getResult();
 

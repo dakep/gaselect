@@ -60,7 +60,8 @@ void SingleThreadPopulation::run() {
 	std::pair<bool, bool> duplicated;
 	double cutoff = 0.0;
 
-	uint32_t discSol = 0;
+	uint32_t discSol1 = 0;
+	uint32_t discSol2 = 0;
 
 	newGeneration.reserve(this->ctrl.populationSize);
 	
@@ -87,6 +88,7 @@ void SingleThreadPopulation::run() {
 		}
 
 		if(check_interrupt()) {
+			this->interrupted = true;
 			throw InterruptException();
 		}
 	}
@@ -103,7 +105,7 @@ void SingleThreadPopulation::run() {
 		this->printCurrentGeneration();
 	}
 	
-	for(i = this->ctrl.numGenerations; i > 0; --i) {
+	for(i = this->ctrl.numGenerations; i > 0 && !this->interrupted; --i) {
 		minFitness = 0.0;
 
 		IF_DEBUG(
@@ -117,7 +119,7 @@ void SingleThreadPopulation::run() {
 		child1It = newGeneration.begin();
 		child2It = newGeneration.rbegin();
 		
-		while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
+		while(child1It != child2It.base() && child1It != (child2It + 1).base() && !this->interrupted) {
 			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
 			do {
 				tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
@@ -166,8 +168,10 @@ void SingleThreadPopulation::run() {
 					 * so go on to the next one
 					 */
 					++child1It;
-				} else {
-					++discSol;
+				} else if(++discSol1 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * this->ctrl.populationSize) {
+					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+					discSol1 = 0;
+					++child1It;
 				}
 			}
 
@@ -198,18 +202,15 @@ void SingleThreadPopulation::run() {
 					 * so go on to the next one
 					 */
 					++child2It;
-				} else {
-					++discSol;
+				} else if(++discSol2 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * this->ctrl.populationSize) {
+					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+					discSol2 = 0;
+					++child2It;
 				}
 			}
 
 			if(check_interrupt()) {
-				throw InterruptException();
-			}
-
-			if(discSol > Population::MAX_DISCARDED_SOLUTIONS_RATIO * this->ctrl.populationSize) {
-				GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
-				discSol = 0;
+				this->interrupted = true;
 			}
 		}
 
@@ -222,7 +223,9 @@ void SingleThreadPopulation::run() {
 		if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
 			this->printCurrentGeneration();
 		}
-		discSol = 0;
+
+		discSol1 = 0;
+		discSol2 = 0;
 	}
 
 	for(ChVecIt it = newGeneration.begin(); it != newGeneration.end(); ++it) {

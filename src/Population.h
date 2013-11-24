@@ -42,7 +42,7 @@ protected:
 	typedef std::vector<Chromosome*>::iterator ChVecIt;
 	typedef std::vector<Chromosome*>::reverse_iterator ChVecRIt;
 
-	static const uint8_t MAX_DISCARDED_SOLUTIONS_RATIO = 50;
+	static const uint8_t MAX_DISCARDED_SOLUTIONS_RATIO = 20;
 
 	const Control& ctrl;
 	::Evaluator& evaluator;
@@ -51,6 +51,7 @@ protected:
 	SortedChromosomes elite;
 	std::vector<double> currentGenFitnessMap;
 	double minEliteFitness;
+	bool interrupted;
 
 public:
 	class InterruptException : public std::exception {
@@ -63,7 +64,7 @@ public:
 	};
 	
 	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) :
-		ctrl(ctrl), evaluator(evaluator), seed(seed), currentGenFitnessMap(ctrl.populationSize + ctrl.elitism, 0.0) {
+		ctrl(ctrl), evaluator(evaluator), seed(seed), currentGenFitnessMap(ctrl.populationSize + ctrl.elitism, 0.0), interrupted(false) {
 		this->currentGeneration.reserve(this->ctrl.populationSize + this->ctrl.elitism);
 
 		this->minEliteFitness = 0.0;
@@ -76,7 +77,11 @@ public:
 	}
 
 	virtual void run() = 0;
-	
+
+	inline bool wasInterrupted() {
+		return this->interrupted;
+	}
+
 	inline SortedChromosomes getResult() const {
 		SortedChromosomes result(this->elite);
 		

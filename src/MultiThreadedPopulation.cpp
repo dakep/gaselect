@@ -108,7 +108,8 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	std::pair<bool, bool> duplicated;
 	double cutoff = 0.0;
 
-	uint32_t discSol = 0;
+	uint32_t discSol1 = 0;
+	uint32_t discSol2 = 0;
 
 	while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
 		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
@@ -149,8 +150,10 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 				 * so go on to the next one
 				 */
 				++child1It;
-			} else {
-				++discSol;
+			} else if(++discSol1 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
+				GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+				discSol1 = 0;
+				++child1It;
 			}
 		}
 
@@ -171,14 +174,11 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 				 * so go on to the next one
 				 */
 				++child2It;
-			} else {
-				++discSol;
+			} else if(++discSol2 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
+				GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+				discSol2 = 0;
+				++child2It;
 			}
-		}
-
-		if(discSol > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
-			GAout << GAout.lock() << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!\n" << GAout.unlock();
-			discSol = 0;
 		}
 
 		/*
@@ -188,6 +188,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			GAout.flushThreadSafeBuffer();
 			GAerr.flushThreadSafeBuffer();
 			if(check_interrupt()) {
+				this->interrupted = true;
 				throw InterruptException();
 			}
 		}
@@ -211,7 +212,6 @@ void MultiThreadedPopulation::run() {
 	uint16_t offset = 0;
 	pthread_attr_t threadAttr;
 	pthread_t* threads;
-	bool interrupted = false;
 	
 	if(this->ctrl.verbosity > OFF) {
 		GAout << "Generating initial population" << std::endl;
@@ -307,7 +307,7 @@ void MultiThreadedPopulation::run() {
 	 * Generate remaining generations
 	 *****************************************************************************************/
 	
-	for(i = this->ctrl.numGenerations; i > 0 && !interrupted; --i) {
+	for(i = this->ctrl.numGenerations; i > 0 && !this->interrupted; --i) {
 		IF_DEBUG(GAout << "Unique chromosomes: " << this->countUniques() << std::endl;)
 		
 		if(this->ctrl.verbosity > OFF) {
@@ -340,7 +340,7 @@ void MultiThreadedPopulation::run() {
 		try {
 			this->mate(numChildrenMainThread, this->evaluator, rng, shuffledSet, offset, true);
 		} catch (InterruptException) {
-			interrupted = true;
+			this->interrupted = true;
 		}
 		
 		this->waitForAllThreadsToFinishMating();
