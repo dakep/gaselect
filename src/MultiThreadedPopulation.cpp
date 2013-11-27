@@ -144,16 +144,22 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 
 			child1Tries = 0;
 
-			if(evaluator.evaluate(**child1It) > cutoff) {
-				/*
-				 * The child is no duplicate (or accepted as one) and is not too bad,
-				 * so go on to the next one
-				 */
-				++child1It;
-			} else if(++discSol1 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
-				GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
-				discSol1 = 0;
-				++child1It;
+			try {
+				if(evaluator.evaluate(**child1It) > cutoff) {
+					/*
+					 * The child is no duplicate (or accepted as one) and is not too bad,
+					 * so go on to the next one
+					 */
+					++child1It;
+				} else if(++discSol1 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
+					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+					discSol1 = 0;
+					++child1It;
+				}
+			} catch(const ::Evaluator::EvaluatorException& ee) {
+				if(this->ctrl.verbosity >= ON) {
+					GAout << GAout.lock() << "Could not evaluate chromosome: " << ee.what() << "\n" << GAout.unlock();
+				}
 			}
 		}
 
@@ -168,16 +174,22 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 
 			child2Tries = 0;
 
-			if(evaluator.evaluate(**child2It) > cutoff) {
-				/*
-				 * The child is no duplicate (or accepted as one) and is not too bad,
-				 * so go on to the next one
-				 */
-				++child2It;
-			} else if(++discSol2 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
-				GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
-				discSol2 = 0;
-				++child2It;
+			try {
+				if(evaluator.evaluate(**child2It) > cutoff) {
+					/*
+					 * The child is no duplicate (or accepted as one) and is not too bad,
+					 * so go on to the next one
+					 */
+					++child2It;
+				} else if(++discSol2 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
+					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+					discSol2 = 0;
+					++child2It;
+				}
+			} catch(const ::Evaluator::EvaluatorException& ee) {
+				if(this->ctrl.verbosity >= ON) {
+					GAout << GAout.lock() << "Could not evaluate chromosome: " << ee.what() << "\n" << GAout.unlock();
+				}
 			}
 		}
 
@@ -225,13 +237,20 @@ void MultiThreadedPopulation::run() {
 		
 		/* Check if chromosome is already in the initial population */
 		if(std::find_if(this->nextGeneration.begin(), this->nextGeneration.end(), CompChromsomePtr(tmpChromosome)) == this->nextGeneration.end()) {
-			this->evaluator.evaluate(*tmpChromosome);
-			if(tmpChromosome->getFitness() < minFitness) {
-				minFitness = tmpChromosome->getFitness();
-			}
+			try {
+				this->evaluator.evaluate(*tmpChromosome);
+				if(tmpChromosome->getFitness() < minFitness) {
+					minFitness = tmpChromosome->getFitness();
+				}
 
-			this->addChromosomeToElite(*tmpChromosome);
-			this->nextGeneration.push_back(tmpChromosome);
+				this->addChromosomeToElite(*tmpChromosome);
+				this->nextGeneration.push_back(tmpChromosome);
+			} catch(const ::Evaluator::EvaluatorException& ee) {
+				delete tmpChromosome;
+				if(this->ctrl.verbosity >= ON) {
+					GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
+				}
+			}
 		} else {
 			delete tmpChromosome;
 		}

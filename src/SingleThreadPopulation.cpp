@@ -75,15 +75,22 @@ void SingleThreadPopulation::run() {
 		
 		/* Check if chromosome is already in the initial population */
 		if(std::find_if(newGeneration.begin(), newGeneration.end(), CompChromsomePtr(tmpChromosome1)) == newGeneration.end()) {
-			this->evaluator.evaluate(*tmpChromosome1);
+			try {
+				this->evaluator.evaluate(*tmpChromosome1);
 
-			if(tmpChromosome1->getFitness() < minFitness) {
-				minFitness = tmpChromosome1->getFitness();
+				if(tmpChromosome1->getFitness() < minFitness) {
+					minFitness = tmpChromosome1->getFitness();
+				}
+				
+				this->addChromosomeToElite(*tmpChromosome1);
+				
+				newGeneration.push_back(tmpChromosome1);
+			} catch(const ::Evaluator::EvaluatorException& ee) {
+				delete tmpChromosome1;
+				if(this->ctrl.verbosity >= ON) {
+					GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
+				}
 			}
-			
-			this->addChromosomeToElite(*tmpChromosome1);
-			
-			newGeneration.push_back(tmpChromosome1);
 		} else {
 			delete tmpChromosome1;
 		}
@@ -153,25 +160,31 @@ void SingleThreadPopulation::run() {
 
 				child1Tries = 0;
 
-				if((this->evaluator.evaluate(**child1It) > cutoff) || (discSol1 > maxDiscardedSolutions)) {
-					if((*child1It)->getFitness() < minFitness) {
-						minFitness = (*child1It)->getFitness();
+				try {
+					if((this->evaluator.evaluate(**child1It) > cutoff) || (discSol1 > maxDiscardedSolutions)) {
+						if((*child1It)->getFitness() < minFitness) {
+							minFitness = (*child1It)->getFitness();
+						}
+
+						this->addChromosomeToElite(**child1It);
+
+						if(this->ctrl.verbosity >= VERBOSE) {
+							this->printChromosomeFitness(GAout, **child1It);
+						}
+
+						/*
+						 * The child is no duplicate (or accepted as one) and is not too bad,
+						 * so go on to the next one
+						 */
+						++child1It;
+						discSol1 = 0;
+					} else if(++discSol1 >= maxDiscardedSolutions) {
+						GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
 					}
-
-					this->addChromosomeToElite(**child1It);
-
-					if(this->ctrl.verbosity >= VERBOSE) {
-						this->printChromosomeFitness(GAout, **child1It);
+				} catch(const ::Evaluator::EvaluatorException& ee) {
+					if(this->ctrl.verbosity >= ON) {
+						GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
 					}
-
-					/*
-					 * The child is no duplicate (or accepted as one) and is not too bad,
-					 * so go on to the next one
-					 */
-					++child1It;
-					discSol1 = 0;
-				} else if(++discSol1 >= maxDiscardedSolutions) {
-					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
 				}
 			}
 
@@ -186,25 +199,31 @@ void SingleThreadPopulation::run() {
 
 				child2Tries = 0;
 
-				if((this->evaluator.evaluate(**child2It) > cutoff) || (discSol2 > maxDiscardedSolutions)) {
-					if((*child2It)->getFitness() < minFitness) {
-						minFitness = (*child2It)->getFitness();
+				try {
+					if((this->evaluator.evaluate(**child2It) > cutoff) || (discSol2 > maxDiscardedSolutions)) {
+						if((*child2It)->getFitness() < minFitness) {
+							minFitness = (*child2It)->getFitness();
+						}
+
+						this->addChromosomeToElite(**child2It);
+
+						if(this->ctrl.verbosity >= VERBOSE) {
+							this->printChromosomeFitness(GAout, **child2It);
+						}
+
+						/*
+						 * The child is no duplicate (or accepted as one) and is not too bad,
+						 * so go on to the next one
+						 */
+						++child2It;
+						discSol2 = 0;
+					} else if(++discSol2 >= maxDiscardedSolutions) {
+						GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
 					}
-
-					this->addChromosomeToElite(**child2It);
-
-					if(this->ctrl.verbosity >= VERBOSE) {
-						this->printChromosomeFitness(GAout, **child2It);
+				} catch(const ::Evaluator::EvaluatorException& ee) {
+					if(this->ctrl.verbosity >= ON) {
+						GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
 					}
-
-					/*
-					 * The child is no duplicate (or accepted as one) and is not too bad,
-					 * so go on to the next one
-					 */
-					++child2It;
-					discSol2 = 0;
-				} else if(++discSol2 >= maxDiscardedSolutions) {
-					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
 				}
 			}
 

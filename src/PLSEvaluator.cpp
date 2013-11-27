@@ -45,7 +45,7 @@ PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
 double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 	if(columnSubset.n_elem == 0) {
 		GAerr << GAerr.lock() << "Can not evaluate empty variable subset" << GAerr.unlock();
-		throw std::runtime_error("Can not evaluate empty variable subset");
+		throw Evaluator::EvaluatorException("Can not evaluate empty variable subset");
 	}
 #ifdef ENABLE_DEBUG_VERBOSITY
 	++PLSEvaluator::counter;
