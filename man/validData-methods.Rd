@@ -5,13 +5,22 @@
 \alias{validData,GenAlgLMEvaluator,GenAlg-method}
 \alias{validData,GenAlgPLSEvaluator,GenAlg-method}
 \title{Check if the data is valid for the evaluator}
+\usage{
+validData(object, genAlg)
+
+\S4method{validData}{GenAlgPLSEvaluator,GenAlg}(object, genAlg)
+
+\S4method{validData}{GenAlgLMEvaluator,GenAlg}(object, genAlg)
+
+\S4method{validData}{GenAlgEvaluator,GenAlg}(object, genAlg)
+}
 \arguments{
   \item{object}{The evaluator}
 
   \item{genAlg}{The GenAlg object the evaluator is used in}
 }
 \description{
-  This method checks if the covariates matrix is valid for
-  the evaluator
+This method checks if the covariates matrix is valid for
+the evaluator
 }
 

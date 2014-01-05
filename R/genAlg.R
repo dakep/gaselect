@@ -1,16 +1,15 @@
 #' Result of a genetic algorithm run
 #'
 #' Return object of a run of the genetic algorithm genAlg
-#' @section Slots:
-#' 	\describe{
-#' 		\item{\code{subsets}:}{Logical matrix with one variable subset per column. The columns are ordered according to their fitness (first column contains the fittest variable-subset).}
-#' 		\item{\code{rawFitness}:}{Numeric vector with the raw fitness of the corresponding variable subset returned by the evaluator.}
-#' 		\item{\code{response}:}{The original response vector.}
-#' 		\item{\code{covariates}:}{The original covariates matrix.}
-#' 		\item{\code{evaluator}:}{The evaluator used in the genetic algorithm.}
-#' 		\item{\code{control}:}{The control object.}
-#' 		\item{\code{seed}:}{The seed the algorithm is started with.}
-#' 	}
+#' @slot subsets Logical matrix with one variable subset per column. The columns are ordered according to their fitness (first column contains the fittest variable-subset).
+#' @slot rawFitness Numeric vector with the raw fitness of the corresponding variable subset returned by the evaluator.
+#' @slot response The original response vector.
+#' @slot covariates The original covariates matrix.
+#' @slot evaluator The evaluator used in the genetic algorithm.
+#' @slot control The control object.
+#' @slot seed The seed the algorithm is started with.
+#' @aliases GenAlg
+#' @include Evaluator.R GenAlgControl.R
 #' @rdname GenAlg-class
 setClass("GenAlg", representation(
 	subsets = "matrix",
@@ -79,42 +78,38 @@ setClass("GenAlg", representation(
 #' @param evaluator The evaluator used to evaluate the fitness of a variable subset. See \code{\link{evaluatorPLS}}, \code{\link{evaluatorLM}} or \code{\link{evaluatorUserFunction}} for details.
 #' @param seed Integer with the seed for the random number generator or NULL to automatically seed the RNG
 #' @export
-#' @rdname genAlg-methods
-#' @docType methods
+#' @include Evaluator.R GenAlgControl.R
+#' @return An object of type \code{\link{GenAlg}}
+#' @rdname GenAlg-constructor
 #' @useDynLib GenAlgPLS
 #' @example examples/genAlg.R
 setGeneric("genAlg", function(y, X, control, evaluator = evaluatorPLS(), seed = NULL) { standardGeneric("genAlg") });
 
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,data.frame,GenAlgControl,ANY,ANY-method
+#' @rdname GenAlg-constructor
 setMethod("genAlg", signature(y = "numeric", X = "data.frame", control = "GenAlgControl", evaluator = "ANY", seed = "ANY"),
 function(y, X, control, evaluator, seed) {
     genAlg(y, as.matrix(X), control, evaluator, seed);
 });
 
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,ANY,ANY-method
+#' @rdname GenAlg-constructor
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "ANY", seed = "ANY"),
 function(y, X, control, evaluator, seed) {
     genAlg(y, as.matrix(X), control, evaluator, seed);
 });
 
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,NULL-method
+#' @rdname GenAlg-constructor
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "NULL"),
 function(y, X, control, evaluator, seed) {
 	genAlg(y, X, control, evaluator, as.integer(sample.int(2^30, 1)));
 });
 
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,numeric-method
+#' @rdname GenAlg-constructor
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "numeric"),
 function(y, X, control, evaluator, seed) {
 	genAlg(y, X, control, evaluator, as.integer(seed));
 });
 
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,integer-method
+#' @rdname GenAlg-constructor
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "integer"),
 function(y, X, control, evaluator, seed) {
 	ret <- new("GenAlg",

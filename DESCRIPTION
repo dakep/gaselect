@@ -14,12 +14,12 @@ Depends:
     RcppArmadillo (>= 0.3.4.0)
 LinkingTo: Rcpp, RcppArmadillo
 Collate:
-    'GenAlgControl.R'
     'Evaluator.R'
-    'genAlg.R'
-    'Evaluator-validData.R'
-    'toCControlList.R'
+    'GenAlgControl.R'
+    'GenAlg.R'
     'SEP.R'
-    'subsets.R'
-    'getEvalFun.R'
     'evaluate.R'
+    'getEvalFun.R'
+    'subsets.R'
+    'toCControlList.R'
+    'validData.R'

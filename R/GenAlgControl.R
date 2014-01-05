@@ -1,26 +1,24 @@
 #' Control class for the genetic algorithm
 #'
 #' This class controls the general setup of the genetic algorithm
-#' @section Slots:
-#' 	\describe{
-#' 		\item{\code{populationSize}:}{The number of "chromosomes" in the population (between 1 and 2^16).}
-#' 		\item{\code{numGenerations}:}{The number of generations to produce (between 1 and 2^16).}
-#' 		\item{\code{minVariables}:}{The minimum number of variables in the variable subset (between 0 and p - 1 where p is the total number of variables).}
-#' 		\item{\code{maxVariables}:}{The maximum number of variables in the variable subset (between 1 and p, and greater than \code{minVariables}).}
-#' 		\item{\code{elitism}:}{The number of absolute best chromosomes to keep across all generations (between 1 and min(\code{populationSize} * \code{numGenerations}, 2^16)).}
-#' 		\item{\code{mutationProbability}:}{The probability of mutation (between 0 and 1).}
-#' 		\item{\code{badSolutionThreshold}:}{The child must not be more than \code{badSolutionThreshold} percent worse than the worse parent. If less than 0, the child must be even better than the worst parent.}
-#' 		\item{\code{crossover}:}{The crossover method to use}
-#' 		\item{\code{crossoverId}:}{The numeric ID of the crossover method to use}
-#' 		\item{\code{maxDuplicateEliminationTries}:}{The maximum number of tries to eliminate duplicates}
-#' 		\item{\code{verbosity}:}{The level of verbosity. 0 means no output at all, 2 is very verbose.}
-#' 	}
+#' @slot populationSize The number of "chromosomes" in the population (between 1 and 2^16).
+#' @slot numGenerations The number of generations to produce (between 1 and 2^16).
+#' @slot minVariables The minimum number of variables in the variable subset (between 0 and p - 1 where p is the total number of variables).
+#' @slot maxVariables The maximum number of variables in the variable subset (between 1 and p, and greater than \code{minVariables}).
+#' @slot elitism The number of absolute best chromosomes to keep across all generations (between 1 and min(\code{populationSize} * \code{numGenerations}, 2^16)).
+#' @slot mutationProbability The probability of mutation (between 0 and 1).
+#' @slot badSolutionThreshold The child must not be more than \code{badSolutionThreshold} percent worse than the worse parent. If less than 0, the child must be even better than the worst parent.
+#' @slot crossover The crossover method to use
+#' @slot crossoverId The numeric ID of the crossover method to use
+#' @slot maxDuplicateEliminationTries The maximum number of tries to eliminate duplicates
+#' @slot verbosity The level of verbosity. 0 means no output at all, 2 is very verbose.
+#' @aliases GenAlgControl
+#' @rdname GenAlgControl-class
 setClass("GenAlgControl", representation(
 	populationSize = "integer",
 	numGenerations = "integer",
 	minVariables = "integer",
 	maxVariables = "integer",
-	maxMatingTries = "integer",
 	elitism = "integer",
 	mutationProbability = "numeric",
 	crossover = "character",
@@ -124,9 +122,11 @@ setClass("GenAlgControl", representation(
 #'			in a long time it issues a warning and uses the last found child to continue.
 #' @param maxDuplicateEliminationTries The maximum number of tries to eliminate duplicates
 #' @param verbosity The level of verbosity. 0 means no output at all, 2 is very verbose.
+#' @return An object of type \code{\link{GenAlgControl}}
 #' @export
 #' @example examples/genAlg.R
-genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables, maxMatingTries = 5L,
+#' @rdname GenAlgControl-constructor
+genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables,
 							elitism = 10L, mutationProbability = 0.01, crossover = c("single", "random"),
 							maxDuplicateEliminationTries = 5L, verbosity = 0L, badSolutionThreshold = 2) {
 	if(is.numeric(populationSize)) {
@@ -143,10 +143,6 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 
 	if(is.numeric(maxVariables)) {
 		maxVariables <- as.integer(maxVariables);
-	}
-
-	if(is.numeric(maxMatingTries)) {
-		maxMatingTries <- as.integer(maxMatingTries);
 	}
 
 	if(is.numeric(elitism)) {
@@ -169,7 +165,6 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 				numGenerations = numGenerations,
 				minVariables = minVariables,
 				maxVariables = maxVariables,
-				maxMatingTries = maxMatingTries,
 				elitism = elitism,
 				mutationProbability = mutationProbability,
 				crossover = crossover,

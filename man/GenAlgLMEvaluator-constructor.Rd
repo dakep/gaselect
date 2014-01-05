@@ -2,8 +2,8 @@
 \alias{evaluatorLM}
 \title{LM Evaluator}
 \usage{
-  evaluatorLM(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"),
-    numThreads = NULL, maxCor = NULL)
+evaluatorLM(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"),
+  numThreads = NULL, maxCor = NULL)
 }
 \arguments{
   \item{statistic}{The statistic used to evaluate the
@@ -17,16 +17,20 @@
   has an entry (absolutely) greater than this value the
   principal components are used to calculate the fit}
 }
+\value{
+Returns an S4 object of type
+\code{\link{GenAlgLMEvaluator}}
+}
 \description{
-  Create an evaluator that uses a linear model to evaluate
-  the fitness.
+Create an evaluator that uses a linear model to evaluate
+the fitness.
 }
 \details{
-  Different statistics to evaluate the fitness of the
-  variable subset can be given. If a maximum absolute
-  correlation is given the algorithm will be very slow (as
-  the C++ implementation can not be used anymore) and
-  multithreading is not available.
+Different statistics to evaluate the fitness of the
+variable subset can be given. If a maximum absolute
+correlation is given the algorithm will be very slow (as
+the C++ implementation can not be used anymore) and
+multithreading is not available.
 }
 \examples{
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,
@@ -38,7 +42,7 @@ result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
 }
 }
 \seealso{
-  Other GenAlg.Evaluators: \code{\link{evaluatorPLS}},
-  \code{\link{evaluatorUserFunction}}
+Other GenAlg.Evaluators: \code{\link{evaluatorPLS}};
+\code{\link{evaluatorUserFunction}}
 }
 

@@ -6,11 +6,25 @@
 \alias{toCControlList,GenAlgPLSEvaluator-method}
 \alias{toCControlList,GenAlgUserEvaluator-method}
 \title{Transform the object to a list}
+\usage{
+toCControlList(object)
+
+\S4method{toCControlList}{GenAlgPLSEvaluator}(object)
+
+\S4method{toCControlList}{GenAlgUserEvaluator}(object)
+
+\S4method{toCControlList}{GenAlgLMEvaluator}(object)
+
+\S4method{toCControlList}{GenAlgControl}(object)
+}
 \arguments{
   \item{object}{The object}
 }
+\value{
+A list with all items expected by the C++ code
+}
 \description{
-  Get the control list for the C++ procedure genAlgPLS from
-  the object
+Get the control list for the C++ procedure genAlgPLS from
+the object
 }
 

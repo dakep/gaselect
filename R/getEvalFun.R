@@ -3,22 +3,21 @@
 #' This method returns the correct evaluation function from a GenAlgUserEvaluator
 #' that can be used by the C++-code as callback or NULL for any other evaluator
 #'
-#' @param object The evaluator
+#' @param object The evaluator (an object of type \code{\link{GenAlgEvaluator}})
 #' @param genAlg The \code{\link{GenAlg}} object
+#' @include Evaluator.R GenAlg.R
 #' @docType methods
-#' @rdname GenAlgEvaluator-getEvalFun-methods
+#' @rdname getEvalFun-methods
 setGeneric("getEvalFun", function(object, genAlg) { standardGeneric("getEvalFun"); });
 
-#' @rdname GenAlgEvaluator-getEvalFun-methods
-#' @aliases getEvalFun,GenAlgUserEvaluator,GenAlg-method
+#' @rdname getEvalFun-methods
 setMethod("getEvalFun", signature(object = "GenAlgUserEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
 	return(function(varSubset) {
 		return(object@evalFunction(genAlg@response, genAlg@covariates[ , varSubset, drop = FALSE]));
 	});
 });
 
-#' @rdname GenAlgEvaluator-getEvalFun-methods
-#' @aliases getEvalFun,GenAlgUserEvaluator,matrix-method
+#' @rdname getEvalFun-methods
 setMethod("getEvalFun", signature(object = "GenAlgUserEvaluator", genAlg = "matrix"), function(object, genAlg) {
 	X <- genAlg[ , -1];
 	y <- genAlg[ , 1];
@@ -35,14 +34,12 @@ setMethod("getEvalFun", signature(object = "GenAlgUserEvaluator", genAlg = "matr
 # 	});
 # });
 
-#' @rdname GenAlgEvaluator-getEvalFun-methods
-#' @aliases getEvalFun,GenAlgEvaluator,GenAlg-method
+#' @rdname getEvalFun-methods
 setMethod("getEvalFun", signature(object = "GenAlgEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
 	return(NULL);
 });
 
-#' @rdname GenAlgEvaluator-getEvalFun-methods
-#' @aliases getEvalFun,GenAlgEvaluator,matrix-method
+#' @rdname getEvalFun-methods
 setMethod("getEvalFun", signature(object = "GenAlgEvaluator", genAlg = "matrix"), function(object, genAlg) {
 	return(NULL);
 });

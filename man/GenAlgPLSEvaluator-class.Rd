@@ -1,19 +1,22 @@
-\name{GenAlgPLSEvaluator}
+\docType{class}
+\name{GenAlgPLSEvaluator-class}
 \alias{GenAlgPLSEvaluator}
+\alias{GenAlgPLSEvaluator-class}
 \title{PLS Evaluator}
 \description{
-  PLS Evaluator
+PLS Evaluator
 }
 \section{Slots}{
-  \describe{ \item{\code{numReplications}:}{The number of
-  replications used to evaluate a variable subset.}
-  \item{\code{numSegments}:}{The number of CV segments used
-  in one replication.} \item{\code{numThreads}:}{The
-  maximum number of threads the algorithm is allowed to
-  spawn (a value less than 1 or NULL means no threads).}
-  \item{\code{method}:}{The PLS method used to fit the PLS
-  model (currently only SIMPLS is implemented).}
-  \item{\code{methodId}:}{The ID of the PLS method used to
-  fit the PLS model.} }
-}
+
+\describe{
+\item{\code{numReplications}}{The number of replications used to evaluate a variable subset.}
+
+\item{\code{numSegments}}{The number of CV segments used in one replication.}
+
+\item{\code{numThreads}}{The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).}
+
+\item{\code{method}}{The PLS method used to fit the PLS model (currently only SIMPLS is implemented).}
+
+\item{\code{methodId}}{The ID of the PLS method used to fit the PLS model.}
+}}
 

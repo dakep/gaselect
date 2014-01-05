@@ -1,18 +1,17 @@
 #' Evaluator Base Class
 #'
 #' Virtual base class of all available evaluators
+#' @aliases GenAlgEvaluator
+#' @rdname GenAlgEvaluator-class
 setClass("GenAlgEvaluator", representation(), contains = "VIRTUAL");
 
 #' PLS Evaluator
-#'
-#' @section Slots:
-#' 	\describe{
-#' 		\item{\code{numReplications}:}{The number of replications used to evaluate a variable subset.}
-#' 		\item{\code{numSegments}:}{The number of CV segments used in one replication.}
-#' 		\item{\code{numThreads}:}{The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).}
-#' 		\item{\code{method}:}{The PLS method used to fit the PLS model (currently only SIMPLS is implemented).}
-#' 		\item{\code{methodId}:}{The ID of the PLS method used to fit the PLS model.}
-#' 	}
+#' @slot numReplications The number of replications used to evaluate a variable subset.
+#' @slot numSegments The number of CV segments used in one replication.
+#' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
+#' @slot method The PLS method used to fit the PLS model (currently only SIMPLS is implemented).
+#' @slot methodId The ID of the PLS method used to fit the PLS model.
+#' @aliases GenAlgPLSEvaluator
 #' @rdname GenAlgPLSEvaluator-class
 setClass("GenAlgPLSEvaluator", representation(
 	numReplications = "integer",
@@ -37,11 +36,9 @@ setClass("GenAlgPLSEvaluator", representation(
 
 #' User Function Evaluator
 #'
-#' @section Slots:
-#' 	\describe{
-#' 		\item{\code{evalFunction}:}{The function that is called to evaluate the variable subset.}
-#' 		\item{\code{sepFunction}:}{The function that calculates the standard error of prediction for the found subsets.}
-#' 	}
+#' @slot evalFunction The function that is called to evaluate the variable subset.
+#' @slot sepFunction The function that calculates the standard error of prediction for the found subsets.
+#' @aliases GenAlgUserEvaluator
 #' @rdname GenAlgUserEvaluator-class
 setClass("GenAlgUserEvaluator", representation(
 	evalFunction = "function",
@@ -55,13 +52,10 @@ setClass("GenAlgUserEvaluator", representation(
 
 #' LM Evaluator
 #'
-#' @section Slots:
-#' 	\describe{
-#' 		\item{\code{statistic}:}{The statistic used to evaluate the fitness.}
-#' 		\item{\code{statisticId}:}{The (internal) numeric ID of the statistic}
-#' 		\item{\code{numThreads}:}{The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).}
-#' 	}
-#'
+#' @slot statistic The statistic used to evaluate the fitness.
+#' @slot statisticId The (internal) numeric ID of the statistic
+#' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
+#' @aliases GenAlgLMEvaluator
 #' @rdname GenAlgLMEvaluator-class
 setClass("GenAlgLMEvaluator", representation(
 	statistic = "character",
@@ -98,9 +92,11 @@ validity = function(object) {
 #' @param numSegments The number of CV segments used in one replication (must be between 1 and 2^16)
 #' @param numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads)
 #' @param method The PLS method used to fit the PLS model (currently only SIMPLS is implemented)
+#' @return Returns an S4 object of type \code{\link{GenAlgPLSEvaluator}}
 #' @export
 #' @family GenAlg Evaluators
 #' @example examples/genAlg.R
+#' @rdname GenAlgPLSEvaluator-constructor
 evaluatorPLS <- function(numReplications = 2L, numSegments = 4L, numThreads = NULL, method = c("simpls")) {
 	method <- match.arg(method);
 
@@ -143,9 +139,11 @@ evaluatorPLS <- function(numReplications = 2L, numSegments = 4L, numThreads = NU
 #' @param FUN Function used to evaluate the fitness
 #' @param sepFUN Function to calculate the SEP of the variable subsets
 #' @param ... Additional arguments passed to FUN and sepFUN
+#' @return Returns an S4 object of type \code{\link{GenAlgUserEvaluator}}
 #' @export
 #' @family GenAlg Evaluators
 #' @example examples/evaluatorUserFunction.R
+#' @rdname GenAlgUserEvaluator-constructor
 evaluatorUserFunction <- function(FUN, sepFUN = NULL, ...) {
 	if(!is.function(FUN)) {
 		stop("FUN must be of type `function`");
@@ -181,9 +179,11 @@ evaluatorUserFunction <- function(FUN, sepFUN = NULL, ...) {
 #' @param numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads)
 #' @param maxCor If the correlation-matrix of the covariates has an entry (absolutely) greater than this value
 #'			the principal components are used to calculate the fit
+#' @return Returns an S4 object of type \code{\link{GenAlgLMEvaluator}}
 #' @export
 #' @family GenAlg Evaluators
 #' @example examples/evaluatorLM.R
+#' @rdname GenAlgLMEvaluator-constructor
 evaluatorLM <- function(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"), numThreads = NULL, maxCor = NULL) {
 	statistic <- match.arg(statistic);
 
