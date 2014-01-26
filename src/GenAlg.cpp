@@ -244,15 +244,22 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 	
 	toFree |= 1; // eval has to be freed
 
-	arma::uvec selectedColumns(X.n_cols);
 	int row = 0;
+	uint16_t i = 0;
 
 	for(int col = 0; col < subsets.cols(); ++col) {
-		for(row = 0; row < subsets.rows(); ++row) {
-			selectedColumns[row] = ((subsets(row, col) == true) ? 1 : 0);
-		}
+		arma::uvec selectedColumns(subsets.rows());
+		i = 0;
 
-		fitness[col] = eval->evaluate(selectedColumns);
+		for(row = 0; row < subsets.rows(); ++row) {
+			if(subsets(row, col) == true) {
+				selectedColumns[i++] = row;
+			}
+		}
+		if(i > 0) {
+			selectedColumns.resize(i);
+			fitness[col] = eval->evaluate(selectedColumns);
+		}
 	}
 
 	delete eval;

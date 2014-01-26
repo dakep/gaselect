@@ -255,18 +255,22 @@ protected:
 		while(begin != child1It && (duplicated.first == false || duplicated.second == false)) {
 			if(duplicated.first == false && (**begin == **child1It)) {
 				duplicated.first = true;
+				(**child1It).setFitness((**begin).getFitness());
 			}
 			if(duplicated.second == false && (**begin == **child2It)) {
 				duplicated.second = true;
+				(**child2It).setFitness((**begin).getFitness());
 			}
 			++begin;
 		}
 		while(rbegin != child2It && (duplicated.first == false || duplicated.second == false)) {
 			if(duplicated.first == false && (**rbegin == **child1It)) {
 				duplicated.first = true;
+				(**child1It).setFitness((**rbegin).getFitness());
 			}
 			if(duplicated.second == false && (**rbegin == **child2It)) {
 				duplicated.second = true;
+				(**child2It).setFitness((**rbegin).getFitness());
 			}
 			++rbegin;
 		}
