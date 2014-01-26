@@ -56,7 +56,4 @@
 
 #define ARMA_DONT_PRINT_RUNTIME_ERRORS 1
 
-//#undef HAVE_PTHREAD_H
-#define HAVE_PTHREAD_H 1
-
 #endif

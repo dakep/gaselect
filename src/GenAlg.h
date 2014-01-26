@@ -66,14 +66,11 @@ RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y, SEXP seed);
  *
  *	X ... A numeric matrix with dimensions n x p
  *	y ... A numeric vector with length n
+ *	subsets ... A logical matrix with dimensions p x k, where k is the number of different subsets to evaluate
  *	seed ... An integer (uint32_t) with the initial seed
  */
-RcppExport SEXP evaluate(SEXP evaluator, SEXP X, SEXP y, SEXP seed);
+RcppExport SEXP evaluate(SEXP evaluator, SEXP X, SEXP y, SEXP subsets, SEXP seed);
 
 //RcppExport SEXP WELL19937a(SEXP n, SEXP seed);
-
-// RcppExport SEXP simpls(SEXP X, SEXP Y, SEXP ncomp, SEXP newX);
-//
-// RcppExport SEXP evalTest(SEXP X, SEXP Y, SEXP numReplications, SEXP numSegments);
 
 #endif
