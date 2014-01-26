@@ -11,6 +11,7 @@
 #include "config.h"
 
 #ifdef HAVE_PTHREAD_H
+
 #include <stdexcept>
 #include <iostream>
 #include <streambuf>
@@ -45,53 +46,17 @@ public:
 	
 	void run();
 private:
-	class SafeRstreambuf : public std::streambuf {
-	public:
-		SafeRstreambuf();
-		~SafeRstreambuf();
-		void realFlush();
-	protected:
-		virtual std::streamsize xsputn(const char* s, std::streamsize n);
-		virtual int	overflow(int c = EOF);
-		virtual int sync();
-	private:
-		std::string buffer;
-		pthread_mutex_t printMutex;
-	};
-	
-	class SafeRostream : public std::ostream {
-	public:
-		SafeRostream() : std::ostream(new SafeRstreambuf()) {
-			this->buf = static_cast<SafeRstreambuf*>(this->rdbuf());
-		};
-		
-		void realFlush() {
-			if(this->buf != NULL) {
-				this->buf->realFlush();
-			}
-		};
-
-		~SafeRostream() {
-			if(this->buf != NULL) {
-				delete this->buf;
-				this->buf = NULL;
-			}
-		}
-   private:
-	   SafeRstreambuf* buf;
-   };
-	
 	struct ThreadArgsWrapper {
 		MultiThreadedPopulation* popObj;
 		Evaluator* evalObj;
 		uint32_t seed;
 		uint16_t numChildren;
 		uint16_t offset;
+		uint16_t chromosomeSize;
 	};
-	
-	ChromosomeVec nextGeneration;
+
+	ChVec nextGeneration;
 	double sumCurrentGenFitness;
-	double minCurrentGenFitness; // Minimum fitness value in the current generation
 	
 	/*
 	 * Mutex and condition variables
@@ -103,17 +68,19 @@ private:
 	bool startMating;
 	bool killThreads;
 	bool allThreadsFinishedMating;
-	
-	SafeRostream Rout;
-	
+
 	uint16_t actuallySpawnedThreads;
 	uint16_t numThreadsFinishedMating;
 		
-	void mate(uint16_t numChildren, ::Evaluator& evaluator, RNG& rng, uint16_t offset, bool checkUserInterrupt = true);
+	void mate(uint16_t numChildren, ::Evaluator& evaluator,
+		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset,
+		bool checkUserInterrupt = true);
 	
 	static void* matingThreadStart(void* obj);
 	
-	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator, RNG& rng, uint16_t offset);
+	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator,
+		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset);
+
 	void waitForAllThreadsToFinishMating();
 	
 	class OrderChromosomePtr : public std::binary_function<Chromosome*, Chromosome*, bool> {

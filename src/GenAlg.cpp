@@ -8,6 +8,7 @@
 #include <RcppArmadillo.h>
 #include <set>
 
+#include "Logger.h"
 #include "Chromosome.h"
 #include "Control.h"
 #include "PLS.h"
@@ -37,18 +38,18 @@ BEGIN_RCPP
 	uint16_t numThreads = as<uint16_t>(control["numThreads"]);
 	VerbosityLevel verbosity = (VerbosityLevel) as<int>(control["verbosity"]);
 	EvaluatorClass evalClass = (EvaluatorClass) as<int>(control["evaluatorClass"]);
-	
+
+#ifdef ENABLE_DEBUG_VERBOSITY
+	PLSEvaluator::counter = 0;
+#endif
+
 	if(numThreads > 1) {
 #ifdef HAVE_PTHREAD_H
 		if(evalClass == USER) {
-			Rcout << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
-		}
-		
-		if(verbosity >= MORE_VERBOSE) {
-			verbosity = MORE_VERBOSE;
+			GAerr << "Warning: Multithreading is not available when using a user supplied function for evaluation" << std::endl;
 		}
 #else
-		Rcout << "Warning: Threads are not supported on this system" << std::endl;
+		GAerr << "Warning: Threads are not supported on this system" << std::endl;
 		numThreads = 1;
 #endif
 	} else if(numThreads < 1) {
@@ -63,10 +64,10 @@ BEGIN_RCPP
 				 as<uint16_t>(control["elitism"]),
 				 as<uint16_t>(control["minVariables"]),
 				 as<uint16_t>(control["maxVariables"]),
-				 as<uint16_t>(control["maxMatingTries"]),
 				 as<double>(control["mutationProb"]),
 				 numThreads,
 				 as<uint16_t>(control["maxDuplicateEliminationTries"]),
+				 as<double>(control["badSolutionThreshold"]),
 				 (CrossoverType) as<int>(control["crossover"]),
 				 verbosity);
 
@@ -116,8 +117,8 @@ BEGIN_RCPP
 	
 	toFree |= 1; // eval has to be freed
 
-	if(ctrl.verbosity >= MORE_VERBOSE) {
-		Rcout << ctrl << std::endl;
+	if(ctrl.verbosity >= VERBOSE) {
+		GAout << ctrl << std::endl;
 	}
 
 #ifdef HAVE_PTHREAD_H
@@ -130,7 +131,7 @@ BEGIN_RCPP
 		toFree |= 8;
 		pop->run();
 	} catch(MultiThreadedPopulation::ThreadingError& te) {
-		if(ctrl.verbosity >= DEBUG_VERBOSE) {
+		if(ctrl.verbosity >= DEBUG_GA) {
 			throw te;
 		} else {
 			throw Rcpp::exception("Multithreading could not be initialized. Set numThreads to 0 to avoid this problem.", __FILE__, __LINE__);
@@ -141,6 +142,15 @@ BEGIN_RCPP
 	toFree |= 8;
 	pop->run();
 #endif
+
+#ifdef ENABLE_DEBUG_VERBOSITY
+	Rcpp::Rcout << "Called evaluator " << PLSEvaluator::counter << " times" << std::endl;
+#endif
+
+	if(pop->wasInterrupted() == true) {
+		GAout << "Interrupted - returning best solutions found so far" << std::endl;
+	}
+
 	Population::SortedChromosomes result = pop->getResult();
 
 	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());
@@ -183,8 +193,7 @@ VOID_END_RCPP
 /**
  *
  */
-SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
-	double fitness = 0.0;
+SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 	::Evaluator *eval;
 	PLS *pls;
 	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls; 3rd bit set ==> free globalUnifGen; 4th bit set ==> free pop
@@ -193,11 +202,12 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 	List evaluator = List(Sevaluator);
 	Rcpp::NumericMatrix XMat(SX);
 	Rcpp::NumericMatrix YMat(Sy);
+	Rcpp::LogicalMatrix subsets(Ssubsets);
+	Rcpp::NumericVector fitness(subsets.cols());
 	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 	EvaluatorClass evalClass = (EvaluatorClass) as<int>(evaluator["evaluatorClass"]);
 	std::vector<uint32_t> seed;
-
 	
 	switch(evalClass) {
 		case USER: {
@@ -233,15 +243,27 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 	}
 	
 	toFree |= 1; // eval has to be freed
-	
-	arma::uvec allCols(X.n_cols);
 
-	for(arma::uword i = 0; i < allCols.n_elem; ++i) {
-		allCols[i] = i;
+	int row = 0;
+	uint16_t i = 0;
+
+	for(int col = 0; col < subsets.cols(); ++col) {
+		arma::uvec selectedColumns(subsets.rows());
+		i = 0;
+
+		for(row = 0; row < subsets.rows(); ++row) {
+			if(subsets(row, col) == true) {
+				selectedColumns[i++] = row;
+			}
+		}
+		if(i > 0) {
+			selectedColumns.resize(i);
+			fitness[col] = eval->evaluate(selectedColumns);
+		}
 	}
-	
-	fitness = eval->evaluate(allCols);
-	
+
+	delete eval;
+
 	if((toFree & 2) > 0) {
 		delete pls;
 	}
@@ -259,25 +281,17 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 	return R_NilValue;
 }
 
-//RcppExport SEXP WELL19937a(SEXP Sn, SEXP Smin, SEXP Smax, SEXP SnStreams, SEXP Sseed) {
+//RcppExport SEXP WELL19937a(SEXP Sn, SEXP Sseed) {
 //	uint32_t n = as<uint32_t>(Sn);
-//	uint32_t nStreams = as<uint32_t>(SnStreams);
 //	uint32_t seed = as<uint32_t>(Sseed);
-//	double min = as<double>(Smin);
-//	double max = as<double>(Smax);
-//	uint16_t row = 0;
 //	
 //	RNG rng(seed);
 //	
-//	Rcpp::NumericMatrix retMat(n, nStreams);
+//	Rcpp::NumericVector retMat(n);
 //
-//	for(uint16_t col = 0; col < nStreams; ++col) {
-//		for(row = 0; row < n; ++row) {
-//			retMat.column(col)[row] = rng(min, max);
-//		}
+//	for(uint16_t row = 0; row < n; ++row) {
+//		retMat[row] = rng();
 //	}
-//
-//	Rcpp::Rcout << retMat.rows() << " x " << retMat.cols() << std::endl;
 //	
 //	return Rcpp::wrap(retMat);
 //}

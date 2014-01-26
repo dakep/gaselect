@@ -71,7 +71,7 @@ ShuffledSet::iterator& ShuffledSet::iterator::operator++() {
 	return *this;
 }
 
-const arma::uword ShuffledSet::iterator::operator*() const {
+arma::uword ShuffledSet::iterator::operator*() const {
 #ifdef SHUFFLED_SET_CHECK_ITERATOR_STATE
 	if(this->shifted == true) {
 		throw std::logic_error("The iterator has been shifted and is thus not valid for accessing elements");

@@ -19,11 +19,6 @@
 #include <stdint.h>
 #endif
 
-
-// #define ENABLE_DEBUG_VERBOSITY
-
-//#define TIMING_BENCHMARK
-
 #define MIN_MUTATION_PROBABILITY 0.000001 // 1e-6
 #define TAB_DELIMITER "    "
 #define PRECISION 8
@@ -59,8 +54,6 @@
 #undef HAVE_PTHREAD_H
 #endif
 
-
-//#undef HAVE_PTHREAD_H
-//#define HAVE_PTHREAD_H 1
+#define ARMA_DONT_PRINT_RUNTIME_ERRORS 1
 
 #endif

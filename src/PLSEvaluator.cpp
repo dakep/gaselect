@@ -9,29 +9,48 @@
 #include "config.h"
 
 #include <algorithm>
+#include "Logger.h"
 #include "PLSEvaluator.h"
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-#define IF_DEBUG(expr) if(this->verbosity >= DEBUG_VERBOSE) { expr; }
-#define IF_FULLY_VERBOSE(expr) if(this->verbosity >= FULLY_VERBOSE) { expr; }
+#define IF_DEBUG(expr) if(this->verbosity == DEBUG_EVAL || this->verbosity == DEBUG_ALL) { expr; }
 #else
 #define IF_DEBUG(expr)
-#define IF_FULLY_VERBOSE(expr)
+#endif
+
+#ifdef ENABLE_DEBUG_VERBOSITY
+uint32_t PLSEvaluator::counter = 0;
 #endif
 
 PLSEvaluator::PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const std::vector<uint32_t> &seed, const VerbosityLevel verbosity) :
-Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
-nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
-completeSegments(nrows % numSegments), seed(seed), pls(pls), cloned(false)
+	Evaluator(verbosity), numReplications(numReplications), numSegments(numSegments),
+	nrows(pls->getNumberOfObservations()), segmentLength(nrows / numSegments),
+	completeSegments(nrows % numSegments), cloned(false), pls(pls)
 {
 	if(pls->getNumberOfResponseVariables() > 1) {
 		throw std::invalid_argument("PLS evaluator only available for models with 1 response variable");
 	}
 
-	this->initRowNumbers();
-};
+	this->initRowNumbers(seed);
+}
+
+PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
+	Evaluator(other.verbosity), numReplications(other.numReplications), numSegments(other.numSegments),
+	nrows(other.nrows), segmentLength(other.segmentLength), completeSegments(other.completeSegments), cloned(true),
+	shuffledRowNumbers(other.shuffledRowNumbers)
+{
+	this->pls = other.pls->clone();
+}
 
 double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
+	if(columnSubset.n_elem == 0) {
+		GAerr << GAerr.lock() << "Can not evaluate empty variable subset" << GAerr.unlock();
+		throw Evaluator::EvaluatorException("Can not evaluate empty variable subset");
+	}
+#ifdef ENABLE_DEBUG_VERBOSITY
+	++PLSEvaluator::counter;
+#endif
+
 	uint16_t maxNComp = ((columnSubset.n_elem < (this->nrows - 2 * this->segmentLength - 2)) ? columnSubset.n_elem : this->nrows - 2 * this->segmentLength - 2);
 	double sumSEP = 0;
 	arma::uword rep = 0;
@@ -41,12 +60,12 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 		sumSEP += this->estSEP(maxNComp, this->shuffledRowNumbers[rep]);
 	}
 
-	IF_DEBUG(Rcpp::Rcout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
+	IF_DEBUG(GAout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
 	return -sumSEP;
 }
 
-inline void PLSEvaluator::initRowNumbers() {
-	RNG rng(this->seed);
+inline void PLSEvaluator::initRowNumbers(const std::vector<uint32_t> &seed) {
+	RNG rng(seed);
 	ShuffledSet rowNumbers(this->nrows);
 	this->shuffledRowNumbers.reserve(this->numReplications);
 
@@ -87,7 +106,7 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 	/*
 	 * the last segment is used as test set, and is excluded from all other calculations
 	 */
-	IF_FULLY_VERBOSE(arma::urowvec(rowNumbers).raw_print(Rcpp::Rcout, "EVALUATOR - Shuffled row numbers:");)
+	IF_DEBUG(arma::urowvec(rowNumbers).raw_print(GAout, "EVALUATOR - Shuffled row numbers:");)
 
 	for(; seg < this->numSegments - 1; ++seg) {
 		arma::uvec segment(&rowNumbers[0], segmentLength, false);
@@ -97,9 +116,9 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 			--segmentLength;
 		}
 		
-		IF_FULLY_VERBOSE(
-			segment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Segment");
-			notSegment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Remaining");
+		IF_DEBUG(
+			segment.t().raw_print(GAout, "EVALUATOR - Segment");
+			notSegment.t().raw_print(GAout, "EVALUATOR - Remaining");
 		)
 
 		/*
@@ -166,9 +185,9 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 	arma::uvec segment(&rowNumbers[this->nrows - lastSegmentLength], lastSegmentLength, false);
 	arma::uvec notSegment(&rowNumbers[0], this->nrows - lastSegmentLength, false);
 	
-	IF_FULLY_VERBOSE(
-		segment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Validation Segment");
-		notSegment.t().raw_print(Rcpp::Rcout, "EVALUATOR - Validation Remaining");
+	IF_DEBUG(
+		segment.t().raw_print(GAout, "EVALUATOR - Validation Segment");
+		notSegment.t().raw_print(GAout, "EVALUATOR - Validation Remaining");
 	)
 	
 	leftOutX = this->pls->getXColumnView().rows(segment);
@@ -177,15 +196,13 @@ double PLSEvaluator::estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers
 	this->pls->fit(Aopt);
 	residuals = leftOutY - this->pls->predict(leftOutX, Aopt);
 	
-	IF_FULLY_VERBOSE(Rcpp::Rcout << "EVALUATOR: Resulting SEP:" << std::endl << arma::stddev(residuals.col(0)) << std::endl)
+	IF_DEBUG(GAout << "EVALUATOR: Resulting SEP:" << std::endl << arma::stddev(residuals.col(0)) << std::endl)
 	
 	return arma::stddev(residuals.col(0));
 }
 
 Evaluator* PLSEvaluator::clone() const {
-	PLSEvaluator* that = new PLSEvaluator(this->pls->clone(), this->numReplications, this->numSegments, this->seed, this->verbosity);
-	that->cloned = true;
-	return that;	
+	return new PLSEvaluator(*this);
 }
 
 

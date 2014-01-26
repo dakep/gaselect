@@ -1,15 +1,15 @@
 #' Result of a genetic algorithm run
 #'
 #' Return object of a run of the genetic algorithm genAlg
-#' @section Slots:
-#' 	\describe{
-#' 		\item{\code{subsets}:}{Logical matrix with one variable subset per column. The columns are ordered according to their fitness (first column contains the fittest variable-subset).}
-#' 		\item{\code{rawFitness}:}{Numeric vector with the raw fitness of the corresponding variable subset returned by the evaluator.}
-#' 		\item{\code{response}:}{The original response vector.}
-#' 		\item{\code{covariates}:}{The original covariates matrix.}
-#' 		\item{\code{evaluator}:}{The evaluator used in the genetic algorithm.}
-#' 		\item{\code{control}:}{The control object.}
-#' 	}
+#' @slot subsets Logical matrix with one variable subset per column. The columns are ordered according to their fitness (first column contains the fittest variable-subset).
+#' @slot rawFitness Numeric vector with the raw fitness of the corresponding variable subset returned by the evaluator.
+#' @slot response The original response vector.
+#' @slot covariates The original covariates matrix.
+#' @slot evaluator The evaluator used in the genetic algorithm.
+#' @slot control The control object.
+#' @slot seed The seed the algorithm is started with.
+#' @aliases GenAlg
+#' @include Evaluator.R GenAlgControl.R
 #' @rdname GenAlg-class
 setClass("GenAlg", representation(
 	subsets = "matrix",
@@ -17,7 +17,8 @@ setClass("GenAlg", representation(
 	response = "numeric",
 	covariates = "matrix",
 	evaluator = "GenAlgEvaluator",
-	control = "GenAlgControl"
+	control = "GenAlgControl",
+	seed = "integer"
 ), prototype(
 	subsets = matrix(),
 	rawFitness = NA_real_
@@ -77,56 +78,57 @@ setClass("GenAlg", representation(
 #' @param evaluator The evaluator used to evaluate the fitness of a variable subset. See \code{\link{evaluatorPLS}}, \code{\link{evaluatorLM}} or \code{\link{evaluatorUserFunction}} for details.
 #' @param seed Integer with the seed for the random number generator or NULL to automatically seed the RNG
 #' @export
-#' @rdname genAlg-methods
-#' @docType methods
+#' @include Evaluator.R GenAlgControl.R
+#' @return An object of type \code{\link{GenAlg}}
+#' @rdname GenAlg-constructor
 #' @useDynLib GenAlgPLS
 #' @example examples/genAlg.R
-setGeneric("genAlg", function(y, X, control, evaluator, seed) { standardGeneric("genAlg") });
+setGeneric("genAlg", function(y, X, control, evaluator = evaluatorPLS(), seed = NULL) { standardGeneric("genAlg") });
 
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,missing,missing-method
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "missing", seed = "missing"),
-function(y, X, control, evaluator) {
-	genAlg(y, X, control, evaluatorPLS(), as.integer(sample.int(2^30, 1)));
-});
-
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,missing,ANY-method
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "missing", seed = "ANY"),
+#' @rdname GenAlg-constructor
+setMethod("genAlg", signature(y = "numeric", X = "data.frame", control = "GenAlgControl", evaluator = "ANY", seed = "ANY"),
 function(y, X, control, evaluator, seed) {
-	genAlg(y, X, control, evaluatorPLS(), seed);
+    genAlg(y, as.matrix(X), control, evaluator, seed);
 });
 
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,NULL-method
+#' @rdname GenAlg-constructor
+setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "ANY", seed = "ANY"),
+function(y, X, control, evaluator, seed) {
+    genAlg(y, as.matrix(X), control, evaluator, seed);
+});
+
+#' @rdname GenAlg-constructor
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "NULL"),
-function(y, X, control, evaluator = evaluatorPLS(), seed) {
-	genAlg(y, X, control, evaluator, as.integer(sample.int(2^30, 1)));
-});
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,NULL-method
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "missing"),
-function(y, X, control, evaluator = evaluatorPLS(), seed) {
+function(y, X, control, evaluator, seed) {
 	genAlg(y, X, control, evaluator, as.integer(sample.int(2^30, 1)));
 });
 
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,numeric-method
+#' @rdname GenAlg-constructor
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "numeric"),
-function(y, X, control, evaluator = evaluatorPLS(), seed) {
+function(y, X, control, evaluator, seed) {
 	genAlg(y, X, control, evaluator, as.integer(seed));
 });
 
-#' @rdname genAlg-methods
-#' @aliases genAlg,numeric,matrix,GenAlgControl,GenAlgEvaluator,integer-method
+#' @rdname GenAlg-constructor
 setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "integer"),
-function(y, X, control, evaluator = evaluatorPLS(), seed) {
+function(y, X, control, evaluator, seed) {
 	ret <- new("GenAlg",
 		response = y,
 		covariates = X,
 		evaluator = evaluator,
-		control = control
+		control = control,
+		seed = seed
 	);
+
+	possSubsetCutoff <- 0.85;
+	numPossibleSubsets <- sum(choose(ncol(ret@covariates), seq.int(ret@control@minVariables, ret@control@maxVariables)));
+
+	if(ret@control@populationSize > possSubsetCutoff * numPossibleSubsets) {
+		stop(paste("Requested a population that is almost as large as the number of all possible subsets. The population size can be at most ",
+			floor(possSubsetCutoff * 100),
+			" of the total number of possible subsets (i.e., ",
+			floor(possSubsetCutoff * numPossibleSubsets), ").", sep = ""));
+	}
 
 	ctrlArg <- c(toCControlList(ret@control), toCControlList(ret@evaluator));
 	ctrlArg$chromosomeSize = ncol(ret@covariates);
@@ -136,7 +138,7 @@ function(y, X, control, evaluator = evaluatorPLS(), seed) {
 	if(ctrlArg$evaluatorClass == 0) {
 		res <- .Call("genAlgPLS", ctrlArg, NULL, NULL, seed, PACKAGE = "GenAlgPLS");
 	} else {
-		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), seed, PACKAGE = "GenAlgPLS");
+		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), ret@seed, PACKAGE = "GenAlgPLS");
 	}
 
 	ret@subsets <- res$subsets;

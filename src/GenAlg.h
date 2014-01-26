@@ -34,11 +34,11 @@ enum EvaluatorClass {
  *		uint16_t numGenerations ... The number of generations to generate (> 0)
  *		uint16_t minVariables ... The minimum number of variables in a subset
  *		uint16_t maxVariables ... The maximum number of variables in a subset
- *		uint16_t maxMatingTries ... The maximum number of tries to get better children than parents
  *		uint16_t elitism ... The number of "elite" chromosomes to keep accross all generations (>= 0)
  *		double mutationProb ... The probability of using a new variable (0 <= onesRatio < 1)
  *		uint16_t numThreads ... The maximum number of threads to spawn
  *		uint16_t maxDuplicateEliminationTries ... The maximum number of tries to eliminate duplicates
+ *		double badSolutionThreshold ... The better child must not be more than badSolutionThreadshold percent worse than the worse parent
  *		CrossoverType crossover ... Type of crossover to use
  *		VerbosityLevel verbosity ... Level of verbosity
  *		EvaluatorClass evaluatorClass ... The evaluator to use
@@ -66,14 +66,11 @@ RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y, SEXP seed);
  *
  *	X ... A numeric matrix with dimensions n x p
  *	y ... A numeric vector with length n
+ *	subsets ... A logical matrix with dimensions p x k, where k is the number of different subsets to evaluate
  *	seed ... An integer (uint32_t) with the initial seed
  */
-RcppExport SEXP evaluate(SEXP evaluator, SEXP X, SEXP y, SEXP seed);
+RcppExport SEXP evaluate(SEXP evaluator, SEXP X, SEXP y, SEXP subsets, SEXP seed);
 
-//RcppExport SEXP WELL19937a(SEXP n, SEXP min, SEXP max, SEXP SnStreams, SEXP seed);
-
-// RcppExport SEXP simpls(SEXP X, SEXP Y, SEXP ncomp, SEXP newX);
-//
-// RcppExport SEXP evalTest(SEXP X, SEXP Y, SEXP numReplications, SEXP numSegments);
+//RcppExport SEXP WELL19937a(SEXP n, SEXP seed);
 
 #endif

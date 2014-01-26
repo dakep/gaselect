@@ -66,6 +66,10 @@ void RNG::seed(const std::vector<uint32_t> &seed) {
 	std::copy(seed.begin(), seed.begin() + RNG::SEED_SIZE, this->STATE);
 	this->stateIndex = 0;
 	this->genFun = &RNG::case1;
+
+	for(int16_t i = RNG::BURNIN; i > 0; --i) {
+		(this->*genFun)();
+	}
 }
 
 void RNG::seed(uint32_t seed) {
@@ -79,6 +83,10 @@ void RNG::seed(uint32_t seed) {
 	}
 
 	this->genFun = &RNG::case1;
+
+	for(int16_t i = RNG::BURNIN; i > 0; --i) {
+		(this->*genFun)();
+	}
 }
 
 uint32_t RNG::case1(void) { // stateIndex = 0

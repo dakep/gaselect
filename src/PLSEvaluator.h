@@ -42,16 +42,21 @@ public:
 	
 	Evaluator* clone() const;
 
+#ifdef ENABLE_DEBUG_VERBOSITY
+	static uint32_t counter;
+#endif
+
 private:
 	const uint16_t numReplications;
 	const uint16_t numSegments;
 	const arma::uword nrows;
 	const arma::uword segmentLength; // The length of the incomplete segments
 	const uint16_t completeSegments; // The number of segments with `segmentLength` + 1 elements. If 0, all segments have `segmentLength` elements
-	const std::vector<uint32_t> &seed;
+	const bool cloned;
 
 	PLS *pls;
-	bool cloned;
+
+	PLSEvaluator(const PLSEvaluator &other);
 
 	/**
 	 * Estimate the SEP
@@ -59,7 +64,7 @@ private:
 	double estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers);
 
 	std::vector< std::vector<arma::uword> > shuffledRowNumbers;
-	void initRowNumbers();
+	void initRowNumbers(const std::vector<uint32_t> &seed);
 };
 
 

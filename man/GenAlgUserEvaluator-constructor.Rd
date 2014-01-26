@@ -2,7 +2,7 @@
 \alias{evaluatorUserFunction}
 \title{User Defined Evaluator}
 \usage{
-  evaluatorUserFunction(FUN, sepFUN = NULL, ...)
+evaluatorUserFunction(FUN, sepFUN = NULL, ...)
 }
 \arguments{
   \item{FUN}{Function used to evaluate the fitness}
@@ -12,19 +12,22 @@
 
   \item{...}{Additional arguments passed to FUN and sepFUN}
 }
+\value{
+Returns an S4 object of type
+\code{\link{GenAlgUserEvaluator}}
+}
 \description{
-  Create an evaluator that uses a user defined function to
-  evaluate the fitness
+Create an evaluator that uses a user defined function to
+evaluate the fitness
 }
 \details{
-  The user specified function must take a the response
-  vector as first and the covariates matrix as second
-  argument. The function must return a number representing
-  the fitness of the variable subset (the higher the value
-  the fitter the subset) Additionally the user can specify
-  a function that takes a \code{\link{GenAlg}} object and
-  returns the standard error of prediction of the found
-  variable subsets.
+The user specified function must take a the response vector
+as first and the covariates matrix as second argument. The
+function must return a number representing the fitness of
+the variable subset (the higher the value the fitter the
+subset) Additionally the user can specify a function that
+takes a \code{\link{GenAlg}} object and returns the
+standard error of prediction of the found variable subsets.
 }
 \examples{
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,
@@ -48,7 +51,7 @@ result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
 }
 }
 \seealso{
-  Other GenAlg.Evaluators: \code{\link{evaluatorLM}},
-  \code{\link{evaluatorPLS}}
+Other GenAlg.Evaluators: \code{\link{evaluatorLM}};
+\code{\link{evaluatorPLS}}
 }
 

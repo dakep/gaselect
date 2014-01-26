@@ -17,6 +17,12 @@
 
 class Evaluator {
 public:
+	class EvaluatorException : public std::runtime_error {
+	public:
+		EvaluatorException(const char* what) : std::runtime_error(what) {};
+		virtual ~EvaluatorException() throw() {};
+	};
+
 	Evaluator(const VerbosityLevel verbosity) : verbosity(verbosity) {}
 	virtual ~Evaluator() {};
 

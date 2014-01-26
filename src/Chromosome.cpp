@@ -12,6 +12,7 @@
 #include <set>
 #include <RcppArmadillo.h>
 
+#include "Logger.h"
 #include "Chromosome.h"
 #include "GenAlg.h"
 
@@ -30,7 +31,7 @@
 using namespace Rcpp;
 
 #ifdef ENABLE_DEBUG_VERBOSITY
-#define IF_DEBUG(expr) if(this->ctrl.verbosity >= DEBUG_VERBOSE) { expr; }
+#define IF_DEBUG(expr) if(this->ctrl.verbosity == DEBUG_GA || this->ctrl.verbosity == DEBUG_ALL) { expr; }
 #else
 #define IF_DEBUG(expr)
 #endif
@@ -91,17 +92,17 @@ void Chromosome::copyFrom(const Chromosome &other, bool copyChromosomeParts) {
 		this->currentlySetBits = other.currentlySetBits;
 	} else {
 		this->chromosomeParts.resize(this->numParts, 0);
+		this->currentlySetBits = 0;
 	}
 }
 
+void Chromosome::randomlyReset(RNG& rng, ShuffledSet &shuffledSet) {
+	this->fitness = 0.0;
+	this->initChromosomeParts(rng, shuffledSet);
+}
 
 inline void Chromosome::initChromosomeParts(RNG& rng, ShuffledSet &shuffledSet) {
 	this->currentlySetBits = rng(this->ctrl.minVariables, this->ctrl.maxVariables + 1);
-
-	IF_DEBUG(
-		Rcout << "Init chromosome with " << this->currentlySetBits << " bits set" << std::endl;
-		Rcout << "First part before initializing: " << this->chromosomeParts[0] << std::endl;
-	)
 
 	ShuffledSet::iterator setPosIter = shuffledSet.shuffle(rng);
 	ShuffledSet::iterator end = setPosIter + this->currentlySetBits;
@@ -109,6 +110,11 @@ inline void Chromosome::initChromosomeParts(RNG& rng, ShuffledSet &shuffledSet) 
 	uint16_t randPos;
 	uint16_t part;
 	uint16_t offset;
+
+	/*
+	 * Reset chromosome to 0
+	 */
+	std::fill(this->chromosomeParts.begin(), this->chromosomeParts.end(), 0);
 	
 	for(; setPosIter != end; ++setPosIter) {
 		randPos = this->unusedBits + (*setPosIter);
@@ -117,7 +123,7 @@ inline void Chromosome::initChromosomeParts(RNG& rng, ShuffledSet &shuffledSet) 
 		this->chromosomeParts[part] |= (((IntChromosome) 1) << offset);
 	}
 	IF_DEBUG(
-		Rcout << "Initialized chromosome with " << this->currentlySetBits << " bits set" << std::endl;
+		GAout << "Initialized chromosome with " << this->currentlySetBits << " bits set" << std::endl;
 	)
 }
 
@@ -140,15 +146,18 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 			IntChromosome negRandomMask = 0;
 			for(uint16_t i = 0; i < this->numParts; ++i) {
 				if(this->chromosomeParts[i] == other.chromosomeParts[i]) {
-					// Just copy the chromosome part to both children if it is the same
-					// for both parents
+					/*
+					 * This part is the same in both parents -- just copy it to the children
+					 */
 					child1.chromosomeParts[i] = child2.chromosomeParts[i] = this->chromosomeParts[i];
 					IF_DEBUG(
-							 Rcout << "Chromosome part is the same for both parents -- copy part to both children" << std::endl;
-							 )
+						GAout << GAout.lock() << "Chromosome part is the same for both parents -- copy part to both children" << std::endl << GAout.unlock();
+					)
 				} else {
-					// Randomly pick some bits from one chromosome and some bits from the other
-					// chromosome
+					/*
+					 * Randomly pick some bits from one chromosome and some bits from the other
+					 * chromosome
+					 */
 					do {
 						randomMask = this->rbits(rng);
 						if(i == 0) {
@@ -161,14 +170,8 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 					child2.chromosomeParts[i] = (this->chromosomeParts[i] & negRandomMask) | (other.chromosomeParts[i] & randomMask);
 					
 					IF_DEBUG(
-						Rcout << "Mask for part " << i << ": ";
-						this->printBits(Rcout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl;
-
-						Rcout << "Resulting parts:" << std::endl
-						<< "Child 1:";
-						this->printBits(Rcout, child1.chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl
-						<< "Child 2:";
-						this->printBits(Rcout, child2.chromosomeParts[i], (i == 0) ? this->unusedBits : 0) << std::endl;
+						GAout << GAout.lock() << "Mask for part " << i << ": ";
+						this->printBits(GAout, randomMask, (i == 0) ? this->unusedBits : 0) << std::endl << GAout.unlock()
 					)
 				}
 			}
@@ -185,17 +188,9 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 			IntChromosome coMask = (INT_CHROMOSOME_MAX >> crossoverBit);
 
 			IF_DEBUG(
-					 Rcout << "Crossover at position " << randPos << " (= part " << chosenPart << " - bit " << crossoverBit << ") --" << coMask << " -- " << ~coMask << std::endl;
-					 Rcout << "First parent: " << *(this) << "  (" << this->chromosomeParts[chosenPart] << ")" << std::endl;
-					 Rcout << "Second parent: " << other << "  (" << other.chromosomeParts[chosenPart] << ")" << std::endl;
-					 Rcout << ((this->chromosomeParts[chosenPart] & (~coMask)) | (other.chromosomeParts[chosenPart] & coMask)) << std::endl;
-					 Rcout << ((other.chromosomeParts[chosenPart] & (~coMask)) | (this->chromosomeParts[chosenPart] & coMask)) << std::endl;
+				GAout << GAout.lock() << "Crossover at position " << randPos << " (= part " << chosenPart << ", bit " << crossoverBit << ")" << std::endl << GAout.unlock()
 			)
-			
-			//	uint16_t i = 0;
-			
-			//	Rcout << "Rand pos: " << randPos << " (= part " << chosenPart << " bit " << crossoverBit << ") -- mask: " << coMask << std::endl;
-			
+					
 			std::copy(this->chromosomeParts.begin(), this->chromosomeParts.begin() + chosenPart, child1.chromosomeParts.begin());
 			std::copy(other.chromosomeParts.begin(), other.chromosomeParts.begin() + chosenPart, child2.chromosomeParts.begin());
 			
@@ -205,19 +200,24 @@ void Chromosome::mateWith(const Chromosome &other, RNG& rng, Chromosome& child1,
 			std::copy(other.chromosomeParts.begin() + chosenPart + 1, other.chromosomeParts.end(), child1.chromosomeParts.begin() + chosenPart + 1);
 			std::copy(this->chromosomeParts.begin() + chosenPart + 1, this->chromosomeParts.end(), child2.chromosomeParts.begin() + chosenPart + 1);
 			
-			IF_DEBUG(
-					 Rcout << "First child: " << child1 << std::endl;
-					 Rcout << "Second child: " << child2 << std::endl;
-			 )
 			break;
 		}
 	}
+
+	IF_DEBUG(
+		GAout << GAout.lock() << "1st child: " << child1 << std::endl
+		<< "2nd child: " << child2 << std::endl << GAout.unlock();
+	)
 
 	child1.updateCurrentlySetBits();
 	child2.updateCurrentlySetBits();
 }
 
 bool Chromosome::mutate(RNG& rng) {
+	if(this->ctrl.mutationProbability == 0.0) {
+		return false;
+	}
+	
 	uint16_t currentlyUnsetBits = this->ctrl.chromosomeSize - this->currentlySetBits;
 	ShuffledSet shuffledSet;
 
@@ -229,8 +229,11 @@ bool Chromosome::mutate(RNG& rng) {
 		numChangeBits = (this->ctrl.maxVariables - this->currentlySetBits);
 	}
 
-	// Now set a random number of bits and unset a random number of bits
-	numChangeBits += this->rtgeom(this->ctrl.maxVariables - this->currentlySetBits, rng) - this->rtgeom(this->currentlySetBits - this->ctrl.minVariables, rng);
+	IF_DEBUG(
+		if(numChangeBits != 0) {
+			GAout << GAout.lock() << "The number of set bits (" << this->currentlySetBits << ") is not within the valid range. MUST change " << numChangeBits << std::endl << GAout.unlock();
+		}
+	)
 
 	if(this->ctrl.maxVariables - this->currentlySetBits > 0) {
 		/*
@@ -251,14 +254,13 @@ bool Chromosome::mutate(RNG& rng) {
 	}
 
 	IF_DEBUG(
+		GAout << GAout.lock();
 		if(numChangeBits != 0) {
-			Rcout << "###########################" << std::endl
-			<< "Changing " << numChangeBits << " bits" << std::endl
-			<< "###########################" << std::endl
-			<< "Before mutation:" << *this << std::endl;
+			GAout << "Changing " << numChangeBits << " bits" << std::endl;
 		} else {
-			Rcout << "Changing " << numChangeBits << " bits" << std::endl;
+			GAout << "No mutation" << std::endl;
 		}
+		GAout << GAout.unlock();
 	)
 
 	if(numChangeBits == 0) {
@@ -267,8 +269,6 @@ bool Chromosome::mutate(RNG& rng) {
 		/*
 		 * We have to unset -numChangeBits bits, i.e. flip from 1 to 0
 		 */
-//		std::vector<uint16_t> positionPopulation = this->shuffledSet(currentlySetBits, -numChangeBits, rng);
-//		std::vector<uint16_t> removeBitsPos(positionPopulation.begin(), positionPopulation.begin() - numChangeBits);
 		ShuffledSet::iterator shuffledIt = shuffledSet.shuffle(this->currentlySetBits, rng, (numChangeBits == -1));
 		std::vector<uint16_t> removeBitsPos(shuffledIt, shuffledIt + ((uint16_t) -numChangeBits));
 		std::sort(removeBitsPos.begin(), removeBitsPos.end());
@@ -318,8 +318,6 @@ bool Chromosome::mutate(RNG& rng) {
 		/*
 		 * We have to set numChangeBits bits, i.e. flip from 0 to 1
 		 */
-//		std::vector<uint16_t> positionPopulation = this->shuffledSet(currentlyUnsetBits, numChangeBits, rng);
-//		std::vector<uint16_t> addBitsPos(positionPopulation.begin(), positionPopulation.begin() + numChangeBits);
 		ShuffledSet::iterator shuffledIt = shuffledSet.shuffle(currentlyUnsetBits, rng, (numChangeBits == 1));
 		std::vector<uint16_t> addBitsPos(shuffledIt, shuffledIt + numChangeBits);
 		std::sort(addBitsPos.begin(), addBitsPos.end());
@@ -368,7 +366,9 @@ bool Chromosome::mutate(RNG& rng) {
 	
 	this->currentlySetBits += numChangeBits;
 	
-	IF_DEBUG(Rcout << "After mutation: " << *this << std::endl)
+	IF_DEBUG(
+		GAout << GAout.lock() << "After mutation:\n" << *this << std::endl << GAout.unlock();
+	)
 	
 	return true;
 }

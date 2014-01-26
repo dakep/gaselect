@@ -15,6 +15,9 @@ public:
 	void seed(uint32_t seed);
 	void seed(const std::vector<uint32_t> &seed);
 
+	/*
+	 * assertion: min <= max!
+	 */
 	double operator()(double min, double max){
 		return min + ((this->*genFun)() / RNG::RANDOM_MAX) * (max - min);
 	}
@@ -23,6 +26,12 @@ public:
 	}
 
 private:
+	/*
+	 * The first BURNIN random numbers are discarded as they do not provide
+	 * reliable results
+	 */
+	static const uint16_t BURNIN = 500;
+
 	static const uint32_t W = 32;
 	static const uint32_t R = 624;
 	static const uint32_t DISCARD = 31;

@@ -3,21 +3,28 @@
 \alias{SEP}
 \alias{SEP,GenAlg-method}
 \title{Get the SEP of a variable subset}
+\usage{
+SEP(object)
+
+\S4method{SEP}{GenAlg}(object)
+}
 \arguments{
-  \item{object}{The GenAlg object returned by
+  \item{object}{The \code{\link{GenAlg}} object returned by
   \code{\link{genAlg}}}
 }
+\value{
+A vector with the estimated SEP for each solution
+}
 \description{
-  Calculate the standard error of prediction for all
-  variable subsets
+Calculate the standard error of prediction for all variable
+subsets
 }
 \details{
-  This method is used to get the standard error of
-  prediction (SEP) of all variable subsets found by the
-  genetic algorithm. The evaluator may not support the
-  calculation of the SEP. In this case, the raw fitness
-  returned by the evaluator is returned and a warning is
-  issued
+This method is used to get the standard error of prediction
+(SEP) of all variable subsets found by the genetic
+algorithm. The evaluator may not support the calculation of
+the SEP. In this case, the raw fitness returned by the
+evaluator is returned and a warning is issued
 }
 \examples{
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,

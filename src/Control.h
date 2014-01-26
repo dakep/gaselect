@@ -15,9 +15,10 @@
 enum VerbosityLevel {
 	OFF = 0,
 	ON,
-	MORE_VERBOSE,
-	DEBUG_VERBOSE,
-	FULLY_VERBOSE
+	VERBOSE,
+	DEBUG_GA,
+	DEBUG_EVAL,
+	DEBUG_ALL
 };
 
 enum CrossoverType {
@@ -33,12 +34,24 @@ public:
 			const uint16_t elitism,
 			const uint16_t minVariables,
 			const uint16_t maxVariables,
-			const uint16_t maxMatingTries,
 			const double mutationProbability,
 			const uint16_t numThreads,
 			const uint16_t maxDuplicateEliminationTries,
+			const double badSolutionThreshold,
 			const enum CrossoverType crossover,
-			const enum VerbosityLevel verbosity) : chromosomeSize(chromosomeSize), populationSize(popSize), numGenerations(numGenerations), elitism(elitism), minVariables(minVariables), maxVariables(maxVariables),	maxMatingTries(maxMatingTries), mutationProbability(mutationProbability), numThreads(numThreads), maxDuplicateEliminationTries(maxDuplicateEliminationTries), crossover(crossover), verbosity(verbosity) {};
+			const enum VerbosityLevel verbosity) :
+	chromosomeSize(chromosomeSize),
+	populationSize(popSize),
+	numGenerations(numGenerations),
+	elitism(elitism),
+	minVariables(minVariables),
+	maxVariables(maxVariables),
+	mutationProbability(mutationProbability),
+	numThreads(numThreads),
+	maxDuplicateEliminationTries(maxDuplicateEliminationTries),
+	badSolutionThreshold(badSolutionThreshold),
+	crossover(crossover),
+	verbosity(verbosity) {};
 
 	const uint16_t chromosomeSize;
 	const uint16_t populationSize;
@@ -46,10 +59,10 @@ public:
 	const uint16_t elitism;
 	const uint16_t minVariables;
 	const uint16_t maxVariables;
-	const uint16_t maxMatingTries;
 	const double mutationProbability;
 	const uint16_t numThreads;
 	const uint16_t maxDuplicateEliminationTries;
+	const double badSolutionThreshold;
 	const enum CrossoverType crossover;
 	const enum VerbosityLevel verbosity;
 
@@ -59,15 +72,15 @@ public:
 		<< "Number of generations: " << ctrl.numGenerations << std::endl
 		<< "Number of elite chromosomes to keep: " << ctrl.elitism << std::endl
 		<< "Number of variables set: " << ctrl.minVariables << " to " << ctrl.maxVariables << std::endl
-		<< "Maximum number of tries for mating: " << ctrl.maxMatingTries << std::endl
 		<< "Mutation probability: " << ctrl.mutationProbability << std::endl
 		<< "Maximum number of tries to eliminate duplicates: " << ctrl.maxDuplicateEliminationTries << std::endl
+		<< "Bad solution threshold: " << ctrl.badSolutionThreshold << std::endl
 		<< "Crossover-type: " << ((ctrl.crossover == SINGLE) ? "Single" : "Random") << std::endl
 		<< "Number of threads: " << ctrl.numThreads << std::endl
 		<< "Verbosity Level: " << ctrl.verbosity << std::endl;
 		
 		return os;
-		};
+	};
 };
 
 #endif
