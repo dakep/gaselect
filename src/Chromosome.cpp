@@ -92,6 +92,7 @@ void Chromosome::copyFrom(const Chromosome &other, bool copyChromosomeParts) {
 		this->currentlySetBits = other.currentlySetBits;
 	} else {
 		this->chromosomeParts.resize(this->numParts, 0);
+		this->currentlySetBits = 0;
 	}
 }
 
@@ -109,6 +110,11 @@ inline void Chromosome::initChromosomeParts(RNG& rng, ShuffledSet &shuffledSet) 
 	uint16_t randPos;
 	uint16_t part;
 	uint16_t offset;
+
+	/*
+	 * Reset chromosome to 0
+	 */
+	std::fill(this->chromosomeParts.begin(), this->chromosomeParts.end(), 0);
 	
 	for(; setPosIter != end; ++setPosIter) {
 		randPos = this->unusedBits + (*setPosIter);
