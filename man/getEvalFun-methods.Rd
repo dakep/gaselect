@@ -1,0 +1,31 @@
+\docType{methods}
+\name{getEvalFun}
+\alias{getEvalFun}
+\alias{getEvalFun,GenAlgEvaluator,GenAlg-method}
+\alias{getEvalFun,GenAlgEvaluator,matrix-method}
+\alias{getEvalFun,GenAlgUserEvaluator,GenAlg-method}
+\alias{getEvalFun,GenAlgUserEvaluator,matrix-method}
+\title{Get the evaluation function from a GenAlgUserEvaluator}
+\usage{
+getEvalFun(object, genAlg)
+
+\S4method{getEvalFun}{GenAlgUserEvaluator,GenAlg}(object, genAlg)
+
+\S4method{getEvalFun}{GenAlgUserEvaluator,matrix}(object, genAlg)
+
+\S4method{getEvalFun}{GenAlgEvaluator,GenAlg}(object, genAlg)
+
+\S4method{getEvalFun}{GenAlgEvaluator,matrix}(object, genAlg)
+}
+\arguments{
+  \item{object}{The evaluator (an object of type
+  \code{\link{GenAlgEvaluator}})}
+
+  \item{genAlg}{The \code{\link{GenAlg}} object}
+}
+\description{
+This method returns the correct evaluation function from a
+GenAlgUserEvaluator that can be used by the C++-code as
+callback or NULL for any other evaluator
+}
+

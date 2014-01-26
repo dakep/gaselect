@@ -5,11 +5,11 @@
 #' @param object The evaluator
 #' @param genAlg The GenAlg object the evaluator is used in
 #' @docType methods
-#' @rdname GenAlgEvaluator-validData-methods
+#' @include Evaluator.R GenAlg.R
+#' @rdname validData-methods
 setGeneric("validData", function(object, genAlg) { standardGeneric("validData"); });
 
-#' @rdname GenAlgEvaluator-validData-methods
-#' @aliases validData,GenAlgPLSEvaluator,GenAlg-method
+#' @rdname validData-methods
 setMethod("validData", signature(object = "GenAlgPLSEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
 	if(is.numeric(genAlg@covariates)) {
 		return(TRUE);
@@ -18,8 +18,7 @@ setMethod("validData", signature(object = "GenAlgPLSEvaluator", genAlg = "GenAlg
 	}
 });
 
-#' @rdname GenAlgEvaluator-validData-methods
-#' @aliases validData,GenAlgLMEvaluator,GenAlg-method
+#' @rdname validData-methods
 setMethod("validData", signature(object = "GenAlgLMEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
 	if(genAlg@control@maxVariables < nrow(genAlg@covariates)) {
 		return(TRUE);
@@ -28,8 +27,7 @@ setMethod("validData", signature(object = "GenAlgLMEvaluator", genAlg = "GenAlg"
 	}
 });
 
-#' @rdname GenAlgEvaluator-validData-methods
-#' @aliases validData,GenAlgEvaluator,GenAlg-method
+#' @rdname validData-methods
 setMethod("validData", signature(object = "GenAlgEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
 	return(TRUE);
 });

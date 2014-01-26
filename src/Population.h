@@ -27,10 +27,6 @@
 #endif
 
 class Population {
-protected:
-	typedef std::vector<Chromosome*> ChVec;
-	typedef std::vector<Chromosome*>::iterator ChVecIt;
-	typedef std::vector<Chromosome*>::reverse_iterator ChVecRIt;
 public:
 	class ChromosomeComparator : public std::binary_function<Chromosome, Chromosome, bool> {
 	public:
@@ -38,19 +34,37 @@ public:
 			return rhs.isFitterThan(lhs);
 		}
 	};
-	
+
 	typedef std::set<Chromosome, Population::ChromosomeComparator> SortedChromosomes;
-	
+
+protected:
+	typedef std::vector<Chromosome*> ChVec;
+	typedef std::vector<Chromosome*>::iterator ChVecIt;
+	typedef std::vector<Chromosome*>::reverse_iterator ChVecRIt;
+
+	static const uint8_t MAX_DISCARDED_SOLUTIONS_RATIO = 20;
+
+	const Control& ctrl;
+	::Evaluator& evaluator;
+	const std::vector<uint32_t> &seed;
+
+	SortedChromosomes elite;
+	std::vector<double> currentGenFitnessMap;
+	double minEliteFitness;
+	bool interrupted;
+
+public:
 	class InterruptException : public std::exception {
 	public:
 		InterruptException() {};
 		virtual ~InterruptException() throw() {};
 		virtual const char* what() const throw() {
-			return "Interrupted";
+			return "The genetic algorithm was interrupted";
 		}
 	};
 	
-	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) : ctrl(ctrl), evaluator(evaluator), seed(seed), currentGenFitnessMap(ctrl.populationSize + ctrl.elitism, 0.0) {
+	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) :
+		ctrl(ctrl), evaluator(evaluator), seed(seed), currentGenFitnessMap(ctrl.populationSize + ctrl.elitism, 0.0), interrupted(false) {
 		this->currentGeneration.reserve(this->ctrl.populationSize + this->ctrl.elitism);
 
 		this->minEliteFitness = 0.0;
@@ -61,9 +75,13 @@ public:
 			delete *it;
 		}
 	}
-	
+
 	virtual void run() = 0;
-	
+
+	inline bool wasInterrupted() {
+		return this->interrupted;
+	}
+
 	inline SortedChromosomes getResult() const {
 		SortedChromosomes result(this->elite);
 		
@@ -77,17 +95,11 @@ public:
 		
 		return result;
 	}
+
 private:
 	ChVec currentGeneration;
+
 protected:
-	const Control& ctrl;
-	::Evaluator& evaluator;
-	const std::vector<uint32_t> &seed;
-
-	SortedChromosomes elite;
-	std::vector<double> currentGenFitnessMap;
-	double minEliteFitness;
-
 	inline void initCurrentGeneration(ShuffledSet &shuffledSet, RNG &rng) {
 		for(uint32_t i = this->ctrl.elitism + this->ctrl.populationSize; i > 0; --i) {
 			this->currentGeneration.push_back(new Chromosome(this->ctrl, shuffledSet, rng, false));

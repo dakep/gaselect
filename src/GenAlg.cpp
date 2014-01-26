@@ -64,7 +64,6 @@ BEGIN_RCPP
 				 as<uint16_t>(control["elitism"]),
 				 as<uint16_t>(control["minVariables"]),
 				 as<uint16_t>(control["maxVariables"]),
-				 as<uint16_t>(control["maxMatingTries"]),
 				 as<double>(control["mutationProb"]),
 				 numThreads,
 				 as<uint16_t>(control["maxDuplicateEliminationTries"]),
@@ -148,6 +147,10 @@ BEGIN_RCPP
 	Rcpp::Rcout << "Called evaluator " << PLSEvaluator::counter << " times" << std::endl;
 #endif
 
+	if(pop->wasInterrupted() == true) {
+		GAout << "Interrupted - returning best solutions found so far" << std::endl;
+	}
+
 	Population::SortedChromosomes result = pop->getResult();
 
 	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());
@@ -190,8 +193,7 @@ VOID_END_RCPP
 /**
  *
  */
-SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
-	double fitness = 0.0;
+SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 	::Evaluator *eval;
 	PLS *pls;
 	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls; 3rd bit set ==> free globalUnifGen; 4th bit set ==> free pop
@@ -200,11 +202,12 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 	List evaluator = List(Sevaluator);
 	Rcpp::NumericMatrix XMat(SX);
 	Rcpp::NumericMatrix YMat(Sy);
+	Rcpp::LogicalMatrix subsets(Ssubsets);
+	Rcpp::NumericVector fitness(subsets.cols());
 	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 	EvaluatorClass evalClass = (EvaluatorClass) as<int>(evaluator["evaluatorClass"]);
 	std::vector<uint32_t> seed;
-
 	
 	switch(evalClass) {
 		case USER: {
@@ -240,15 +243,20 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Sseed) {
 	}
 	
 	toFree |= 1; // eval has to be freed
-	
-	arma::uvec allCols(X.n_cols);
 
-	for(arma::uword i = 0; i < allCols.n_elem; ++i) {
-		allCols[i] = i;
+	arma::uvec selectedColumns(X.n_cols);
+	int row = 0;
+
+	for(int col = 0; col < subsets.cols(); ++col) {
+		for(row = 0; row < subsets.rows(); ++row) {
+			selectedColumns[row] = ((subsets(row, col) == true) ? 1 : 0);
+		}
+
+		fitness[col] = eval->evaluate(selectedColumns);
 	}
-	
-	fitness = eval->evaluate(allCols);
-	
+
+	delete eval;
+
 	if((toFree & 2) > 0) {
 		delete pls;
 	}

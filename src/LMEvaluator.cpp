@@ -11,6 +11,7 @@
 #include <limits>
 
 #include "LMEvaluator.h"
+#include "Logger.h"
 
 LMEvaluator::LMEvaluator(const arma::mat &X, const arma::colvec &y, const LMEvaluator::Statistic statistic, const VerbosityLevel &verbosity, const bool addIntercept) : Evaluator(verbosity), y(y), statistic(statistic), Xdesign(X) {
 	if(addIntercept) {
@@ -20,7 +21,7 @@ LMEvaluator::LMEvaluator(const arma::mat &X, const arma::colvec &y, const LMEval
 	}
 
 	this->r2denom = arma::sum(arma::square(this->y - arma::mean(this->y)));
-};
+}
 
 double LMEvaluator::evaluate(arma::uvec &columnSubset) {
 	double ret = 0.0;
@@ -55,8 +56,10 @@ double LMEvaluator::evaluate(arma::uvec &columnSubset) {
 			default:
 				break;
 		}
-	} catch(std::runtime_error re) {
-		ret = std::numeric_limits<double>::min();
+	} catch(const std::runtime_error& re) {
+		throw Evaluator::EvaluatorException("The subset could not be evaluated because the system could not be solved (probably the subset is singular)");
+	} catch(...) {
+		throw Evaluator::EvaluatorException("The subset could not be evaluated due to an unknown error.");
 	}
 	
 	return ret;

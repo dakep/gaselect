@@ -54,7 +54,7 @@ private:
 		uint16_t offset;
 		uint16_t chromosomeSize;
 	};
-	
+
 	ChVec nextGeneration;
 	double sumCurrentGenFitness;
 	

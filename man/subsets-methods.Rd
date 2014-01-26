@@ -1,13 +1,28 @@
 \docType{methods}
 \name{subsets}
 \alias{subsets}
-\alias{subsets,GenAlg,missing,logical-method}
-\alias{subsets,GenAlg,missing,missing-method}
 \alias{subsets,GenAlg,NULL,logical-method}
 \alias{subsets,GenAlg,NULL,missing-method}
+\alias{subsets,GenAlg,missing,logical-method}
+\alias{subsets,GenAlg,missing,missing-method}
 \alias{subsets,GenAlg,numeric,logical-method}
 \alias{subsets,GenAlg,numeric,missing-method}
 \title{Get the found subset(s)}
+\usage{
+subsets(object, indices = NULL, names = TRUE)
+
+\S4method{subsets}{GenAlg,missing,missing}(object, indices, names)
+
+\S4method{subsets}{GenAlg,numeric,missing}(object, indices, names)
+
+\S4method{subsets}{GenAlg,NULL,missing}(object, indices, names)
+
+\S4method{subsets}{GenAlg,NULL,logical}(object, indices, names)
+
+\S4method{subsets}{GenAlg,missing,logical}(object, indices, names)
+
+\S4method{subsets}{GenAlg,numeric,logical}(object, indices, names)
+}
 \arguments{
   \item{object}{The GenAlg object returned by
   \code{\link{genAlg}}}
@@ -17,13 +32,17 @@
 
   \item{names}{Should the names of the variables}
 }
+\value{
+A logical matrix where each column represents a variable
+subset
+}
 \description{
-  Get a list of variable indices/names of the found
-  variable subsets
+Get a list of variable indices/names of the found variable
+subsets
 }
 \details{
-  This method is used to get the names or indices of the
-  variables used in specified variable subsets
+This method is used to get the names or indices of the
+variables used in specified variable subsets
 }
 \examples{
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,

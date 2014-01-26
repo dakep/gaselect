@@ -54,8 +54,6 @@
 #undef HAVE_PTHREAD_H
 #endif
 
-
-//#undef HAVE_PTHREAD_H
-//#define HAVE_PTHREAD_H 1
+#define ARMA_DONT_PRINT_RUNTIME_ERRORS 1
 
 #endif

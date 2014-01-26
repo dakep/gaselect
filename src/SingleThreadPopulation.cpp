@@ -42,7 +42,6 @@ SingleThreadPopulation::SingleThreadPopulation(const Control &ctrl, ::Evaluator 
 
 void SingleThreadPopulation::run() {
 	int i = 0;
-	uint8_t matingTries = 0;
 	ShuffledSet shuffledSet(this->ctrl.chromosomeSize);
 	RNG rng(this->seed);
 	
@@ -56,12 +55,14 @@ void SingleThreadPopulation::run() {
 	Chromosome* tmpChromosome2;
 	ChVecIt child1It;
 	ChVecRIt child2It;
-	Chromosome* proposalChild1 = new Chromosome(this->ctrl, shuffledSet, rng, false);
-	Chromosome* proposalChild2 = new Chromosome(this->ctrl, shuffledSet, rng, false);
 	uint8_t child1Tries = 0;
 	uint8_t child2Tries = 0;
-	bool child1Mutated, child2Mutated;
 	std::pair<bool, bool> duplicated;
+	double cutoff = 0.0;
+
+	uint32_t discSol1 = 0;
+	uint32_t discSol2 = 0;
+	uint32_t maxDiscardedSolutions = Population::MAX_DISCARDED_SOLUTIONS_RATIO * this->ctrl.populationSize;
 
 	newGeneration.reserve(this->ctrl.populationSize);
 	
@@ -74,20 +75,28 @@ void SingleThreadPopulation::run() {
 		
 		/* Check if chromosome is already in the initial population */
 		if(std::find_if(newGeneration.begin(), newGeneration.end(), CompChromsomePtr(tmpChromosome1)) == newGeneration.end()) {
-			this->evaluator.evaluate(*tmpChromosome1);
+			try {
+				this->evaluator.evaluate(*tmpChromosome1);
 
-			if(tmpChromosome1->getFitness() < minFitness) {
-				minFitness = tmpChromosome1->getFitness();
+				if(tmpChromosome1->getFitness() < minFitness) {
+					minFitness = tmpChromosome1->getFitness();
+				}
+				
+				this->addChromosomeToElite(*tmpChromosome1);
+				
+				newGeneration.push_back(tmpChromosome1);
+			} catch(const ::Evaluator::EvaluatorException& ee) {
+				delete tmpChromosome1;
+				if(this->ctrl.verbosity >= ON) {
+					GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
+				}
 			}
-			
-			this->addChromosomeToElite(*tmpChromosome1);
-			
-			newGeneration.push_back(tmpChromosome1);
 		} else {
 			delete tmpChromosome1;
 		}
 
 		if(check_interrupt()) {
+			this->interrupted = true;
 			throw InterruptException();
 		}
 	}
@@ -104,7 +113,7 @@ void SingleThreadPopulation::run() {
 		this->printCurrentGeneration();
 	}
 	
-	for(i = this->ctrl.numGenerations; i > 0; --i) {
+	for(i = this->ctrl.numGenerations; i > 0 && !this->interrupted; --i) {
 		minFitness = 0.0;
 
 		IF_DEBUG(
@@ -118,7 +127,7 @@ void SingleThreadPopulation::run() {
 		child1It = newGeneration.begin();
 		child2It = newGeneration.rbegin();
 		
-		while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
+		while(child1It != child2It.base() && child1It != (child2It + 1).base() && !this->interrupted) {
 			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
 			do {
 				tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
@@ -128,150 +137,98 @@ void SingleThreadPopulation::run() {
 			
 			minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 
+			(*child1It)->mutate(rng);
+			(*child2It)->mutate(rng);
+
 			/*
-			 * If any of the two children has no variables, mate again
+			 * Simple rejection
+			 * Reject either of the child chromosomes if they are worse than the worst parent (times a given percentage)
+			 * or if they are duplicated
 			 */
-			while((*child1It)->getVariableCount() == 0 || (*child2It)->getVariableCount() == 0) {
-				tmpChromosome1->mateWith(*tmpChromosome2, rng, *(*child1It), *(*child2It));
-			}
+			cutoff = minParentFitness - this->ctrl.badSolutionThreshold * fabs(minParentFitness);
 
-			this->evaluator.evaluate(**child1It);
-			this->evaluator.evaluate(**child2It);
-
-			// Make sure the first child is "better" than the second child
-			if((*child1It)->getFitness() < (*child2It)->getFitness()) {
-				std::swap(*child1It, *child2It);
-			}
-
-			matingTries = 0;
-			while(((*child1It)->getFitness() < minParentFitness) && (matingTries++ < this->ctrl.maxMatingTries)) {
-				tmpChromosome1->mateWith(*tmpChromosome2, rng, *proposalChild1, *proposalChild2);
-
-				/*
-				 * After mating a chromosome may have no variables at all, so we need to check if the variable count is
-				 * greater than 0, otherwise the evaluation step would fail
-				 * The better child is worse than the worst parent and we have some tries left
-				 */
-				if(proposalChild1->getVariableCount() > 0) {
-					if(this->evaluator.evaluate(*proposalChild1) > (*child2It)->getFitness()) { // better as 2nd child
-						if(proposalChild1->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
-							std::swap(*child1It, *child2It);
-							delete *child1It;
-							*child1It = new Chromosome(*proposalChild1);
-						} else {
-							delete *child2It;
-							*child2It = new Chromosome(*proposalChild1);
-						}
-					}
-				}
-				
-				// Check 2nd new child
-				if(proposalChild2->getVariableCount() > 0) {
-					if(this->evaluator.evaluate(*proposalChild2) > (*child2It)->getFitness()) { // better as 2nd child
-						if(proposalChild2->getFitness() > (*child1It)->getFitness()) { // even better as 1st child
-							std::swap(*child1It, *child2It);
-							delete *child1It;
-							*child1It = new Chromosome(*proposalChild2);
-						} else {
-							delete *child2It;
-							*child2It = new Chromosome(*proposalChild2);
-						}
-					}
-				}
-				
-				IF_DEBUG(
-					GAout << "Proposed children have fitness: " << proposalChild1->getFitness() << " / " << proposalChild2->getFitness() << std::endl
-					<< "Currently selected children have fitness: " << (*child1It)->getFitness() << " / " << (*child2It)->getFitness() << std::endl;
-				)
-			}
-
-			if((*child1It)->getFitness() < (minParentFitness - this->ctrl.badSolutionThreshold * fabs(minParentFitness))) {
-				/*
-				 * The fitness of the better child is more than x% less than the worst parent's
-				 * fitness so cancel mating of the two parents and choose two new parents
-				 */
-				continue;
-			}
-
-			child1Mutated = (*child1It)->mutate(rng);
-			child2Mutated = (*child2It)->mutate(rng);
-			
-			/*
-			 * Search for identical chromosomes in the previously generated
-			 * chromsomes
-			 * The manual loop is faster than find_if because both children
-			 * can be checked at once
-			 */
 			duplicated = Population::checkDuplicated(newGeneration.begin(), newGeneration.rbegin(), child1It, child2It);
-			
-			if(duplicated.first == false || (++child1Tries > this->ctrl.maxDuplicateEliminationTries)) {
+
+			if((duplicated.first == false) || (++child1Tries > this->ctrl.maxDuplicateEliminationTries)) {
 				/*
 				 * If the child is a duplicate and we have tried too often
 				 * just reset the chromosome to a random point
 				 */
 				if(duplicated.first == true && child1Tries > this->ctrl.maxDuplicateEliminationTries) {
 					(*child1It)->randomlyReset(rng, shuffledSet);
-					child1Mutated = true;
 				}
 
-				if(child1Mutated == true) {
-					this->evaluator.evaluate(**child1It);
-				}
-
-				if((*child1It)->getFitness() < minFitness) {
-					minFitness = (*child1It)->getFitness();
-				}
-
-				this->addChromosomeToElite(**child1It);
-				if(this->ctrl.verbosity >= VERBOSE) {
-					this->printChromosomeFitness(GAout, **child1It);
-				}
-
-				++child1It;
-
-				IF_DEBUG(
-					if(child1Tries > 0) {
-						GAout << "Needed " << (int) child1Tries << " tries to find unique chromosome" << std::endl;
-					}
-				)
 				child1Tries = 0;
+
+				try {
+					if((this->evaluator.evaluate(**child1It) > cutoff) || (discSol1 > maxDiscardedSolutions)) {
+						if((*child1It)->getFitness() < minFitness) {
+							minFitness = (*child1It)->getFitness();
+						}
+
+						this->addChromosomeToElite(**child1It);
+
+						if(this->ctrl.verbosity >= VERBOSE) {
+							this->printChromosomeFitness(GAout, **child1It);
+						}
+
+						/*
+						 * The child is no duplicate (or accepted as one) and is not too bad,
+						 * so go on to the next one
+						 */
+						++child1It;
+						discSol1 = 0;
+					} else if(++discSol1 >= maxDiscardedSolutions) {
+						GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+					}
+				} catch(const ::Evaluator::EvaluatorException& ee) {
+					if(this->ctrl.verbosity >= ON) {
+						GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
+					}
+				}
 			}
-			
-			if(duplicated.second == false || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
+
+			if((duplicated.second == false) || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
 				/*
 				 * If the child is a duplicate and we have tried too often
 				 * just reset the chromosome to a random point
 				 */
 				if(duplicated.second == true && child2Tries > this->ctrl.maxDuplicateEliminationTries) {
 					(*child2It)->randomlyReset(rng, shuffledSet);
-					child2Mutated = true;
 				}
 
-				if(child2Mutated == true) {
-					this->evaluator.evaluate(**child2It);
-				}
-
-				if((*child2It)->getFitness() < minFitness) {
-					minFitness = (*child2It)->getFitness();
-				}
-
-				this->addChromosomeToElite(**child2It);
-				if(this->ctrl.verbosity >= VERBOSE) {
-					this->printChromosomeFitness(GAout, **child2It);
-				}
-
-				++child2It;
-
-				IF_DEBUG(
-					if(child2Tries > 0) {
-						GAout << "Needed " << (int) child2Tries << " tries to find unique chromosome" << std::endl;
-					}
-				)
 				child2Tries = 0;
+
+				try {
+					if((this->evaluator.evaluate(**child2It) > cutoff) || (discSol2 > maxDiscardedSolutions)) {
+						if((*child2It)->getFitness() < minFitness) {
+							minFitness = (*child2It)->getFitness();
+						}
+
+						this->addChromosomeToElite(**child2It);
+
+						if(this->ctrl.verbosity >= VERBOSE) {
+							this->printChromosomeFitness(GAout, **child2It);
+						}
+
+						/*
+						 * The child is no duplicate (or accepted as one) and is not too bad,
+						 * so go on to the next one
+						 */
+						++child2It;
+						discSol2 = 0;
+					} else if(++discSol2 >= maxDiscardedSolutions) {
+						GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+					}
+				} catch(const ::Evaluator::EvaluatorException& ee) {
+					if(this->ctrl.verbosity >= ON) {
+						GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
+					}
+				}
 			}
-			
+
 			if(check_interrupt()) {
-				throw InterruptException();
+				this->interrupted = true;
 			}
 		}
 
@@ -284,10 +241,11 @@ void SingleThreadPopulation::run() {
 		if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
 			this->printCurrentGeneration();
 		}
+
+		discSol1 = 0;
+		discSol2 = 0;
 	}
 
-	delete proposalChild1;
-	delete proposalChild2;
 	for(ChVecIt it = newGeneration.begin(); it != newGeneration.end(); ++it) {
 		delete *it;
 	}

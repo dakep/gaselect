@@ -30,7 +30,7 @@ double UserFunEvaluator::evaluate(arma::uvec &columnSubset) {
 	
 	SEXP rawFitness = this->userFun(Rcpp::wrap(logVec));
 	if(!Rf_isNumeric(rawFitness)) {
-		throw Rcpp::exception("Evaluation function has to return a numeric value", __FILE__, __LINE__);
+		throw Evaluator::EvaluatorException("The evaluation function did not return a numeric value.");
 	}
 	
 	double fitness = Rcpp::as<double>(rawFitness);

@@ -34,7 +34,6 @@ public:
 			const uint16_t elitism,
 			const uint16_t minVariables,
 			const uint16_t maxVariables,
-			const uint16_t maxMatingTries,
 			const double mutationProbability,
 			const uint16_t numThreads,
 			const uint16_t maxDuplicateEliminationTries,
@@ -47,7 +46,6 @@ public:
 	elitism(elitism),
 	minVariables(minVariables),
 	maxVariables(maxVariables),
-	maxMatingTries(maxMatingTries),
 	mutationProbability(mutationProbability),
 	numThreads(numThreads),
 	maxDuplicateEliminationTries(maxDuplicateEliminationTries),
@@ -61,7 +59,6 @@ public:
 	const uint16_t elitism;
 	const uint16_t minVariables;
 	const uint16_t maxVariables;
-	const uint16_t maxMatingTries;
 	const double mutationProbability;
 	const uint16_t numThreads;
 	const uint16_t maxDuplicateEliminationTries;
@@ -75,7 +72,6 @@ public:
 		<< "Number of generations: " << ctrl.numGenerations << std::endl
 		<< "Number of elite chromosomes to keep: " << ctrl.elitism << std::endl
 		<< "Number of variables set: " << ctrl.minVariables << " to " << ctrl.maxVariables << std::endl
-		<< "Maximum number of tries for mating: " << ctrl.maxMatingTries << std::endl
 		<< "Mutation probability: " << ctrl.mutationProbability << std::endl
 		<< "Maximum number of tries to eliminate duplicates: " << ctrl.maxDuplicateEliminationTries << std::endl
 		<< "Bad solution threshold: " << ctrl.badSolutionThreshold << std::endl
