@@ -97,7 +97,7 @@ validity = function(object) {
 #' @family GenAlg Evaluators
 #' @example examples/genAlg.R
 #' @rdname GenAlgPLSEvaluator-constructor
-evaluatorPLS <- function(numReplications = 2L, numSegments = 4L, numThreads = NULL, method = c("simpls")) {
+evaluatorPLS <- function(numReplications = 30L, numSegments = 5L, numThreads = NULL, method = c("simpls")) {
 	method <- match.arg(method);
 
 	methodId <- switch(method,
