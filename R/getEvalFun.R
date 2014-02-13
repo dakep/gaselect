@@ -5,7 +5,7 @@
 #'
 #' @param object The evaluator (an object of type \code{\link{GenAlgEvaluator}})
 #' @param genAlg The \code{\link{GenAlg}} object
-#' @include Evaluator.R GenAlg.R
+#' @include Evaluator.R genAlg.R
 #' @docType methods
 #' @rdname getEvalFun-methods
 setGeneric("getEvalFun", function(object, genAlg) { standardGeneric("getEvalFun"); });

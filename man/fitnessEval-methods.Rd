@@ -1,0 +1,33 @@
+\docType{methods}
+\name{fitnessEval}
+\alias{fitnessEval}
+\alias{fitnessEval,GenAlgLMEvaluator,GenAlg-method}
+\alias{fitnessEval,GenAlgPLSEvaluator,GenAlg-method}
+\alias{fitnessEval,GenAlgUserEvaluator,GenAlg-method}
+\title{Get the fitness of a variable subset}
+\usage{
+fitnessEval(object, genAlg)
+
+\S4method{fitnessEval}{GenAlgPLSEvaluator,GenAlg}(object, genAlg)
+
+\S4method{fitnessEval}{GenAlgUserEvaluator,GenAlg}(object, genAlg)
+
+\S4method{fitnessEval}{GenAlgLMEvaluator,GenAlg}(object, genAlg)
+}
+\arguments{
+  \item{object}{The used evaluator, i.e. an object of type
+  \code{\link{GenAlgEvaluator}}}
+
+  \item{genAlg}{An object of type \code{\link{GenAlg}}}
+}
+\value{
+A vector with the estimated fitness for each solution
+}
+\description{
+Get the internal fitness for all variable subsets
+}
+\details{
+This method is used to get the fitness of all variable
+subsets found by the genetic algorithm.
+}
+

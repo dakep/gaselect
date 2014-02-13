@@ -5,5 +5,5 @@ evaluator <- evaluatorPLS(numReplications = 3L, numSegments = 4L, numThreads = 2
 \dontrun{
 result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
 
-SEP(result)
+fitness(result)
 }

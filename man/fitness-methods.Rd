@@ -1,0 +1,36 @@
+\docType{methods}
+\name{fitness}
+\alias{fitness}
+\alias{fitness,GenAlg-method}
+\title{Get the fitness of a variable subset}
+\usage{
+fitness(object)
+
+\S4method{fitness}{GenAlg}(object)
+}
+\arguments{
+  \item{object}{The \code{\link{GenAlg}} object returned by
+  \code{\link{genAlg}}}
+}
+\value{
+A vector with the estimated fitness for each solution
+}
+\description{
+Get the internal fitness for all variable subsets
+}
+\details{
+This method is used to get the fitness of all variable
+subsets found by the genetic algorithm.
+}
+\examples{
+ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,
+	minVariables = 5, maxVariables = 15)
+evaluator <- evaluatorPLS(numReplications = 3L, numSegments = 4L, numThreads = 2L)
+
+\dontrun{
+result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
+
+fitness(result)
+}
+}
+
