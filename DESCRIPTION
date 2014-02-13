@@ -1,13 +1,11 @@
 Package: GenAlgPLS
 Type: Package
 Title: Genetic algorithm for variable selection using a PLS criterion
-Version: 2.4
+Version: 2.4.2
 Date: 2014-02-13
 Author: David Kepplinger
 Maintainer: David Kepplinger <david@dkepplinger.org>
-Description: Implementation of a simple genetic algorithm for variable selection with different
-internal fitness measures, most notably the simple repeated cross-validtion fitness measure to
-quantify the prediction power of variable subsets.
+Description: Implementation of a simple genetic algorithm for variable selection with different internal fitness measures, most notably the simple repeated cross-validtion fitness measure to quantify the prediction power of variable subsets.
 License: GPL (>= 2)
 NeedsCompilation: yes
 Depends:
