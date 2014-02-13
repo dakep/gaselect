@@ -5,7 +5,7 @@
 #' @param object The evaluator
 #' @param genAlg The GenAlg object the evaluator is used in
 #' @docType methods
-#' @include Evaluator.R GenAlg.R
+#' @include Evaluator.R genAlg.R
 #' @rdname validData-methods
 setGeneric("validData", function(object, genAlg) { standardGeneric("validData"); });
 

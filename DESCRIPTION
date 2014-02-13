@@ -5,7 +5,7 @@ Version: 2.3
 Date: 2014-01-26
 Author: David Kepplinger
 Maintainer: David Kepplinger <david@dkepplinger.org>
-Description:
+Description: 
 License: GPL (>= 2)
 NeedsCompilation: yes
 Depends:
@@ -16,9 +16,9 @@ LinkingTo: Rcpp, RcppArmadillo
 Collate:
     'Evaluator.R'
     'GenAlgControl.R'
-    'genAlg.R'
-    'SEP.R'
     'evaluate.R'
+    'genAlg.R'
+    'fitness.R'
     'getEvalFun.R'
     'subsets.R'
     'toCControlList.R'

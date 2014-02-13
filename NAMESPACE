@@ -1,7 +1,7 @@
-export(SEP)
 export(evaluatorLM)
 export(evaluatorPLS)
 export(evaluatorUserFunction)
+export(fitness)
 export(genAlg)
 export(genAlgControl)
 export(subsets)

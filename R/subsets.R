@@ -9,7 +9,7 @@
 #' @param names Should the names of the variables
 #' @return A logical matrix where each column represents a variable subset
 #' @export
-#' @include GenAlg.R
+#' @include genAlg.R
 #' @docType methods
 #' @rdname subsets-methods
 #' @example examples/subsets.R

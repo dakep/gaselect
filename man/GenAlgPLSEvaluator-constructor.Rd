@@ -2,7 +2,7 @@
 \alias{evaluatorPLS}
 \title{PLS Evaluator}
 \usage{
-evaluatorPLS(numReplications = 2L, numSegments = 4L, numThreads = NULL,
+evaluatorPLS(numReplications = 30L, numSegments = 5L, numThreads = NULL,
   method = c("simpls"))
 }
 \arguments{
