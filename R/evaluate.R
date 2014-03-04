@@ -13,22 +13,22 @@
 setGeneric("evaluate", function(object, X, y, subsets, seed) { standardGeneric("evaluate"); });
 
 #' @rdname evaluate-methods
-setMethod("evaluate", signature(object = "ANY", X = "matrix", y = "numeric", subsets = "ANY", seed = "missing"), function(object, X, y, subsets, seed) {
+setMethod("evaluate", signature(object = "GenAlgEvaluator", X = "matrix", y = "numeric", subsets = "ANY", seed = "missing"), function(object, X, y, subsets, seed) {
 	evaluate(object, X, y, subsets, as.integer(sample.int(2^30, 1)));
 });
 
 #' @rdname evaluate-methods
-setMethod("evaluate", signature(object = "ANY", X = "matrix", y = "numeric", subsets = "ANY", seed = "NULL"), function(object, X, y, subsets, seed) {
+setMethod("evaluate", signature(object = "GenAlgEvaluator", X = "matrix", y = "numeric", subsets = "ANY", seed = "NULL"), function(object, X, y, subsets, seed) {
 	evaluate(object, X, y, subsets, as.integer(sample.int(2^30, 1)));
 });
 
 #' @rdname evaluate-methods
-setMethod("evaluate", signature(object = "ANY", X = "matrix", y = "numeric", subsets = "ANY", seed = "numeric"), function(object, X, y, subsets, seed) {
+setMethod("evaluate", signature(object = "GenAlgEvaluator", X = "matrix", y = "numeric", subsets = "ANY", seed = "numeric"), function(object, X, y, subsets, seed) {
 	evaluate(object, X, y, subsets, as.integer(seed));
 });
 
 #' @rdname evaluate-methods
-setMethod("evaluate", signature(object = "ANY", X = "matrix", y = "numeric", subsets = "logical", seed = "integer"), function(object, X, y, subsets, seed) {
+setMethod("evaluate", signature(object = "GenAlgEvaluator", X = "matrix", y = "numeric", subsets = "logical", seed = "integer"), function(object, X, y, subsets, seed) {
 	evaluate(object, X, y, as.matrix(subsets), seed);
 });
 
