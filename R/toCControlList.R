@@ -17,6 +17,7 @@ setMethod("toCControlList", signature(object = "GenAlgPLSEvaluator"), function(o
 		"numSegments" = object@numSegments,
 		"plsMethod" = object@methodId,
 		"numThreads" = object@numThreads,
+        "maxNComp" = object@maxNComp,
 		"userEvalFunction" = function() {NULL;},
 		"statistic" = 0
 	));
@@ -30,6 +31,7 @@ setMethod("toCControlList", signature(object = "GenAlgUserEvaluator"), function(
 		"numSegments" = 0L,
 		"plsMethod" = 0L,
 		"numThreads" = 1L,
+	    "maxNComp" = 0L,
 		"userEvalFunction" = object@evalFunction,
 		"statistic" = 0
 	));
@@ -43,6 +45,7 @@ setMethod("toCControlList", signature(object = "GenAlgLMEvaluator"), function(ob
 		"numSegments" = 0L,
 		"plsMethod" = 0L,
 		"numThreads" = object@numThreads,
+	    "maxNComp" = 0L,
 		"userEvalFunction" = function() {NULL;},
 		"statistic" = object@statisticId
 	));

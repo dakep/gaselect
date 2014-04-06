@@ -77,8 +77,13 @@ public:
 		<< "Bad solution threshold: " << ctrl.badSolutionThreshold << std::endl
 		<< "Crossover-type: " << ((ctrl.crossover == SINGLE) ? "Single" : "Random") << std::endl
 		<< "Number of threads: " << ctrl.numThreads << std::endl
-		<< "Verbosity Level: " << ctrl.verbosity << std::endl;
-		
+		<< "Verbosity Level: " << ctrl.verbosity << std::endl
+#ifdef ENABLE_DEBUG_VERBOSITY
+		<< "Debug enabled"
+#else
+		<< "Debug disabled"
+#endif
+		<< std::endl;
 		return os;
 	};
 };

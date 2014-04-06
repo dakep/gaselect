@@ -23,7 +23,8 @@
 
 class PLSEvaluator : public Evaluator {
 public:
-	PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const std::vector<uint32_t> &seed, const VerbosityLevel verbosity);
+	PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
+	uint16_t innerSegments, uint16_t outerSegments = 1, double testSetSize = 0.0);
 
 	~PLSEvaluator() {
 		if(this->cloned == true) {
@@ -48,23 +49,25 @@ public:
 
 private:
 	const uint16_t numReplications;
-	const uint16_t numSegments;
+	const uint16_t outerSegments;
+	const uint16_t innerSegments;
 	const arma::uword nrows;
-	const arma::uword segmentLength; // The length of the incomplete segments
-	const uint16_t completeSegments; // The number of segments with `segmentLength` + 1 elements. If 0, all segments have `segmentLength` elements
 	const bool cloned;
 
 	PLS *pls;
+	uint16_t maxNComp;
+	uint16_t minSegmentLength;
+	std::vector< std::vector<arma::uword> > shuffledRowNumbers;
+	std::vector<arma::uvec> segmentation;
 
 	PLSEvaluator(const PLSEvaluator &other);
 
 	/**
 	 * Estimate the SEP
 	 */
-	double estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers);
+	double estSEP(uint16_t maxNComp);
 
-	std::vector< std::vector<arma::uword> > shuffledRowNumbers;
-	void initRowNumbers(const std::vector<uint32_t> &seed);
+	void initSegmentation(double testSetSize, const std::vector<uint32_t> &seed);
 };
 
 

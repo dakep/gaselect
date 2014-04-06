@@ -74,7 +74,7 @@ setClass("GenAlgControl", representation(
 	}
 
 	if(object@verbosity < 0L || object@verbosity > 5L) {
-		errors <- c(errors, "The verbosity level can not be less than 0 or greater than 4");
+		errors <- c(errors, "The verbosity level can not be less than 0 or greater than 5");
 	}
 
 	if(length(errors) == 0) {
