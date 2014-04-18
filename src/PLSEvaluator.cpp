@@ -216,6 +216,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 	arma::mat residuals;
 	arma::mat leftOutX;
 	arma::mat leftOutY;
+	arma::running_stat<double> predSD;
 	
 	RSSSDm2n.zeros();
 	RSS.zeros();
@@ -225,6 +226,8 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 
 	while(rep++ < this->numReplications) {
 		outer = 0;
+		predSD.reset();
+
 		while(outer++ < this->outerSegments) {
 			seg = 0;
 			n = 0;
@@ -256,7 +259,6 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 				n += j;
 			}
 
-
 			/*
 			 * Find best number of components based on the RSS plus one standard deviation
 			 */
@@ -283,7 +285,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 			++optNComp;
 
 			/*
-			 * @TODO Predict last segment with a model fit to the other observations using optNComp components
+			 * Predict last segment with a model fit to the other observations using optNComp components
 			 */
 			this->pls->viewSelectRows(this->segmentation[i++]);
 			this->pls->fit(optNComp);
@@ -292,13 +294,19 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 			leftOutY = this->pls->getY().rows(this->segmentation[i]);
 			residuals = leftOutY - this->pls->predict(leftOutX, optNComp);
 
-			IF_DEBUG(GAout << "EVALUATOR: Resulting SEP:" << std::endl << arma::stddev(residuals.col(0)) << std::endl)
-
-			sumSEP += arma::stddev(residuals.col(0));
+			for(j = 0; j < residuals.n_elem; ++j) {
+				predSD(residuals[j]);
+			}
 		}
+
+		/*
+		 * Calculate standard deviation of
+		 */
+		IF_DEBUG(GAout << "EVALUATOR: Resulting SEP:" << predSD.stddev() << std::endl)
+		sumSEP -= predSD.stddev();
 	}
 
-	return -sumSEP;
+	return sumSEP;
 }
 
 Evaluator* PLSEvaluator::clone() const {
