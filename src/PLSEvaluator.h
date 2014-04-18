@@ -57,7 +57,6 @@ private:
 	PLS *pls;
 	uint16_t maxNComp;
 	uint16_t minSegmentLength;
-	std::vector< std::vector<arma::uword> > shuffledRowNumbers;
 	std::vector<arma::uvec> segmentation;
 
 	PLSEvaluator(const PLSEvaluator &other);

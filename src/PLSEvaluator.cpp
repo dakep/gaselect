@@ -47,8 +47,8 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 
 PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
 	Evaluator(other.verbosity), numReplications(other.numReplications), outerSegments(other.outerSegments),
-	innerSegments(other.innerSegments), nrows(other.nrows), cloned(true), segmentation(other.segmentation),
-	maxNComp(other.maxNComp), minSegmentLength(other.minSegmentLength)
+	innerSegments(other.innerSegments), nrows(other.nrows), cloned(true), maxNComp(other.maxNComp),
+	minSegmentLength(other.minSegmentLength), segmentation(other.segmentation)
 {
 	this->pls = other.pls->clone();
 }
