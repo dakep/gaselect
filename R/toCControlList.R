@@ -12,37 +12,43 @@ setGeneric("toCControlList", function(object) { standardGeneric("toCControlList"
 #' @rdname toCControlList-methods
 setMethod("toCControlList", signature(object = "GenAlgPLSEvaluator"), function(object) {
 	return(list(
-		"evaluatorClass" = 1,
+		"evaluatorClass" = 1L,
 		"numReplications" = object@numReplications,
-		"numSegments" = object@numSegments,
+		"innerSegments" = object@innerSegments,
+        "outerSegments" = object@outerSegments,
+	    "testSetSize" = object@testSetSize,
 		"plsMethod" = object@methodId,
 		"numThreads" = object@numThreads,
         "maxNComp" = object@maxNComp,
 		"userEvalFunction" = function() {NULL;},
-		"statistic" = 0
+		"statistic" = 0L
 	));
 });
 
 #' @rdname toCControlList-methods
 setMethod("toCControlList", signature(object = "GenAlgUserEvaluator"), function(object) {
 	return(list(
-		"evaluatorClass" = 0,
+		"evaluatorClass" = 0L,
 		"numReplications" = 0L,
-		"numSegments" = 0L,
+	    "innerSegments" = 0L,
+	    "outerSegments" = 0L,
+	    "testSetSize" = 0.0,
 		"plsMethod" = 0L,
 		"numThreads" = 1L,
 	    "maxNComp" = 0L,
 		"userEvalFunction" = object@evalFunction,
-		"statistic" = 0
+		"statistic" = 0L
 	));
 });
 
 #' @rdname toCControlList-methods
 setMethod("toCControlList", signature(object = "GenAlgLMEvaluator"), function(object) {
 	return(list(
-		"evaluatorClass" = 2,
+		"evaluatorClass" = 2L,
 		"numReplications" = 0L,
-		"numSegments" = 0L,
+	    "innerSegments" = 0L,
+	    "outerSegments" = 0L,
+	    "testSetSize" = 0.0,
 		"plsMethod" = 0L,
 		"numThreads" = object@numThreads,
 	    "maxNComp" = 0L,

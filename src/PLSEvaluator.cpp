@@ -42,6 +42,8 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 		throw std::invalid_argument("The test set size must be within the interval (0, 1)");
 	}
 
+	IF_DEBUG(GAout << "Test set size: " << testSetSize << " -- outerSegments: " << outerSegments << std::endl);
+
 	this->initSegmentation(testSetSize, seed);
 }
 
@@ -77,7 +79,7 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
 	ShuffledSet rowNumbers(nrows);
 	arma::uword i, n = 0;
 
-	if(testSetSize == 0.0 || this->outerSegments == 1) {
+	if(testSetSize == 0.0 && this->outerSegments == 1) {
 		testSetSize = 1.0 / (this->innerSegments + 1.0);
 	}
 
@@ -109,12 +111,14 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
 	 * Update the maximal number of components, as innerSegmentLengthBigOuter is the minimal
 	 * segment length.
 	 */
-	if(innerSegmentLengthBigOuter <= this->maxNComp) {
+	if(innerSegmentLengthBigOuter <= this->maxNComp || this->maxNComp == 0) {
 		this->minSegmentLength = innerSegmentLengthBigOuter;
 		this->maxNComp = innerSegmentLengthBigOuter - 1;
 	}
 
 	arma::uword j, orem, olen = 0, irem, ilenFixed,	ilen;
+
+	IF_DEBUG(GAout << "Initialize segments with a test set size of " << testSetSize << std::endl);
 
 	for(uint16_t rep = 0; rep < this->numReplications; ++rep) {
 		arma::uvec shuffledRowNumbers = rowNumbers.shuffleAll(rng);
@@ -169,10 +173,10 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
 
 				/* First push back training set */
 				this->segmentation.push_back(inSegment);
-				IF_DEBUG(this->segmentation.back().t().raw_print("Training set:"));
+				IF_DEBUG(this->segmentation.back().t().raw_print(GAout, "Training set:"));
 				/* Then add test set */
 				this->segmentation.push_back(arma::sort(shuffledRowNumbers.rows(n, n + ilen - 1)));
-				IF_DEBUG(this->segmentation.back().t().raw_print("Test set:"));
+				IF_DEBUG(this->segmentation.back().t().raw_print(GAout, "Test set:"));
 
 				n += ilen;
 			}
@@ -183,10 +187,10 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
 			if(olen > 0) {
 				/* First push back training set */
 				this->segmentation.push_back(arma::sort(shuffledRowNumbers.rows(0, n - 1)));
-				IF_DEBUG(this->segmentation.back().t().raw_print("Outer training set:"));
+				IF_DEBUG(this->segmentation.back().t().raw_print(GAout, "Outer training set:"));
 				/* Then add test set */
 				this->segmentation.push_back(arma::sort(shuffledRowNumbers.rows(n, nrows - 1)));
-				IF_DEBUG(this->segmentation.back().t().raw_print("Outer test set:"));
+				IF_DEBUG(this->segmentation.back().t().raw_print(GAout, "Outer test set:"));
 			}
 
 			/*
@@ -229,8 +233,13 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 		predSD.reset();
 
 		while(outer++ < this->outerSegments) {
+			/* Reset the variables to 0 */
 			seg = 0;
 			n = 0;
+			RSSSDdelta = 0.0;
+			RSS.zeros();
+			RSSSDm2n.zeros();
+			std::memset(&RSSSDmean[0], 0.0, maxNComp * sizeof(RSSSDmean[0]));
 
 			/*
 			 * Fit PLS models to predict the values in each segment once
@@ -242,8 +251,8 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 				leftOutY = this->pls->getY().rows(this->segmentation[i]);
 				leftOutX = this->pls->getXColumnView().rows(this->segmentation[i]);
 
-				for(comp = 1; comp <= maxNComp; ++comp) {
-					residuals = leftOutY - this->pls->predict(leftOutX, comp);
+				for(comp = 0; comp < maxNComp; ++comp) {
+					residuals = leftOutY - this->pls->predict(leftOutX, comp + 1);
 
 					for(j = 0; j < residuals.n_elem; ++j) {
 						r2 = residuals[j] * residuals[j];
@@ -284,6 +293,8 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 			}
 			++optNComp;
 
+			IF_DEBUG(GAout << "EVALUATOR: Opt. num. of components: " << optNComp << " (max. " << maxNComp << ")" << std::endl)
+
 			/*
 			 * Predict last segment with a model fit to the other observations using optNComp components
 			 */
@@ -302,7 +313,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 		/*
 		 * Calculate standard deviation of
 		 */
-		IF_DEBUG(GAout << "EVALUATOR: Resulting SEP:" << predSD.stddev() << std::endl)
+		IF_DEBUG(GAout << "EVALUATOR: Resulting SEP: " << predSD.stddev() << std::endl)
 		sumSEP -= predSD.stddev();
 	}
 

@@ -6,6 +6,7 @@
 setClass("GenAlgEvaluator", representation(), contains = "VIRTUAL");
 
 #' PLS Evaluator
+#' 
 #' @slot numReplications The number of replications used to evaluate a variable subset.
 #' @slot numSegments The number of CV segments used in one replication.
 #' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
@@ -102,10 +103,10 @@ validity = function(object) {
 #' @param numReplications The number of replications used to evaluate a variable subset (must be between 1 and 2^16)
 #' @param innerSegments The number of CV segments used in one replication (must be between 1 and 2^16)
 #' @param outerSegments The number of outer CV segments used in one replication (between 0 and 2^16). If this
-#' is greater than 1, the repeated double cross-validation strategy (rdCV) will be used instead of
-#' simple repeated cross-validation (srCV)
+#'      is greater than 1, the repeated double cross-validation strategy (rdCV) will be used instead of
+#'      simple repeated cross-validation (srCV)
 #' @param testSetSize The relative size of the test set used for simple repeated CV (between 0 and 1). This parameter
-#' is ignored if outerSegments > 1 and a warning will be issued.
+#'      is ignored if outerSegments > 1 and a warning will be issued.
 #' @param numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads)
 #' @param maxNComp The maximum number of components the PLS models should consinder (if not specified, the number is not constrained)
 #' @param method The PLS method used to fit the PLS model (currently only SIMPLS is implemented)

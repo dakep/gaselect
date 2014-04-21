@@ -67,6 +67,7 @@ RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y, SEXP seed);
  *		uint16_t numReplications ... Number of replications in the internal evaluation procedure (the variable subset is evaluted with CV numReplication times and the mean fitness is returned) (> 0)
  *		uint16_t numSegments ... Number of CV segments used in the internal evaluation method (> 0)
  *		int statistic ... The statistic the LM Evaluator should use
+ *		VerbosityLevel verbosity ... Level of verbosity
  *
  *	X ... A numeric matrix with dimensions n x p
  *	y ... A numeric vector with length n

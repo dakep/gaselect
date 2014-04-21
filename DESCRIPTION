@@ -11,9 +11,11 @@ Description: Implementation of a simple genetic algorithm for variable
     of variable subsets.
 License: GPL (>= 2)
 NeedsCompilation: yes
+Roxygen: list(wrap = FALSE)
 Depends:
     methods (>= 2.10.0),
-    Rcpp (>= 0.9.10),
+    Rcpp (>= 0.9.10)
+Imports:
     RcppArmadillo (>= 0.3.4.0)
 LinkingTo: Rcpp, RcppArmadillo
 Collate:

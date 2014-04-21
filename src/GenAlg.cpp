@@ -231,7 +231,7 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 			toFree |= 2; // pls has to be freed
 		
 			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]),
-				as<uint16_t>(evaluator["maxNComp"]), seed, OFF,
+				as<uint16_t>(evaluator["maxNComp"]), seed, (VerbosityLevel) as<int>(evaluator["verbosity"]),
 				as<uint16_t>(evaluator["innerSegments"]),
 				as<uint16_t>(evaluator["outerSegments"]),
 				as<double>(evaluator["testSetSize"]));
@@ -242,7 +242,7 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 			arma::colvec y = Y.col(0);
 			
 			LMEvaluator::Statistic stat = (LMEvaluator::Statistic) as<int>(evaluator["statistic"]);
-			eval = new LMEvaluator(X, y, stat, OFF);
+			eval = new LMEvaluator(X, y, stat, (VerbosityLevel) as<int>(evaluator["verbosity"]));
 			
 			break;
 		}
