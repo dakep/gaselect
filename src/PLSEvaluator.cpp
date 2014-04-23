@@ -49,8 +49,7 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 
 PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
 	Evaluator(other.verbosity), numReplications(other.numReplications), outerSegments(other.outerSegments),
-	innerSegments(other.innerSegments), nrows(other.nrows), cloned(true), maxNComp(other.maxNComp),
-	minSegmentLength(other.minSegmentLength), segmentation(other.segmentation)
+	innerSegments(other.innerSegments), nrows(other.nrows), cloned(true), maxNComp(other.maxNComp), segmentation(other.segmentation)
 {
 	this->pls = other.pls->clone();
 }
@@ -76,7 +75,7 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
  */
 inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector<uint32_t> &seed) {
 	RNG rng(seed);
-	ShuffledSet rowNumbers(nrows);
+	ShuffledSet rowNumbers(this->nrows);
 	arma::uword i, n = 0;
 
 	if(testSetSize == 0.0 && this->outerSegments == 1) {
@@ -87,8 +86,8 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
 	 * The size of the outer segment and the number of outer segments with one extra
 	 * observation
 	 */
-	arma::uword outerSegmentLength = nrows * testSetSize;
-	arma::uword outerSegmentLengthRem = nrows % outerSegmentLength;
+	arma::uword outerSegmentLength = this->nrows * testSetSize;
+	arma::uword outerSegmentLengthRem = this->nrows % outerSegmentLength;
 
 	this->segmentation.reserve(2 * this->numReplications * (this->innerSegments + 1) * this->outerSegments);
 
@@ -99,8 +98,8 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
 	 * won't get this extra observation. If no inner segment has an extra observation,
 	 * one inner segment will have one observation less.
 	 */
-	arma::uword innerSegmentLength = (nrows - outerSegmentLength) / this->innerSegments;
-	arma::uword innerSegmentLengthRem = (nrows - outerSegmentLength) % this->innerSegments;
+	arma::uword innerSegmentLength = (this->nrows - outerSegmentLength) / this->innerSegments;
+	arma::uword innerSegmentLengthRem = (this->nrows - outerSegmentLength) % this->innerSegments;
 	arma::uword innerSegmentLengthBigOuter = innerSegmentLength;
 
 	if(outerSegmentLengthRem > 0 && innerSegmentLengthRem == 0) {
@@ -110,10 +109,12 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
 	/*
 	 * Update the maximal number of components, as innerSegmentLengthBigOuter is the minimal
 	 * segment length.
+	 * The minimum number of observations in a fit set is (the 2 is just for safety):
+	 *	nrows - outerSegmentLength - innerSegmentLength - 2
 	 */
-	if(innerSegmentLengthBigOuter <= this->maxNComp || this->maxNComp == 0) {
-		this->minSegmentLength = innerSegmentLengthBigOuter;
-		this->maxNComp = innerSegmentLengthBigOuter - 1;
+	arma::uword minFitSetSize = this->nrows - outerSegmentLength - innerSegmentLength - 2;
+	if(minFitSetSize <= this->maxNComp || this->maxNComp == 0) {
+		this->maxNComp = minFitSetSize;
 	}
 
 	arma::uword j, orem, olen = 0, irem, ilenFixed,	ilen;
@@ -159,14 +160,14 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
 				/*
 				 *
 				 */
-				arma::uvec inSegment(nrows - olen - ilen);
+				arma::uvec inSegment(this->nrows - olen - ilen);
 
 				if(n > 0) {
 					inSegment.rows(0, n - 1) = shuffledRowNumbers.rows(0, n - 1);
 				}
 
-				if(n < nrows - olen - ilen) {
-					inSegment.rows(n, inSegment.n_elem - 1) = shuffledRowNumbers.rows(n + ilen, nrows - olen - 1);
+				if(n < this->nrows - olen - ilen) {
+					inSegment.rows(n, inSegment.n_elem - 1) = shuffledRowNumbers.rows(n + ilen, this->nrows - olen - 1);
 				}
 
 				std::sort(inSegment.begin(), inSegment.end());
@@ -189,14 +190,14 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
 				this->segmentation.push_back(arma::sort(shuffledRowNumbers.rows(0, n - 1)));
 				IF_DEBUG(this->segmentation.back().t().raw_print(GAout, "Outer training set:"));
 				/* Then add test set */
-				this->segmentation.push_back(arma::sort(shuffledRowNumbers.rows(n, nrows - 1)));
+				this->segmentation.push_back(arma::sort(shuffledRowNumbers.rows(n, this->nrows - 1)));
 				IF_DEBUG(this->segmentation.back().t().raw_print(GAout, "Outer test set:"));
 			}
 
 			/*
 			 * Rotate shuffled row numbers (put the last segment in front)
 			 */
-			shuffledRowNumbers = arma::join_cols(shuffledRowNumbers.rows(n, nrows - 1), shuffledRowNumbers.rows(0, n - 1));
+			shuffledRowNumbers = arma::join_cols(shuffledRowNumbers.rows(n, this->nrows - 1), shuffledRowNumbers.rows(0, n - 1));
 		}
 	}
 }
@@ -206,13 +207,7 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
  */
 double PLSEvaluator::estSEP(uint16_t maxNComp) {
 	double sumSEP = 0.0;
-	// (online) Sum of squares of differences from the (current) mean (residMeans)
-	// M_2,n = sum( (x_i - mean_n) ^ 2 )
-	arma::vec RSS(maxNComp);
-	double RSSSDdelta = 0.0;
-	arma::vec RSSSDm2n(maxNComp);
-	std::vector<double> RSSSDmean(maxNComp, 0.0);
-	double r2;
+	OnlineStddev fitRSS(maxNComp);
 
 	double cutoff;
 	arma::uword optNComp;
@@ -220,13 +215,11 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 	arma::mat residuals;
 	arma::mat leftOutX;
 	arma::mat leftOutY;
-	arma::running_stat<double> predSD;
-	
-	RSSSDm2n.zeros();
-	RSS.zeros();
+	OnlineStddev predSD;
 
 	uint16_t rep = 0, outer, seg, comp;
-	arma::uword i = 0, j, n;
+	std::vector<arma::uvec>::const_iterator segmentIter = this->segmentation.begin();
+	arma::uword j;
 
 	while(rep++ < this->numReplications) {
 		outer = 0;
@@ -235,79 +228,89 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 		while(outer++ < this->outerSegments) {
 			/* Reset the variables to 0 */
 			seg = 0;
-			n = 0;
-			RSSSDdelta = 0.0;
-			RSS.zeros();
-			RSSSDm2n.zeros();
-			std::memset(&RSSSDmean[0], 0.0, maxNComp * sizeof(RSSSDmean[0]));
+			fitRSS.reset();
 
 			/*
 			 * Fit PLS models to predict the values in each segment once
 			 */
 			while(seg++ < this->innerSegments) {
-				this->pls->viewSelectRows(this->segmentation[i++]);
+				/* Segmentation iterator currently points to the `fit` segment */
+				this->pls->viewSelectRows(*(segmentIter));
 				this->pls->fit(maxNComp);
 
-				leftOutY = this->pls->getY().rows(this->segmentation[i]);
-				leftOutX = this->pls->getXColumnView().rows(this->segmentation[i]);
+				/* Increment segmentation iterator to point to the `predict` segment */
+				++segmentIter;
+
+				leftOutY = this->pls->getY().rows(*segmentIter);
+				leftOutX = this->pls->getXColumnView().rows(*segmentIter);
 
 				for(comp = 0; comp < maxNComp; ++comp) {
 					residuals = leftOutY - this->pls->predict(leftOutX, comp + 1);
 
 					for(j = 0; j < residuals.n_elem; ++j) {
-						r2 = residuals[j] * residuals[j];
-						RSS[comp] += r2;
-						
-						RSSSDdelta = r2 - RSSSDmean[comp];
-						RSSSDmean[comp] = RSSSDmean[comp] + RSSSDdelta / (n + 1 + j);
-						RSSSDm2n[comp] = RSSSDm2n[comp] + RSSSDdelta * (r2 - RSSSDmean[comp]);
+						fitRSS.update(residuals[j] * residuals[j], comp);
 					}
 				}
 
-				++i;
-				n += j;
+				/* Increment segmentation iterator to point to the next `fit` segment */
+				++segmentIter;
 			}
 
 			/*
 			 * Find best number of components based on the RSS plus one standard deviation
 			 */
-			cutoff = RSS[0];
+			IF_DEBUG(
+				GAout << "EVALUATOR: MSE and SD" << std::endl;
+				for(j = 0; j < maxNComp; ++j) {
+					GAout << "\t (" << j + 1 << " comps.): " << fitRSS.mean(j) << " +- " << fitRSS.stddev(j) << std::endl;
+				}
+			)
+
+			cutoff = fitRSS.mean(0);
 			optNComp = 0;
 			
 			for(comp = 1; comp < maxNComp; ++comp) {
-				if(RSS[comp] < cutoff) {
+				if(fitRSS.mean(comp) < cutoff) {
 					optNComp = comp;
-					cutoff = RSS[comp];
+					cutoff = fitRSS.mean(comp);
 				}
 			}
+
+			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp << " (max. " << maxNComp << ")" << std::endl)
 			
-			cutoff += sqrt(RSSSDm2n[optNComp] / (this->nrows - this->minSegmentLength));
-			
-			optNComp = 0;
-			while(RSS[optNComp] > cutoff) {
+			cutoff += fitRSS.stddev(optNComp);
+
+			/* Go backwards again until the MSE is larger than the cutoff value */
+			if(optNComp == 0) {
+				optNComp = 1;
+			} else {
+				while(optNComp > 0 && fitRSS.mean(optNComp - 1) <= cutoff) {
+					--optNComp;
+				}
 				++optNComp;
-				if(optNComp > maxNComp) {
-					optNComp = 0;
-					break;
-				}
 			}
-			++optNComp;
 
 			IF_DEBUG(GAout << "EVALUATOR: Opt. num. of components: " << optNComp << " (max. " << maxNComp << ")" << std::endl)
 
 			/*
 			 * Predict last segment with a model fit to the other observations using optNComp components
+			 * (segmentation iterator points to the `test fit` segment
 			 */
-			this->pls->viewSelectRows(this->segmentation[i++]);
+			this->pls->viewSelectRows(*segmentIter);
 			this->pls->fit(optNComp);
 
-			leftOutX = this->pls->getXColumnView().rows(this->segmentation[i]);
-			leftOutY = this->pls->getY().rows(this->segmentation[i]);
+
+			/* Increment the segmentation iterator to point to the `test predict` segment */
+			++segmentIter;
+
+			leftOutX = this->pls->getXColumnView().rows(*segmentIter);
+			leftOutY = this->pls->getY().rows(*segmentIter);
 			residuals = leftOutY - this->pls->predict(leftOutX, optNComp);
 
-			for(j = 0; j < residuals.n_elem; ++j) {
-				predSD(residuals[j]);
-			}
+			/* Increment the segmentation iterator to point to the next `fit` segment */
+			++segmentIter;
+
+			predSD.update(residuals.col(0));
 		}
 
 		/*
