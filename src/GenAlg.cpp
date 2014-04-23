@@ -92,7 +92,7 @@ BEGIN_RCPP
 			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
 			
-			pls = PLS::getInstance(method, X, Y);
+			pls = PLS::getInstance(method, X, Y.col(0));
 			toFree |= 2; // pls has to be freed
 			
 			eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]),
@@ -227,7 +227,7 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 				seed.push_back(rng());
 			}
 			
-			pls = PLS::getInstance(method, X, Y);
+			pls = PLS::getInstance(method, X, Y.col(0));
 			toFree |= 2; // pls has to be freed
 		
 			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]),

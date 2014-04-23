@@ -212,9 +212,9 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 	double cutoff;
 	arma::uword optNComp;
 
-	arma::mat residuals;
+	arma::vec residuals;
 	arma::mat leftOutX;
-	arma::mat leftOutY;
+	arma::vec leftOutY;
 	OnlineStddev predSD;
 
 	uint16_t rep = 0, outer, seg, comp;
@@ -246,7 +246,6 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 
 				for(comp = 0; comp < maxNComp; ++comp) {
 					residuals = leftOutY - this->pls->predict(leftOutX, comp + 1);
-
 					for(j = 0; j < residuals.n_elem; ++j) {
 						fitRSS.update(residuals[j] * residuals[j], comp);
 					}
@@ -276,7 +275,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 				}
 			}
 
-			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp << " (max. " << maxNComp << ")" << std::endl)
+			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
 			
 			cutoff += fitRSS.stddev(optNComp);
 
@@ -310,11 +309,11 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 			/* Increment the segmentation iterator to point to the next `fit` segment */
 			++segmentIter;
 
-			predSD.update(residuals.col(0));
+			predSD.update(residuals);
 		}
 
 		/*
-		 * Calculate standard deviation of
+		 * Calculate standard deviation of the residuals
 		 */
 		IF_DEBUG(GAout << "EVALUATOR: Resulting SEP: " << predSD.stddev() << std::endl)
 		sumSEP -= predSD.stddev();

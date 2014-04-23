@@ -22,10 +22,10 @@ protected:
 	};
 
 public:
-	PLS(const arma::mat &X, const arma::mat &Y) : X(X), Y(Y), currentViewState(UNKNOWN) {};
+	PLS(const arma::mat &X, const arma::vec &Y) : X(X), Y(Y), currentViewState(UNKNOWN) {};
 	virtual ~PLS() {};
 
-	static PLS* getInstance(PLSMethod method, const arma::mat &X, const arma::mat &Y);
+	static PLS* getInstance(PLSMethod method, const arma::mat &X, const arma::vec &Y);
 
 	/**
 	 * Reset the current view to be the original X and original Y matrix
@@ -51,13 +51,13 @@ public:
 	 * that are obtained with ncomp specified in the last call
 	 * to PLS::fit).
 	 */
-	virtual const arma::cube& getCoefficients() const = 0;
+	virtual const arma::mat& getCoefficients() const = 0;
 
 	/**
 	 * Returns the intercept term for every number of components
 	 * i.e. ncomp x nresp matrix
 	 */
-	virtual const arma::mat& getIntercepts() const = 0;
+	virtual const arma::vec& getIntercepts() const = 0;
 
 	/**
 	 * Get dimensions of original matrices Y and X
@@ -74,23 +74,23 @@ public:
 	/**
 	 * ncomp should be 0 based (as in the fit method)
 	 */
-	arma::mat predict(const arma::mat &newX, uint16_t ncomp) const;
-	arma::cube predict(const arma::mat &newX) const;
+	arma::vec predict(const arma::mat &newX, uint16_t ncomp) const;
+	arma::mat predict(const arma::mat &newX) const;
 	
 	const arma::mat & getXColumnView() const { return this->viewXCol; }
-	const arma::mat & getY() const { return this->Y; }
+	const arma::vec & getY() const { return this->Y; }
 	
 	virtual PLS* clone() const = 0;
 	
 protected:
 	const arma::mat X;
-	const arma::mat Y;
+	const arma::vec Y;
 
 	uint16_t resultNComp;
 
 	ViewState currentViewState;
 	arma::mat viewXCol;
-	arma::mat viewY;
+	arma::vec viewY;
 	arma::mat viewX;
 };
 
