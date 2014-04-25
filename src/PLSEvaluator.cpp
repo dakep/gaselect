@@ -207,19 +207,17 @@ inline void PLSEvaluator::initSegmentation(double testSetSize, const std::vector
  */
 double PLSEvaluator::estSEP(uint16_t maxNComp) {
 	double sumSEP = 0.0;
-	OnlineStddev fitRSS(maxNComp);
+	OnlineStddev trainMSEP(maxNComp);
 
 	double cutoff;
 	arma::uword optNComp;
 
-	arma::vec residuals;
 	arma::mat leftOutX;
 	arma::vec leftOutY;
 	OnlineStddev predSD;
 
 	uint16_t rep = 0, outer, seg, comp;
 	std::vector<arma::uvec>::const_iterator segmentIter = this->segmentation.begin();
-	arma::uword j;
 
 	while(rep++ < this->numReplications) {
 		outer = 0;
@@ -228,7 +226,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 		while(outer++ < this->outerSegments) {
 			/* Reset the variables to 0 */
 			seg = 0;
-			fitRSS.reset();
+			trainMSEP.reset();
 
 			/*
 			 * Fit PLS models to predict the values in each segment once
@@ -245,10 +243,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 				leftOutX = this->pls->getXColumnView().rows(*segmentIter);
 
 				for(comp = 0; comp < maxNComp; ++comp) {
-					residuals = leftOutY - this->pls->predict(leftOutX, comp + 1);
-					for(j = 0; j < residuals.n_elem; ++j) {
-						fitRSS.update(residuals[j] * residuals[j], comp);
-					}
+					trainMSEP.update(arma::mean(arma::square(leftOutY - this->pls->predict(leftOutX, comp + 1))), comp);
 				}
 
 				/* Increment segmentation iterator to point to the next `fit` segment */
@@ -260,30 +255,30 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 			 */
 			IF_DEBUG(
 				GAout << "EVALUATOR: MSE and SD" << std::endl;
-				for(j = 0; j < maxNComp; ++j) {
-					GAout << "\t (" << j + 1 << " comps.): " << fitRSS.mean(j) << " +- " << fitRSS.stddev(j) << std::endl;
+				for(uint16_t j = 0; j < maxNComp; ++j) {
+					GAout << "\t (" << j + 1 << " comps.): " << trainMSEP.mean(j) << " +- " << trainMSEP.stddev(j) << std::endl;
 				}
 			)
 
-			cutoff = fitRSS.mean(0);
+			cutoff = trainMSEP.mean(0);
 			optNComp = 0;
 			
 			for(comp = 1; comp < maxNComp; ++comp) {
-				if(fitRSS.mean(comp) < cutoff) {
+				if(trainMSEP.mean(comp) < cutoff) {
 					optNComp = comp;
-					cutoff = fitRSS.mean(comp);
+					cutoff = trainMSEP.mean(comp);
 				}
 			}
 
 			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
 			
-			cutoff += fitRSS.stddev(optNComp);
+			cutoff += trainMSEP.stddev(optNComp);
 
 			/* Go backwards again until the MSE is larger than the cutoff value */
 			if(optNComp == 0) {
 				optNComp = 1;
 			} else {
-				while(optNComp > 0 && fitRSS.mean(optNComp - 1) <= cutoff) {
+				while(optNComp > 0 && trainMSEP.mean(optNComp - 1) <= cutoff) {
 					--optNComp;
 				}
 				++optNComp;
@@ -304,12 +299,10 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 
 			leftOutX = this->pls->getXColumnView().rows(*segmentIter);
 			leftOutY = this->pls->getY().rows(*segmentIter);
-			residuals = leftOutY - this->pls->predict(leftOutX, optNComp);
+			predSD.update(leftOutY - this->pls->predict(leftOutX, optNComp));
 
 			/* Increment the segmentation iterator to point to the next `fit` segment */
 			++segmentIter;
-
-			predSD.update(residuals);
 		}
 
 		/*
