@@ -23,7 +23,7 @@ void ShuffledSet::reset() {
 	this->reset(this->set.size());
 }
 
-void ShuffledSet::reset(size_t size) {
+void ShuffledSet::reset(arma::uword size) {
 	this->set.resize(size);
 	arma::uword i = 0, j = 1;
 	for(; j < size; i += 2, j += 2) {
@@ -35,7 +35,7 @@ void ShuffledSet::reset(size_t size) {
 	}
 }
 
-const std::vector<arma::uword>& ShuffledSet::shuffleAll(RNG &rng) {
+const arma::uvec& ShuffledSet::shuffleAll(RNG &rng) {
 	for(arma::uword i = 0; i < this->set.size(); ++i) {
 		std::swap(this->set[i], this->set[rng(i, this->set.size())]);
 	}

@@ -10,80 +10,50 @@
 #include "Logger.h"
 #include "PLS.h"
 
-void PLS::subviewChanged() {
-	this->validResultState = false;
+void PLS::viewSelectColumns(const arma::uvec &columns) {
+	this->viewXCol = this->X.cols(columns);
+
+	this->currentViewState = COLUMNS;
 }
 
-void PLS::setSubmatrixView(const arma::uvec &rows, const arma::uvec &columns) {
-	// As usually the submatrices are used alot and the columns and rows
-	// are generally not consequtive, it is faster to create a copy of the
-	// submatrix and work with the copy than to always access the submatrix view
-
-	this->viewXCol = this->X.cols(columns);
+void PLS::viewSelectRows(const arma::uvec &rows) {
 	this->viewX = this->viewXCol.rows(rows);
 	this->viewY = this->Y.rows(rows);
-
-	this->subviewChanged();
+	this->currentViewState = ROWS;
 }
 
-void PLS::setSubmatrixViewColumns(const arma::uvec &columns) {
-	// As usually the submatrices are used alot and the columns and rows
-	// are generally not consequtive, it is faster to create a copy of the
-	// submatrix and work with the copy than to always access the submatrix view
-
-	this->viewX = this->viewXCol = this->X.cols(columns);
-	this->viewY = this->Y;
-
-	this->subviewChanged();
-}
-
-void PLS::setSubmatrixViewRows(const arma::uvec &rows, bool keepOldColumns) {
-	// As usually the submatrices are used alot and the columns and rows
-	// are generally not consequtive, it is faster to create a copy of the
-	// submatrix and work with the copy than to always access the submatrix view
-
-	if(keepOldColumns == true) {
-		this->viewX = this->viewXCol.rows(rows);
-	} else {
-		this->viewX = this->X.rows(rows);
-	}
-	this->viewY = this->Y.rows(rows);
-
-	this->subviewChanged();
-}
-
-// ncomp should be zero based
-arma::mat PLS::predict(const arma::mat &newX, uint16_t ncomp) const {
-	const arma::cube& coefs = this->getCoefficients();
-	const arma::mat& intercepts = this->getIntercepts();
-	if(ncomp > coefs.n_slices) {
-		GAerr << "Trying to predict with " << ncomp << " components when only " << coefs.n_slices << " components are available" << std::endl;
+arma::vec PLS::predict(const arma::mat &newX, uint16_t ncomp) const {
+	const arma::mat& coefs = this->getCoefficients();
+	const arma::vec& intercepts = this->getIntercepts();
+	if(ncomp > coefs.n_cols) {
+		GAerr << "Trying to predict with " << ncomp << " components when only " << coefs.n_cols << " components are available" << std::endl;
 		throw Rcpp::exception("Can not predict values for a model with more components than fit components", __FILE__, __LINE__);
 	}
 	
 	--ncomp;
-	arma::mat pred = newX * coefs.slice(ncomp);
-	pred.each_row() += intercepts.row(ncomp);
+
+	arma::vec pred = newX * coefs.col(ncomp);
+	pred += intercepts[ncomp];
 	return pred;
 }
 
-arma::cube PLS::predict(const arma::mat &newX) const {
-	const arma::cube& coefs = this->getCoefficients();
-	const arma::mat& intercepts = this->getIntercepts();
-	arma::cube pred(newX.n_rows, coefs.n_cols, coefs.n_slices);
-	for(uint16_t i = 0; i < coefs.n_slices; ++i) {
-		pred.slice(i) = newX * coefs.slice(i);
-		pred.slice(i).each_row() += intercepts.row(i);
+arma::mat PLS::predict(const arma::mat &newX) const {
+	const arma::mat& coefs = this->getCoefficients();
+	const arma::vec& intercepts = this->getIntercepts();
+	arma::mat pred(newX.n_rows, coefs.n_cols);
+	for(uint16_t i = 0; i < coefs.n_cols; ++i) {
+		pred.col(i) = newX * coefs.col(i);
+		pred.col(i) += intercepts[i];
 	}
 
 	return pred;
 }
 
-PLS* PLS::getInstance(PLSMethod method, const arma::mat &X, const arma::mat &Y, const bool fitValues) {
+PLS* PLS::getInstance(PLSMethod method, const arma::mat &X, const arma::vec &Y) {
 	PLS *ret;
 	switch(method) {
 		case SIMPLS:
-			ret = new PLSSimpls(X, Y, fitValues);
+			ret = new PLSSimpls(X, Y);
 			break;
 	}
 
