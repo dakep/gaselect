@@ -30,6 +30,10 @@ setClass("GenAlgPLSEvaluator", representation(
 	if(object@numThreads < 0L || object@numThreads > MAXUINT16) {
 		errors <- c(errors, paste("The maximum number of threads must be greater than or equal 0 and less than", MAXUINT16));
 	}
+    
+    if(object@innerSegments <= 1L || object@innerSegments > MAXUINT16) {
+        errors <- c(errors, paste("The number of inner segments must be between 2 and", MAXUINT16));
+    }
 
     if(object@maxNComp < 0L || object@maxNComp > MAXUINT16) {
         errors <- c(errors, paste("The maximum number of components must be greater than or equal 0 and less than", MAXUINT16));
@@ -92,25 +96,36 @@ validity = function(object) {
 
 #' PLS Evaluator
 #'
-#' Create a PLS evaluator for the genetic algorithm
+#' Creates the object that controls the evaluation step in the genetic algorithm
 #'
-#' This evaluator class uses PLS with cross-validation (using \code{numSegments} random segments) to
-#' assess the prediction power of the variable subset. In each of the \code{numReplications} replications
-#' the standard error of prediction (SEP) is used to quantify the fitness of the subset. The final fitness
-#' is the mean SEP. The larger the number of replications, the better the estimation of the SEP but the slower
-#' the algorithm (the evaluation step is done \code{numGenerations} * \code{populationSize} times - see \code{\link{genAlgControl}}).
+#' With this method the genetic algorithm uses PLS regression models to assess the prediction power of
+#' variable subsets. By default, simple repeated cross-validation (srCV) is used. The optimal number
+#' of PLS components is estimated using cross-validation (with \code{innerSegments} segments) on a
+#' training set. The prediction power is then evaluated by fitting a PLS regression model with this optimal
+#' number of components to the training set and predicting the values of a test set (of either
+#' \code{testSetSize} size or \code{1 / innerSegments}, if \code{testSetSize} is not specified).
+#' 
+#' If the parameter \code{outerSegments} is given, repeated double cross-validation is used instead.
+#' There, the data set is first split into \code{outerSegments} segments and one segment is used as
+#' prediction set and the other segments as test set. This is repeated for each outer segment.
+#' 
+#' The whole procedure is repeated \code{numReplications} times to get a more reliable estimate of the
+#' prediction power.
 #'
 #' @param numReplications The number of replications used to evaluate a variable subset (must be between 1 and 2^16)
-#' @param innerSegments The number of CV segments used in one replication (must be between 1 and 2^16)
+#' @param innerSegments The number of CV segments used in one replication (must be between 2 and 2^16)
 #' @param outerSegments The number of outer CV segments used in one replication (between 0 and 2^16). If this
-#'      is greater than 1, the repeated double cross-validation strategy (rdCV) will be used instead of
-#'      simple repeated cross-validation (srCV)
+#'      is greater than 1, repeated double cross-validation strategy (rdCV) will be used instead of
+#'      simple repeated cross-validation (srCV) (see details)
 #' @param testSetSize The relative size of the test set used for simple repeated CV (between 0 and 1). This parameter
 #'      is ignored if outerSegments > 1 and a warning will be issued.
-#' @param numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads)
-#' @param maxNComp The maximum number of components the PLS models should consinder (if not specified, the number is not constrained)
+#' @param numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than
+#'      1 or NULL means no threads)
+#' @param maxNComp The maximum number of components the PLS models should consider (if not specified,
+#'      the number of components is not constrained)
 #' @param method The PLS method used to fit the PLS model (currently only SIMPLS is implemented)
-#' @return Returns an S4 object of type \code{\link{GenAlgPLSEvaluator}}
+#' @return Returns an S4 object of type \code{\link{GenAlgPLSEvaluator}} to be used as argument to
+#'      a call of \code{\link{genAlg}}.
 #' @export
 #' @family GenAlg Evaluators
 #' @example examples/genAlg.R

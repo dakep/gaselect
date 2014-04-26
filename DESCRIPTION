@@ -1,14 +1,17 @@
-Package: GenAlgPLS
+Package: gaselect
 Type: Package
-Title: Genetic algorithm for variable selection using a PLS criterion
-Version: 2.9.0
-Date: 2014-02-13
+Title: Genetic algorithm (GA) for variable selection from high dimensional data
+Version: 0.1
+Date: 2014-04-26
 Author: David Kepplinger
 Maintainer: David Kepplinger <david@dkepplinger.org>
-Description: Implementation of a simple genetic algorithm for variable
-    selection with different internal fitness measures, most notably the simple
-    repeated cross-validtion fitness measure to quantify the prediction power
-    of variable subsets.
+Description: This package provides a genetic algorithm for finding variable
+    subsets in high dimensional data with high prediction performance. The
+    genetic algorithm can use oridnary least squares (OLS) regression models or
+    partial least squares (PLS) regression models to evaluate the prediction
+    power of variable subsets. By supporting different cross-validation
+    schemes, the user can fine-tune the tradeoff between speed and quality of
+    the solution.
 License: GPL (>= 2)
 NeedsCompilation: yes
 Roxygen: list(wrap = FALSE)
