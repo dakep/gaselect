@@ -78,10 +78,11 @@ setClass("GenAlg", representation(
 #' @param evaluator The evaluator used to evaluate the fitness of a variable subset. See \code{\link{evaluatorPLS}}, \code{\link{evaluatorLM}} or \code{\link{evaluatorUserFunction}} for details.
 #' @param seed Integer with the seed for the random number generator or NULL to automatically seed the RNG
 #' @export
+#' @import Rcpp
 #' @include Evaluator.R GenAlgControl.R
 #' @return An object of type \code{\link{GenAlg}}
 #' @rdname GenAlg-constructor
-#' @useDynLib GenAlgPLS
+#' @useDynLib gaselect
 #' @example examples/genAlg.R
 setGeneric("genAlg", function(y, X, control, evaluator = evaluatorPLS(), seed = NULL) { standardGeneric("genAlg") });
 
@@ -136,9 +137,9 @@ function(y, X, control, evaluator, seed) {
 	ctrlArg$userEvalFunction <- getEvalFun(ret@evaluator, ret);
 
 	if(ctrlArg$evaluatorClass == 0) {
-		res <- .Call("genAlgPLS", ctrlArg, NULL, NULL, seed, PACKAGE = "GenAlgPLS");
+		res <- .Call("genAlgPLS", ctrlArg, NULL, NULL, seed, PACKAGE = "gaselect");
 	} else {
-		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), ret@seed, PACKAGE = "GenAlgPLS");
+		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), ret@seed, PACKAGE = "gaselect");
 	}
 
 	ret@subsets <- res$subsets;

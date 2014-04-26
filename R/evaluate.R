@@ -8,8 +8,9 @@
 #' @param subsets The logical matrix where a column stands for one subset to evaluate
 #' @param seed The value to seed the random number generator before evaluating
 #' @param verbosity A value between 0 (no output at all) and 5 (maximum verbosity)
+#' @import Rcpp
+#' @useDynLib gaselect
 #' @include Evaluator.R
-#' @docType methods
 #' @rdname evaluate-methods
 setGeneric("evaluate", function(object, X, y, subsets, seed, verbosity) { standardGeneric("evaluate"); });
 
@@ -19,30 +20,30 @@ function(object, X, y, subsets, seed, verbosity) {
     if(!is.logical(subsets)) {
         stop("subsets must be logical.");
     }
-    
+
     if(!is.numeric(X)) {
         stop("X must be numeric.");
     }
-    
+
     if(verbosity < 0L) {
         verbosity <- 0L;
     } else if(verbosity > 5L) {
         verbosity <- 5L;
     }
-    
+
     if(nrow(subsets) != ncol(X)) {
         stop("The number of rows of subsets must match the number of columns of X.");
     }
-    
+
     ctrlArg <- toCControlList(object);
     ctrlArg$userEvalFunction <- getEvalFun(object, cbind(y, X));
     ctrlArg$verbosity <- verbosity;
-    res <- .Call("evaluate", ctrlArg, as.matrix(X), as.matrix(y), subsets, seed, PACKAGE = "GenAlgPLS");
-    
+    res <- .Call("evaluate", ctrlArg, as.matrix(X), as.matrix(y), subsets, seed, PACKAGE = "gaselect");
+
     if(class(object) == "GenAlgPLSEvaluator") {
         res <- -res / object@numReplications;
     }
-    
+
     return(res);
 });
 

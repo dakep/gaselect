@@ -15,12 +15,11 @@ Description: This package provides a genetic algorithm for finding variable
 License: GPL (>= 2)
 NeedsCompilation: yes
 Roxygen: list(wrap = FALSE)
-Depends:
+Imports:
     methods (>= 2.10.0),
     Rcpp (>= 0.9.10)
-Imports:
+LinkingTo: Rcpp (>= 0.9.10),
     RcppArmadillo (>= 0.3.4.0)
-LinkingTo: Rcpp, RcppArmadillo
 Collate:
     'Evaluator.R'
     'GenAlgControl.R'
