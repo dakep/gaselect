@@ -13,22 +13,17 @@
 #include <RcppArmadillo.h>
 #include "PLSSimpls.h"
 
-PLSSimpls::PLSSimpls(const arma::mat &X, const arma::mat &Y, const bool fitValues) : PLS(X, Y, fitValues) {
+PLSSimpls::PLSSimpls(const arma::mat &X, const arma::vec &Y) : PLS(X, Y) {
 	if(Y.n_cols > 1) {
 		throw std::invalid_argument("The size of the seed must not be smaller than the RNG's seed size");
 	}
-	this->subviewChanged();
 }
 
 PLSSimpls::~PLSSimpls() {
 }
 
 PLS* PLSSimpls::clone() const {
-	PLSSimpls* clone = new PLSSimpls(arma::mat(this->X), arma::mat(this->Y), this->fitValues);
-	
-	clone->viewX = this->viewX;
-	clone->viewY = this->viewY;
-	clone->viewXCol = this->viewXCol;
+	PLSSimpls* clone = new PLSSimpls(arma::mat(this->X), arma::mat(this->Y));
 	
 //	clone->resultNComp = this->resultNComp;
 //	clone->fittedValues = this->fittedValues;
@@ -40,15 +35,27 @@ PLS* PLSSimpls::clone() const {
 	return clone;
 }
 
-void PLSSimpls::subviewChanged() {
-	PLS::subviewChanged();
-
+inline void PLSSimpls::centerView() {
 	// center X and Y
-	this->Xmean = ((arma::mat) arma::mean(this->viewX)).row(0);
-	this->Ymean = ((arma::mat) arma::mean(this->viewY)).row(0);
+
+	switch(this->currentViewState) {
+		case PLS::UNKNOWN:
+			this->viewX = this->X;
+			this->viewY = this->Y;
+			break;
+		case PLS::COLUMNS:
+			this->viewX = this->viewXCol;
+			this->viewY = this->Y;
+			break;
+		default:
+			break;
+	}
+
+	this->Xmean = arma::mean(this->viewX);
+	this->Ymean = arma::mean(this->viewY);
 
 	this->viewX.each_row() -= this->Xmean;
-	this->viewY.each_row() -= this->Ymean;
+	this->viewY -= this->Ymean;
 }
 
 void PLSSimpls::fit(uint16_t ncomp) {
@@ -57,26 +64,32 @@ void PLSSimpls::fit(uint16_t ncomp) {
 		ncomp = maxNComp;
 	}
 
-	// Init neccessary matrices and vectors
-	// Variable names are accoridng to the original paper by S. de Jong (1993)
+	/*
+	 * Init neccessary matrices and vectors
+	 * Variable names are according to the original paper by S. de Jong (1993)
+	 */
 
-	this->coef.zeros(this->viewX.n_cols, this->viewY.n_cols, ncomp);
-	this->intercepts.zeros(ncomp, this->viewY.n_cols);
-
-	arma::mat TT; // X factor scores (only really needed if fitted values should be calculated)
+	this->coef.zeros(this->viewX.n_cols, ncomp);
+	this->intercepts.zeros(ncomp);
 
 	this->R.zeros(this->viewX.n_cols, ncomp);
 	this->V.zeros(this->viewX.n_cols, ncomp);
 	this->tQ.zeros(ncomp, this->viewY.n_cols);
 
-	if(this->fitValues) {
-		TT.zeros(this->viewX.n_rows, ncomp);
-		this->fittedValues.zeros(this->viewY.n_rows, this->viewY.n_cols, ncomp);
-	} else {
-		this->fittedValues.zeros(1, 1, 1);
-	}
+//	arma::mat TT; // X factor scores (only really needed if fitted values should be calculated)
+//	if(this->fitValues) {
+//		TT.zeros(this->viewX.n_rows, ncomp);
+//		this->fittedValues.zeros(this->viewY.n_rows, this->viewY.n_cols, ncomp);
+//	} else {
+//		this->fittedValues.zeros(1, 1, 1);
+//	}
 
-	arma::mat S = this->viewX.t() * this->viewY; // Cross product
+	/*
+	 * Center X and Y views
+	 */
+	this->centerView();
+
+	arma::vec S = ((arma::mat) (this->viewX.t() * this->viewY)).col(0); // Cross product
 
 	// Working vectors
 	arma::vec t; // X block factor scores
@@ -113,16 +126,15 @@ void PLSSimpls::fit(uint16_t ncomp) {
 
 		// R and V must not be updated because r resp. v are already pointers to the correct column
 
-		this->coef.slice(i) = this->R.cols(0, i) * this->tQ.rows(0, i);
-		this->intercepts.row(i) = this->Ymean - (this->Xmean * this->coef.slice(i));
+		this->coef.col(i) = this->R.cols(0, i) * this->tQ.rows(0, i);
+		this->intercepts[i] = this->Ymean - ((arma::vec) (this->Xmean * this->coef.col(i)))[0];
 
-		if(this->fitValues) {
-			TT.col(i) = t;
-			this->fittedValues.slice(i) = TT.cols(0, i) * tQ.rows(0, i);
-			this->fittedValues.slice(i).each_row() += this->Ymean;
-		}
+//		if(this->fitValues) {
+//			TT.col(i) = t;
+//			this->fittedValues.slice(i) = TT.cols(0, i) * tQ.rows(0, i);
+//			this->fittedValues.slice(i).each_row() += this->Ymean;
+//		}
 	}
 
 	this->resultNComp = ncomp;
-	this->validResultState = true;
 }

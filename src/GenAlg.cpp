@@ -92,10 +92,14 @@ BEGIN_RCPP
 			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
 			
-			pls = PLS::getInstance(method, X, Y, false);
+			pls = PLS::getInstance(method, X, Y.col(0));
 			toFree |= 2; // pls has to be freed
 			
-			eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]), as<uint16_t>(control["numSegments"]), seed, ctrl.verbosity);
+			eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]),
+				as<uint16_t>(control["maxNComp"]), seed, ctrl.verbosity,
+				as<uint16_t>(control["innerSegments"]),
+				as<uint16_t>(control["outerSegments"]),
+				as<double>(control["testSetSize"]));
 
 			break;
 		}
@@ -223,10 +227,14 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 				seed.push_back(rng());
 			}
 			
-			pls = PLS::getInstance(method, X, Y, false);
+			pls = PLS::getInstance(method, X, Y.col(0));
 			toFree |= 2; // pls has to be freed
 		
-			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]), as<uint16_t>(evaluator["numSegments"]), seed, OFF);
+			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]),
+				as<uint16_t>(evaluator["maxNComp"]), seed, (VerbosityLevel) as<int>(evaluator["verbosity"]),
+				as<uint16_t>(evaluator["innerSegments"]),
+				as<uint16_t>(evaluator["outerSegments"]),
+				as<double>(evaluator["testSetSize"]));
 			
 			break;
 		}
@@ -234,7 +242,7 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 			arma::colvec y = Y.col(0);
 			
 			LMEvaluator::Statistic stat = (LMEvaluator::Statistic) as<int>(evaluator["statistic"]);
-			eval = new LMEvaluator(X, y, stat, OFF);
+			eval = new LMEvaluator(X, y, stat, (VerbosityLevel) as<int>(evaluator["verbosity"]));
 			
 			break;
 		}

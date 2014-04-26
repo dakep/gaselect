@@ -61,7 +61,7 @@ public:
 	 * Shuffle the whole set and return a reference to the shuffled set (the reference
 	 * will be invalid once the ShuffledSet object is destroyed)
 	 */
-	const std::vector<arma::uword>& shuffleAll(RNG &rng);
+	const arma::uvec& shuffleAll(RNG &rng);
 	
 	/**
 	 *
@@ -83,7 +83,7 @@ public:
 	 *
 	 * @param arma::uword size ... The new size of the set
 	 */
-	void reset(size_t size);
+	void reset(arma::uword size);
 
 	/**
 	 * Reset the set to a sorted state with the same number of elements
@@ -92,7 +92,7 @@ public:
 	void reset();
 
 private:
-	std::vector<arma::uword> set;
+	arma::uvec set;
 };
 
 #endif

@@ -23,7 +23,8 @@
 
 class PLSEvaluator : public Evaluator {
 public:
-	PLSEvaluator(PLS* pls, const uint16_t numReplications, const uint16_t numSegments, const std::vector<uint32_t> &seed, const VerbosityLevel verbosity);
+	PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
+	uint16_t innerSegments, uint16_t outerSegments = 1, double testSetSize = 0.0);
 
 	~PLSEvaluator() {
 		if(this->cloned == true) {
@@ -48,23 +49,64 @@ public:
 
 private:
 	const uint16_t numReplications;
-	const uint16_t numSegments;
+	const uint16_t outerSegments;
+	const uint16_t innerSegments;
 	const arma::uword nrows;
-	const arma::uword segmentLength; // The length of the incomplete segments
-	const uint16_t completeSegments; // The number of segments with `segmentLength` + 1 elements. If 0, all segments have `segmentLength` elements
 	const bool cloned;
 
 	PLS *pls;
+	uint16_t maxNComp;
+	std::vector<arma::uvec> segmentation;
 
 	PLSEvaluator(const PLSEvaluator &other);
 
 	/**
 	 * Estimate the SEP
 	 */
-	double estSEP(uint16_t ncomp, std::vector<arma::uword> &rowNumbers);
+	double estSEP(uint16_t maxNComp);
 
-	std::vector< std::vector<arma::uword> > shuffledRowNumbers;
-	void initRowNumbers(const std::vector<uint32_t> &seed);
+	void initSegmentation(double testSetSize, const std::vector<uint32_t> &seed);
+
+	/**
+	 * Helper class for online calculation of the standard deviation (and optionally the sum)
+	 */
+	class OnlineStddev {
+	public:
+		OnlineStddev(uint16_t dim = 1) : dim(dim),
+			meanVec(dim, 0.0), M2(dim, 0.0), counter(dim, 0) {}
+
+		inline void reset() {
+			std::memset(&(this->counter[0]), 0, this->dim * sizeof(this->counter[0]));
+			std::memset(&(this->meanVec[0]), 0.0, this->dim * sizeof(this->meanVec[0]));
+			std::memset(&(this->M2[0]), 0.0, this->dim * sizeof(this->M2[0]));
+		};
+
+		inline void update(arma::vec samples, uint16_t dim = 0) {
+			for(uint16_t i = 0; i < samples.n_elem; ++i) {
+				this->update(samples[i], dim);
+			}
+		};
+
+		inline void update(double sample, uint16_t dim = 0) {
+			double delta = sample - this->meanVec[dim];
+			this->meanVec[dim] += delta / (++this->counter[dim]);
+			this->M2[dim] += delta * (sample - this->meanVec[dim]);
+		};
+
+		inline double stddev(uint16_t dim = 0) const {
+			return std::sqrt(this->M2[dim] / (this->counter[dim] - 1));
+		};
+
+		inline double mean(uint16_t dim = 0) const {
+			return this->meanVec[dim];
+		};
+
+	private:
+		const uint16_t dim;
+		std::vector<double> meanVec;
+		std::vector<double> M2;
+		std::vector<uint16_t> counter;
+	};
 };
 
 

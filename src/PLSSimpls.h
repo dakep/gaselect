@@ -16,29 +16,28 @@
 
 class PLSSimpls : public PLS {
 public:
-	PLSSimpls(const arma::mat &X, const arma::mat &Y, const bool fitValues = true);
+	PLSSimpls(const arma::mat &X, const arma::vec &Y);
 	~PLSSimpls();
 
 	void fit(uint16_t ncomp = 0);
-	const arma::cube& getCoefficients() const { return this->coef; }
-	const arma::mat& getIntercepts() const { return this->intercepts; };
-	arma::cube getFittedValues() const { return this->fittedValues; }
+	const arma::mat& getCoefficients() const { return this->coef; }
+	const arma::vec& getIntercepts() const { return this->intercepts; };
+//	arma::cube getFittedValues() const { return this->fittedValues; }
 
 //	arma::mat getScores() { return this->TT; }
 //	arma::mat getYLoadings() { return this->tQ.t(); }
 //	arma::mat getProjection() { return this->R; }
 
 	virtual PLS* clone() const;
-	
-protected:
-	void subviewChanged();
 
 private:
-	arma::cube fittedValues;
-	arma::cube coef; // Cube with coefficients
-	arma::mat intercepts; // n x ncomp matrix with intercept terms
-	arma::rowvec Ymean; // Column means of Y
+//	arma::cube fittedValues;
+	arma::mat coef; // Cube with coefficients
+	arma::vec intercepts; // n x ncomp matrix with intercept terms
+	double Ymean; // mean of Y
 	arma::rowvec Xmean; // Column means of X
+
+	void centerView();
 
 	/*
 	 * Following private variables are only for fitting, but it is faster to not

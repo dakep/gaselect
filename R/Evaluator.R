@@ -6,6 +6,7 @@
 setClass("GenAlgEvaluator", representation(), contains = "VIRTUAL");
 
 #' PLS Evaluator
+#' 
 #' @slot numReplications The number of replications used to evaluate a variable subset.
 #' @slot numSegments The number of CV segments used in one replication.
 #' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
@@ -15,8 +16,11 @@ setClass("GenAlgEvaluator", representation(), contains = "VIRTUAL");
 #' @rdname GenAlgPLSEvaluator-class
 setClass("GenAlgPLSEvaluator", representation(
 	numReplications = "integer",
-	numSegments = "integer",
+	innerSegments = "integer",
+	outerSegments = "integer",
+	testSetSize = "numeric",
 	numThreads = "integer",
+    maxNComp = "integer",
 	method = "character",
 	methodId = "integer"
 ), validity = function(object) {
@@ -26,6 +30,14 @@ setClass("GenAlgPLSEvaluator", representation(
 	if(object@numThreads < 0L || object@numThreads > MAXUINT16) {
 		errors <- c(errors, paste("The maximum number of threads must be greater than or equal 0 and less than", MAXUINT16));
 	}
+
+    if(object@maxNComp < 0L || object@maxNComp > MAXUINT16) {
+        errors <- c(errors, paste("The maximum number of components must be greater than or equal 0 and less than", MAXUINT16));
+    }
+
+    if(object@testSetSize < 0 || object@testSetSize >= 1) {
+        errors <- c(errors, "The test set size must be between 0 and 1.");
+    }
 
 	if(length(errors) == 0) {
 		return(TRUE);
@@ -89,15 +101,21 @@ validity = function(object) {
 #' the algorithm (the evaluation step is done \code{numGenerations} * \code{populationSize} times - see \code{\link{genAlgControl}}).
 #'
 #' @param numReplications The number of replications used to evaluate a variable subset (must be between 1 and 2^16)
-#' @param numSegments The number of CV segments used in one replication (must be between 1 and 2^16)
+#' @param innerSegments The number of CV segments used in one replication (must be between 1 and 2^16)
+#' @param outerSegments The number of outer CV segments used in one replication (between 0 and 2^16). If this
+#'      is greater than 1, the repeated double cross-validation strategy (rdCV) will be used instead of
+#'      simple repeated cross-validation (srCV)
+#' @param testSetSize The relative size of the test set used for simple repeated CV (between 0 and 1). This parameter
+#'      is ignored if outerSegments > 1 and a warning will be issued.
 #' @param numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads)
+#' @param maxNComp The maximum number of components the PLS models should consinder (if not specified, the number is not constrained)
 #' @param method The PLS method used to fit the PLS model (currently only SIMPLS is implemented)
 #' @return Returns an S4 object of type \code{\link{GenAlgPLSEvaluator}}
 #' @export
 #' @family GenAlg Evaluators
 #' @example examples/genAlg.R
 #' @rdname GenAlgPLSEvaluator-constructor
-evaluatorPLS <- function(numReplications = 30L, numSegments = 5L, numThreads = NULL, method = c("simpls")) {
+evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegments = 1L, testSetSize = NULL, numThreads = NULL, maxNComp = NULL, method = c("simpls")) {
 	method <- match.arg(method);
 
 	methodId <- switch(method,
@@ -108,9 +126,21 @@ evaluatorPLS <- function(numReplications = 30L, numSegments = 5L, numThreads = N
 		numReplications <- as.integer(numReplications);
 	}
 
-	if(is.numeric(numSegments)) {
-		numSegments <- as.integer(numSegments);
+	if(is.numeric(innerSegments)) {
+		innerSegments <- as.integer(innerSegments);
 	}
+
+	if(is.numeric(outerSegments)) {
+		outerSegments <- as.integer(outerSegments);
+	}
+
+    if(outerSegments > 1 && is.numeric(testSetSize)) {
+        warning("outerSegments AND testSetSize have been set. testSetSize will be ignored and rdCV with outerSegments will be used.");
+    }
+
+    if(!is.numeric(testSetSize)) {
+        testSetSize <- 0;
+    }
 
 	if(missing(numThreads) || is.null(numThreads)) {
 		numThreads <- 1L;
@@ -118,10 +148,19 @@ evaluatorPLS <- function(numReplications = 30L, numSegments = 5L, numThreads = N
 		numThreads <- as.integer(numThreads);
 	}
 
+    if(missing(maxNComp) || is.null(maxNComp)) {
+        maxNComp <- 0L;
+    } else if(is.numeric(maxNComp)) {
+        maxNComp <- as.integer(maxNComp);
+    }
+
 	return(new("GenAlgPLSEvaluator",
 		numReplications = numReplications,
-		numSegments = numSegments,
+		innerSegments = innerSegments,
+		outerSegments = outerSegments,
+		testSetSize = testSetSize,
 		numThreads = numThreads,
+        maxNComp = maxNComp,
 		method = method,
 		methodId = methodId
 	));

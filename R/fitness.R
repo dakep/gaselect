@@ -16,7 +16,7 @@ setGeneric("fitness", function(object) { standardGeneric("fitness") });
 
 #' @rdname fitness-methods
 setMethod("fitness", signature(object = "GenAlg"), function(object) {
-	return(SEPeval(object@evaluator, object));
+	return(fitnessEval(object@evaluator, object));
 });
 
 #' Get the fitness of a variable subset
