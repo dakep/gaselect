@@ -2,29 +2,31 @@
 \docType{methods}
 \name{evaluate}
 \alias{evaluate}
-\alias{evaluate,GenAlgEvaluator,matrix,numeric,ANY,NULL-method}
-\alias{evaluate,GenAlgEvaluator,matrix,numeric,ANY,missing-method}
-\alias{evaluate,GenAlgEvaluator,matrix,numeric,ANY,numeric-method}
-\alias{evaluate,GenAlgEvaluator,matrix,numeric,logical,integer-method}
-\alias{evaluate,GenAlgEvaluator,matrix,numeric,matrix,integer-method}
+\alias{evaluate,GenAlgEvaluator,matrix,numeric,ANY,integer,missing-method}
+\alias{evaluate,GenAlgEvaluator,matrix,numeric,ANY,missing,integer-method}
+\alias{evaluate,GenAlgEvaluator,matrix,numeric,ANY,missing,missing-method}
+\alias{evaluate,GenAlgEvaluator,matrix,numeric,logical,integer,integer-method}
+\alias{evaluate,GenAlgEvaluator,matrix,numeric,matrix,integer,integer-method}
 \title{Evaluate the fitness of variable subsets}
 \usage{
-evaluate(object, X, y, subsets, seed)
+evaluate(object, X, y, subsets, seed, verbosity)
 
-\S4method{evaluate}{GenAlgEvaluator,matrix,numeric,ANY,missing}(object, X, y,
-  subsets, seed)
 
-\S4method{evaluate}{GenAlgEvaluator,matrix,numeric,ANY,`NULL`}(object, X, y,
-  subsets, seed)
+  \S4method{evaluate}{GenAlgEvaluator,matrix,numeric,matrix,integer,integer}(object,
+  X, y, subsets, seed, verbosity)
 
-\S4method{evaluate}{GenAlgEvaluator,matrix,numeric,ANY,numeric}(object, X, y,
-  subsets, seed)
 
-\S4method{evaluate}{GenAlgEvaluator,matrix,numeric,logical,integer}(object, X,
-  y, subsets, seed)
+  \S4method{evaluate}{GenAlgEvaluator,matrix,numeric,logical,integer,integer}(object,
+  X, y, subsets, seed, verbosity)
 
-\S4method{evaluate}{GenAlgEvaluator,matrix,numeric,matrix,integer}(object, X, y,
-  subsets, seed)
+\S4method{evaluate}{GenAlgEvaluator,matrix,numeric,ANY,missing,integer}(object,
+  X, y, subsets, seed, verbosity)
+
+\S4method{evaluate}{GenAlgEvaluator,matrix,numeric,ANY,integer,missing}(object,
+  X, y, subsets, seed, verbosity)
+
+\S4method{evaluate}{GenAlgEvaluator,matrix,numeric,ANY,missing,missing}(object,
+  X, y, subsets, seed, verbosity)
 }
 \arguments{
 \item{object}{The GenAlgEvaluator object that is used to evaluate the variables}
@@ -36,6 +38,8 @@ evaluate(object, X, y, subsets, seed)
 \item{subsets}{The logical matrix where a column stands for one subset to evaluate}
 
 \item{seed}{The value to seed the random number generator before evaluating}
+
+\item{verbosity}{A value between 0 (no output at all) and 5 (maximum verbosity)}
 }
 \description{
 Evaluate the given variable subsets with the given Evaluator
