@@ -214,7 +214,7 @@ protected:
 	inline void printCurrentGeneration() {
 		int i = 0;
 		for(ChVecIt it = this->currentGeneration.begin(); it != this->currentGeneration.end(); ++it) {
-			GAout << (std::stringstream() << std::fixed << std::setw(4) << i++).rdbuf();
+			GAout << (std::stringstream() << std::fixed << std::setw(4) << i++ << ": ").rdbuf();
 			this->printChromosomeFitness(GAout, **it);
 		}
 		GAout << "\n" << std::endl;

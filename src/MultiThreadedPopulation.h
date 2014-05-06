@@ -71,17 +71,21 @@ private:
 
 	uint16_t actuallySpawnedThreads;
 	uint16_t numThreadsFinishedMating;
-		
-	void mate(uint16_t numChildren, ::Evaluator& evaluator,
+
+	inline void generateInitialChromosomes(uint16_t numChromosomes, ::Evaluator& evaluator,
+		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset,
+		bool checkUserInterrupt = true);
+
+	inline void mate(uint16_t numChildren, ::Evaluator& evaluator,
 		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset,
 		bool checkUserInterrupt = true);
 	
 	static void* matingThreadStart(void* obj);
-	
-	void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator,
+
+	inline void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator,
 		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset);
 
-	void waitForAllThreadsToFinishMating();
+	inline void waitForAllThreadsToFinishMating();
 	
 	class OrderChromosomePtr : public std::binary_function<Chromosome*, Chromosome*, bool> {
 	public:

@@ -168,10 +168,6 @@ void SingleThreadPopulation::run() {
 
 						this->addChromosomeToElite(**child1It);
 
-						if(this->ctrl.verbosity >= VERBOSE) {
-							this->printChromosomeFitness(GAout, **child1It);
-						}
-
 						/*
 						 * The child is no duplicate (or accepted as one) and is not too bad,
 						 * so go on to the next one
@@ -206,10 +202,6 @@ void SingleThreadPopulation::run() {
 						}
 
 						this->addChromosomeToElite(**child2It);
-
-						if(this->ctrl.verbosity >= VERBOSE) {
-							this->printChromosomeFitness(GAout, **child2It);
-						}
 
 						/*
 						 * The child is no duplicate (or accepted as one) and is not too bad,
