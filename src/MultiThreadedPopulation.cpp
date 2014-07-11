@@ -85,6 +85,44 @@ MultiThreadedPopulation::~MultiThreadedPopulation() {
 	pthread_cond_destroy(&this->allThreadsFinishedMatingCond);
 }
 
+void MultiThreadedPopulation::generateInitialChromosomes(uint16_t numChromosomes, ::Evaluator& evaluator,
+		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset, bool checkUserInterrupt) {
+
+	ChVecIt rangeBeginIt = this->nextGeneration.begin() + offset;
+	ChVecIt it = rangeBeginIt;
+	ChVecIt rangeEndIt = rangeBeginIt + numChromosomes;
+
+	while(it != rangeEndIt) {
+		(*it) = new Chromosome(this->ctrl, shuffledSet, rng);
+
+		if(std::find_if(rangeBeginIt, it, CompChromsomePtr(*it)) == it) {
+			try {
+				evaluator.evaluate(**it);
+				++it;
+			} catch(const ::Evaluator::EvaluatorException &ee) {
+				delete (*it);
+				if(this->ctrl.verbosity >= ON) {
+					GAerr << "Could not evaluate chromosome: " << ee.what() << "\n";
+				}
+			}
+		} else {
+			delete (*it);
+		}
+
+		/*
+		 * The main thread has to check for a user interrupt
+		 */
+		if(checkUserInterrupt == true) {
+			GAout.flushThreadSafeBuffer();
+			GAerr.flushThreadSafeBuffer();
+			if(check_interrupt()) {
+				this->interrupted = true;
+				throw InterruptException();
+			}
+		}
+	}
+}
+
 /**
  * Do the actual mating
  *
@@ -214,7 +252,6 @@ void MultiThreadedPopulation::run() {
 	int i = 0, j = 0;
 	RNG rng(this->seed);
 	double minFitness = 0.0;
-	Chromosome* tmpChromosome;
 	ShuffledSet shuffledSet(this->ctrl.chromosomeSize);
 	MultiThreadedPopulation::ThreadArgsWrapper* threadArgs;
 	uint16_t maxThreadsToSpawn = this->ctrl.numThreads - 1;
@@ -224,54 +261,23 @@ void MultiThreadedPopulation::run() {
 	uint16_t offset = 0;
 	pthread_attr_t threadAttr;
 	pthread_t* threads;
-	
+
+	/*****************************************************************************************
+	 * Initialize the current/next generation and enable thread safety for the output
+	 *****************************************************************************************/
 	if(this->ctrl.verbosity > OFF) {
 		GAout << "Generating initial population" << std::endl;
 	}
-	
-	/*****************************************************************************************
-	 * Generate initial population
-	 *****************************************************************************************/
-	while(this->nextGeneration.size() < this->ctrl.populationSize) {
-		tmpChromosome = new Chromosome(this->ctrl, shuffledSet, rng);
-		
-		/* Check if chromosome is already in the initial population */
-		if(std::find_if(this->nextGeneration.begin(), this->nextGeneration.end(), CompChromsomePtr(tmpChromosome)) == this->nextGeneration.end()) {
-			try {
-				this->evaluator.evaluate(*tmpChromosome);
-				if(tmpChromosome->getFitness() < minFitness) {
-					minFitness = tmpChromosome->getFitness();
-				}
 
-				this->addChromosomeToElite(*tmpChromosome);
-				this->nextGeneration.push_back(tmpChromosome);
-			} catch(const ::Evaluator::EvaluatorException& ee) {
-				delete tmpChromosome;
-				if(this->ctrl.verbosity >= ON) {
-					GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
-				}
-			}
-		} else {
-			delete tmpChromosome;
-		}
-		
-		if(check_interrupt()) {
-			throw InterruptException();
-		}
-	}
-
+	/* 1. fill the next generation with null pointers and initialize the current generation */
+	this->nextGeneration.resize(this->ctrl.populationSize, (Chromosome*) NULL);
 	this->initCurrentGeneration(shuffledSet, rng);
 
-	/***********************************************************************
-	 * Update minFitness, the current generation and the sumFitness
-	 * and print the generation if requested
-	 **********************************************************************/
-	this->sumCurrentGenFitness = this->updateCurrentGeneration(this->nextGeneration, minFitness, false);
 
-	if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
-		this->printCurrentGeneration();
-	}
-	
+	/* 2. let the threads generate and evaluate a bunch of chromosomes ... */
+	GAout.enableThreadSafety(true);
+	GAerr.enableThreadSafety(true);
+
 	/*****************************************************************************************
 	 * Setup threads
 	 *****************************************************************************************/
@@ -303,6 +309,9 @@ void MultiThreadedPopulation::run() {
 		threadArgs[i].evalObj = this->evaluator.clone();
 		threadArgs[i].chromosomeSize = this->ctrl.chromosomeSize;
 
+		/*
+		 * Once created, the threads already start generating the initial generation!
+		 */
 		pthreadRC = pthread_create((threads + i), &threadAttr, &MultiThreadedPopulation::matingThreadStart, (void *) (threadArgs + i));
 		
 		if(pthreadRC == 0) {
@@ -323,10 +332,47 @@ void MultiThreadedPopulation::run() {
 	}
 
 	/*****************************************************************************************
+	 * Generate initial population
+	 *****************************************************************************************/
+
+	try {
+		this->generateInitialChromosomes(numChildrenMainThread, this->evaluator, rng, shuffledSet, offset, true);
+	} catch (InterruptException) {
+		this->interrupted = true;
+	}
+
+	/*****************************************************************************************
+	 * Wait for threads to create current generation and further process the initial population
+	 *****************************************************************************************/
+	this->waitForAllThreadsToFinishMating();
+
+	/* Maybe check the initial generation for duplicats ??? */
+
+	/*
+	 * Signal output streams that multithreading is over
+	 */
+	GAout.enableThreadSafety(false);
+	GAerr.enableThreadSafety(false);
+
+	if(this->interrupted == false) {
+		/***********************************************************************
+		 * Update minFitness, the current generation and the sumFitness
+		 * and print the generation if requested
+		 **********************************************************************/
+		minFitness = (*(std::min_element(this->nextGeneration.begin(), this->nextGeneration.end(), MultiThreadedPopulation::OrderChromosomePtr())))->getFitness();
+
+		this->sumCurrentGenFitness = this->updateCurrentGeneration(this->nextGeneration, minFitness, true);
+
+		if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
+			this->printCurrentGeneration();
+		}
+	}
+
+	/*****************************************************************************************
 	 * Generate remaining generations
 	 *****************************************************************************************/
 	
-	for(i = this->ctrl.numGenerations; i > 0 && !this->interrupted; --i) {
+	for(i = this->ctrl.numGenerations; i > 0 && (this->interrupted == false); --i) {
 		IF_DEBUG(GAout << "Unique chromosomes: " << this->countUniques() << std::endl;)
 		
 		if(this->ctrl.verbosity > OFF) {
@@ -419,24 +465,33 @@ void MultiThreadedPopulation::run() {
 	 *****************************************************************************************/
 	
 	for(j = 0; j < this->ctrl.populationSize; ++j) {
-		delete this->nextGeneration[j];
+		if(this->nextGeneration[j]) {
+			delete this->nextGeneration[j];
+		}
 	}
 }
 
 
-
 /**
  * Setup and start the mating threads
- *
  */
 void* MultiThreadedPopulation::matingThreadStart(void* obj) {
 	ThreadArgsWrapper* args = static_cast<ThreadArgsWrapper*>(obj);
 	RNG rng(args->seed);
 	ShuffledSet shuffledSet(args->chromosomeSize);
+
+	/* First generate a bunch of initial chromosomes */
+	args->popObj->generateInitialChromosomes(args->numChildren, *args->evalObj, rng, shuffledSet, args->offset, false);
+	args->popObj->waitForAllThreadsToFinishMating();
+
+	/* The start the mating cycle */
 	args->popObj->runMating(args->numChildren, *args->evalObj, rng, shuffledSet, args->offset);
 	return NULL;
 }
 
+/**
+ * Run the mating control loop
+ */
 void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& evaluator,
 		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset) {
 	while(true) {
@@ -471,6 +526,9 @@ void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& 
 	}
 }
 
+/**
+ * Wait for all threads to finish the current generation
+ */
 inline void MultiThreadedPopulation::waitForAllThreadsToFinishMating() {
 	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->syncMutex))
 	
