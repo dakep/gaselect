@@ -117,7 +117,7 @@ protected:
 		uint16_t i = 0;
 		double sumFitness = 0.0;
 
-		if(this->ctrl.elitism > 0 && minFitness > this->elite.rbegin()->getFitness()) {
+		if(this->ctrl.elitism > 0 && this->elite.size() > 0 && minFitness > this->elite.rbegin()->getFitness()) {
 			minFitness = this->elite.rbegin()->getFitness();
 		}
 		
