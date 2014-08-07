@@ -274,12 +274,14 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 			
 			cutoff += trainMSEP.stddev(minNComp);
 
-			/* Go backwards again until the MSE is larger than the cutoff value */
 			if(minNComp == 0) {
 				optNComp = 1;
 			} else {
 				optNComp = 0;
-				while(optNComp < minNComp && trainMSEP.mean(optNComp) <= cutoff) {
+				while(optNComp < minNComp && trainMSEP.mean(optNComp) > cutoff) {
+					++optNComp;
+				}
+				if(optNComp < minNComp) {
 					++optNComp;
 				}
 			}
