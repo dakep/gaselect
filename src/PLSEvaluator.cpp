@@ -210,7 +210,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 	OnlineStddev trainMSEP(maxNComp);
 
 	double cutoff;
-	arma::uword optNComp;
+	arma::uword minNComp, optNComp;
 
 	arma::mat leftOutX;
 	arma::vec leftOutY;
@@ -261,27 +261,27 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 			)
 
 			cutoff = trainMSEP.mean(0);
-			optNComp = 0;
+			minNComp = 0;
 			
 			for(comp = 1; comp < maxNComp; ++comp) {
 				if(trainMSEP.mean(comp) < cutoff) {
-					optNComp = comp;
+					minNComp = comp;
 					cutoff = trainMSEP.mean(comp);
 				}
 			}
 
 			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
 			
-			cutoff += trainMSEP.stddev(optNComp);
+			cutoff += trainMSEP.stddev(minNComp);
 
 			/* Go backwards again until the MSE is larger than the cutoff value */
-			if(optNComp == 0) {
+			if(minNComp == 0) {
 				optNComp = 1;
 			} else {
-				while(optNComp > 0 && trainMSEP.mean(optNComp - 1) <= cutoff) {
-					--optNComp;
+				optNComp = 0;
+				while(optNComp < minNComp && trainMSEP.mean(optNComp) <= cutoff) {
+					++optNComp;
 				}
-				++optNComp;
 			}
 
 			IF_DEBUG(GAout << "EVALUATOR: Opt. num. of components: " << optNComp << " (max. " << maxNComp << ")" << std::endl)
