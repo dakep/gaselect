@@ -143,7 +143,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	
 	uint8_t child1Tries = 0;
 	uint8_t child2Tries = 0;
-	std::pair<bool, bool> duplicated;
+	std::pair<bool, bool> duplicated(false, false);
 	double cutoff = 0.0;
 
 	uint32_t discSol1 = 0;
@@ -169,7 +169,9 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		 */
 		cutoff = minParentFitness - this->ctrl.badSolutionThreshold * fabs(minParentFitness);
 
-		duplicated = Population::checkDuplicated(rangeBeginIt, rangeEndIt, child1It, child2It);
+		if(this->ctrl.maxDuplicateEliminationTries > 0) {
+			duplicated = Population::checkDuplicated(rangeBeginIt, rangeEndIt, child1It, child2It);
+		}
 
 		if((duplicated.first == false) || (++child1Tries > this->ctrl.maxDuplicateEliminationTries)) {
 			/*

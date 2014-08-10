@@ -121,6 +121,7 @@ setClass("GenAlgControl", representation(
 #'			If less than 0, the child must be even better than the worst parent. If the algorithm can't find a better child
 #'			in a long time it issues a warning and uses the last found child to continue.
 #' @param maxDuplicateEliminationTries The maximum number of tries to eliminate duplicates
+#'        (a value of \code{0} or \code{NULL} means that no checks for duplicates are done.
 #' @param verbosity The level of verbosity. 0 means no output at all, 2 is very verbose.
 #' @return An object of type \code{\link{GenAlgControl}}
 #' @export
@@ -128,7 +129,7 @@ setClass("GenAlgControl", representation(
 #' @rdname GenAlgControl-constructor
 genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables,
 							elitism = 10L, mutationProbability = 0.01, crossover = c("single", "random"),
-							maxDuplicateEliminationTries = 5L, verbosity = 0L, badSolutionThreshold = 2) {
+							maxDuplicateEliminationTries = 0L, verbosity = 0L, badSolutionThreshold = 2) {
 	if(is.numeric(populationSize)) {
 		populationSize <- as.integer(populationSize);
 	}
@@ -152,6 +153,10 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 	if(is.numeric(verbosity)) {
 		verbosity <- as.integer(verbosity);
 	}
+
+    if(is.null(maxDuplicateEliminationTries)) {
+        maxDuplicateEliminationTries <- 0L;
+    }
 
 	crossover <- match.arg(crossover);
 
