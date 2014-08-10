@@ -48,3 +48,9 @@ setMethod("fitnessEval", signature(object = "GenAlgUserEvaluator", genAlg = "Gen
 setMethod("fitnessEval", signature(object = "GenAlgLMEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
 	return(genAlg@rawFitness);
 });
+
+#' @rdname fitnessEval-methods
+setMethod("fitnessEval", signature(object = "GenAlgFitEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
+	return(genAlg@rawFitness);
+});
+

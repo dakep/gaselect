@@ -12,7 +12,7 @@ LM Evaluator
 \describe{
 \item{\code{statistic}}{The statistic used to evaluate the fitness.}
 
-\item{\code{statisticId}}{The (internal) numeric ID of the statistic}
+\item{\code{statisticId}}{The (internal) numeric ID of the statistic.}
 
 \item{\code{numThreads}}{The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).}
 }}

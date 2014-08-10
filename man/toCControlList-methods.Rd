@@ -3,6 +3,7 @@
 \name{toCControlList}
 \alias{toCControlList}
 \alias{toCControlList,GenAlgControl-method}
+\alias{toCControlList,GenAlgFitEvaluator-method}
 \alias{toCControlList,GenAlgLMEvaluator-method}
 \alias{toCControlList,GenAlgPLSEvaluator-method}
 \alias{toCControlList,GenAlgUserEvaluator-method}
@@ -11,6 +12,8 @@
 toCControlList(object)
 
 \S4method{toCControlList}{GenAlgPLSEvaluator}(object)
+
+\S4method{toCControlList}{GenAlgFitEvaluator}(object)
 
 \S4method{toCControlList}{GenAlgUserEvaluator}(object)
 

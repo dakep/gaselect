@@ -2,6 +2,7 @@
 \docType{methods}
 \name{fitnessEval}
 \alias{fitnessEval}
+\alias{fitnessEval,GenAlgFitEvaluator,GenAlg-method}
 \alias{fitnessEval,GenAlgLMEvaluator,GenAlg-method}
 \alias{fitnessEval,GenAlgPLSEvaluator,GenAlg-method}
 \alias{fitnessEval,GenAlgUserEvaluator,GenAlg-method}
@@ -14,6 +15,8 @@ fitnessEval(object, genAlg)
 \S4method{fitnessEval}{GenAlgUserEvaluator,GenAlg}(object, genAlg)
 
 \S4method{fitnessEval}{GenAlgLMEvaluator,GenAlg}(object, genAlg)
+
+\S4method{fitnessEval}{GenAlgFitEvaluator,GenAlg}(object, genAlg)
 }
 \arguments{
 \item{object}{The used evaluator, i.e. an object of type \code{\link{GenAlgEvaluator}}}

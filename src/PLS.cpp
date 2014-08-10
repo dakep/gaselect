@@ -22,6 +22,12 @@ void PLS::viewSelectRows(const arma::uvec &rows) {
 	this->currentViewState = ROWS;
 }
 
+void PLS::viewSelectAllRows() {
+	this->viewX = this->viewXCol;
+	this->viewY = this->Y;
+	this->currentViewState = ROWS;
+}
+
 arma::vec PLS::predict(const arma::mat &newX, uint16_t ncomp) const {
 	const arma::mat& coefs = this->getCoefficients();
 	const arma::vec& intercepts = this->getIntercepts();
