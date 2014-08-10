@@ -11,6 +11,7 @@
 #include <algorithm>
 #include "Logger.h"
 #include "PLSEvaluator.h"
+#include "OnlineStddev.h"
 
 #ifdef ENABLE_DEBUG_VERBOSITY
 #define IF_DEBUG(expr) if(this->verbosity == DEBUG_EVAL || this->verbosity == DEBUG_ALL) { expr; }

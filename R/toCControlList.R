@@ -24,6 +24,21 @@ setMethod("toCControlList", signature(object = "GenAlgPLSEvaluator"), function(o
 		"statistic" = 0L
 	));
 });
+#' @rdname toCControlList-methods
+setMethod("toCControlList", signature(object = "GenAlgFitEvaluator"), function(object) {
+	return(list(
+		"evaluatorClass" = 3L,
+		"numReplications" = 0L,
+		"innerSegments" = object@numSegments,
+        "outerSegments" = 0L,
+	    "testSetSize" = 0.0,
+		"plsMethod" = 0L,
+		"numThreads" = object@numThreads,
+        "maxNComp" = object@maxNComp,
+		"userEvalFunction" = function() {NULL;},
+		"statistic" = object@statisticId
+	));
+});
 
 #' @rdname toCControlList-methods
 setMethod("toCControlList", signature(object = "GenAlgUserEvaluator"), function(object) {

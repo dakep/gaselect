@@ -12,7 +12,11 @@ PLS Evaluator
 \describe{
 \item{\code{numReplications}}{The number of replications used to evaluate a variable subset.}
 
-\item{\code{numSegments}}{The number of CV segments used in one replication.}
+\item{\code{innerSegments}}{The number of inner RDCV segments used in one replication.}
+
+\item{\code{outerSegments}}{The number of outer RDCV segments used in one replication.}
+
+\item{\code{testSetSize}}{The relative size of the test set (between 0 and 1).}
 
 \item{\code{numThreads}}{The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).}
 

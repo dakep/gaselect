@@ -46,7 +46,7 @@ result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
 }
 }
 \seealso{
-Other GenAlg.Evaluators: \code{\link{evaluatorLM}};
-  \code{\link{evaluatorPLS}}
+Other GenAlg.Evaluators: \code{\link{evaluatorFit}};
+  \code{\link{evaluatorLM}}; \code{\link{evaluatorPLS}}
 }
 
