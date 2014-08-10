@@ -15,7 +15,7 @@
 #include "UserFunEvaluator.h"
 #include "PLSEvaluator.h"
 #include "LMEvaluator.h"
-//#include "BICEvaluator.h"
+#include "BICEvaluator.h"
 #include "SingleThreadPopulation.h"
 #include "RNG.h"
 
@@ -104,23 +104,23 @@ BEGIN_RCPP
 
 			break;
 		}
-//		case PLS_FIT: {
-//			Rcpp::NumericMatrix XMat(SX);
-//			Rcpp::NumericMatrix YMat(Sy);
-//			arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
-//			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
-//			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
-//			
-//			pls = PLS::getInstance(method, X, Y.col(0));
-//			toFree |= 2; // pls has to be freed
-//
-//			BICEvaluator::Statistic stat = (BICEvaluator::Statistic) as<int>(control["statistic"]);
-//
-//			eval = new BICEvaluator(pls, as<uint16_t>(control["maxNComp"]), seed,
-//				ctrl.verbosity, as<uint16_t>(control["innerSegments"]), stat);
-//
-//			break;
-//		}
+		case PLS_FIT: {
+			Rcpp::NumericMatrix XMat(SX);
+			Rcpp::NumericMatrix YMat(Sy);
+			arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
+			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
+			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
+			
+			pls = PLS::getInstance(method, X, Y.col(0));
+			toFree |= 2; // pls has to be freed
+
+			BICEvaluator::Statistic stat = (BICEvaluator::Statistic) as<int>(control["statistic"]);
+
+			eval = new BICEvaluator(pls, as<uint16_t>(control["maxNComp"]), seed,
+				ctrl.verbosity, as<uint16_t>(control["innerSegments"]), stat);
+
+			break;
+		}
 		case LM: {
 			Rcpp::NumericMatrix XMat(SX);
 			Rcpp::NumericMatrix YMat(Sy);
