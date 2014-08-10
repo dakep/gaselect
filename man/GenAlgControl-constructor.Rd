@@ -5,7 +5,7 @@
 \usage{
 genAlgControl(populationSize, numGenerations, minVariables, maxVariables,
   elitism = 10L, mutationProbability = 0.01, crossover = c("single",
-  "random"), maxDuplicateEliminationTries = 5L, verbosity = 0L,
+  "random"), maxDuplicateEliminationTries = 0L, verbosity = 0L,
   badSolutionThreshold = 2)
 }
 \arguments{
@@ -27,7 +27,8 @@ genAlgControl(populationSize, numGenerations, minVariables, maxVariables,
 If less than 0, the child must be even better than the worst parent. If the algorithm can't find a better child
 in a long time it issues a warning and uses the last found child to continue.}
 
-\item{maxDuplicateEliminationTries}{The maximum number of tries to eliminate duplicates}
+\item{maxDuplicateEliminationTries}{The maximum number of tries to eliminate duplicates
+(a value of \code{0} or \code{NULL} means that no checks for duplicates are done.}
 
 \item{verbosity}{The level of verbosity. 0 means no output at all, 2 is very verbose.}
 }
