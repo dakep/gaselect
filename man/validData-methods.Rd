@@ -3,6 +3,7 @@
 \name{validData}
 \alias{validData}
 \alias{validData,GenAlgEvaluator,GenAlg-method}
+\alias{validData,GenAlgFitEvaluator,GenAlg-method}
 \alias{validData,GenAlgLMEvaluator,GenAlg-method}
 \alias{validData,GenAlgPLSEvaluator,GenAlg-method}
 \title{Check if the data is valid for the evaluator}
@@ -10,6 +11,8 @@
 validData(object, genAlg)
 
 \S4method{validData}{GenAlgPLSEvaluator,GenAlg}(object, genAlg)
+
+\S4method{validData}{GenAlgFitEvaluator,GenAlg}(object, genAlg)
 
 \S4method{validData}{GenAlgLMEvaluator,GenAlg}(object, genAlg)
 

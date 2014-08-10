@@ -62,7 +62,8 @@ resultRDCV <- genAlg(y, x, control = ctrl, evaluator = evaluatorRDCV)
 }
 }
 \seealso{
-Other GenAlg.Evaluators: \code{\link{evaluatorLM}};
+Other GenAlg.Evaluators: \code{\link{evaluatorFit}};
+  \code{\link{evaluatorLM}};
   \code{\link{evaluatorUserFunction}}
 }
 

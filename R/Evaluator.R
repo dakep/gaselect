@@ -6,9 +6,11 @@
 setClass("GenAlgEvaluator", representation(), contains = "VIRTUAL");
 
 #' PLS Evaluator
-#' 
+#'
 #' @slot numReplications The number of replications used to evaluate a variable subset.
-#' @slot numSegments The number of CV segments used in one replication.
+#' @slot innerSegments The number of inner RDCV segments used in one replication.
+#' @slot outerSegments The number of outer RDCV segments used in one replication.
+#' @slot testSetSize The relative size of the test set (between 0 and 1).
 #' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
 #' @slot method The PLS method used to fit the PLS model (currently only SIMPLS is implemented).
 #' @slot methodId The ID of the PLS method used to fit the PLS model.
@@ -30,7 +32,7 @@ setClass("GenAlgPLSEvaluator", representation(
 	if(object@numThreads < 0L || object@numThreads > MAXUINT16) {
 		errors <- c(errors, paste("The maximum number of threads must be greater than or equal 0 and less than", MAXUINT16));
 	}
-    
+
     if(object@innerSegments <= 1L || object@innerSegments > MAXUINT16) {
         errors <- c(errors, paste("The number of inner segments must be between 2 and", MAXUINT16));
     }
@@ -66,10 +68,63 @@ setClass("GenAlgUserEvaluator", representation(
 	}
 ), contains = "GenAlgEvaluator");
 
+#' Fit Evaluator
+#'
+#' @slot numSegments The number of CV segments used in one replication.
+#' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
+#' @slot statistic The statistic used to evaluate the fitness.
+#' @slot statisticId The (internal) numeric ID of the statistic.
+#' @aliases GenAlgFitEvaluator
+#' @rdname GenAlgFitEvaluator-class
+setClass("GenAlgFitEvaluator", representation(
+	numSegments = "integer",
+	numThreads = "integer",
+    maxNComp = "integer",
+	statistic = "character",
+	statisticId = "integer"
+), validity = function(object) {
+	errors <- character(0);
+	MAXUINT16 <- 2^16; # unsigned 16bit integers are used (uint16_t) in the C++ code
+
+	if(object@numThreads < 0L || object@numThreads > MAXUINT16) {
+		errors <- c(errors, paste("The maximum number of threads must be greater than or equal 0 and less than", MAXUINT16));
+	}
+
+    if(object@numSegments <= 1L || object@numSegments > MAXUINT16) {
+        errors <- c(errors, paste("The number of segments must be between 2 and", MAXUINT16));
+    }
+
+    if(object@maxNComp < 0L || object@maxNComp > MAXUINT16) {
+        errors <- c(errors, paste("The maximum number of components must be greater than or equal 0 and less than", MAXUINT16));
+    }
+
+	if(length(errors) == 0) {
+		return(TRUE);
+	} else {
+		return(errors);
+	}
+},contains = "GenAlgEvaluator");
+
+#' User Function Evaluator
+#'
+#' @slot evalFunction The function that is called to evaluate the variable subset.
+#' @slot sepFunction The function that calculates the standard error of prediction for the found subsets.
+#' @aliases GenAlgUserEvaluator
+#' @rdname GenAlgUserEvaluator-class
+setClass("GenAlgUserEvaluator", representation(
+	evalFunction = "function",
+	sepFunction = "function"
+), prototype(
+	sepFunction = function(genAlg) {
+		warning("Evaluator doesn't support SEP calculation -- using raw fitness");
+		return(genAlg@rawFitness);
+	}
+), contains = "GenAlgEvaluator");
+
 #' LM Evaluator
 #'
 #' @slot statistic The statistic used to evaluate the fitness.
-#' @slot statisticId The (internal) numeric ID of the statistic
+#' @slot statisticId The (internal) numeric ID of the statistic.
 #' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
 #' @aliases GenAlgLMEvaluator
 #' @rdname GenAlgLMEvaluator-class
@@ -104,11 +159,11 @@ validity = function(object) {
 #' training set. The prediction power is then evaluated by fitting a PLS regression model with this optimal
 #' number of components to the training set and predicting the values of a test set (of either
 #' \code{testSetSize} size or \code{1 / innerSegments}, if \code{testSetSize} is not specified).
-#' 
+#'
 #' If the parameter \code{outerSegments} is given, repeated double cross-validation is used instead.
 #' There, the data set is first split into \code{outerSegments} segments and one segment is used as
 #' prediction set and the other segments as test set. This is repeated for each outer segment.
-#' 
+#'
 #' The whole procedure is repeated \code{numReplications} times to get a more reliable estimate of the
 #' prediction power.
 #'
@@ -178,6 +233,66 @@ evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegment
         maxNComp = maxNComp,
 		method = method,
 		methodId = methodId
+	));
+};
+
+#' Fit Evaluator
+#'
+#' Creates the object that controls the evaluation step in the genetic algorithm
+#'
+#' The fitness of a variable subset is assessed by how well a PLS model fits the data. To estimate
+#' the optimal number of components for the PLS model, cross-validation is used.
+#'
+#' @param numSegments The number of CV segments used to estimate the optimal number of PLS components (between 2 and 2^16).
+#' @param statistic The statistic used to evaluate the fitness (BIC, AIC, adjusted R^2, or R^2).
+#' @param numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than
+#'      1 or NULL means no threads).
+#' @param maxNComp The maximum number of components the PLS models should consider (if not specified,
+#'      the number of components is not constrained)
+#' @return Returns an S4 object of type \code{\link{GenAlgFitEvaluator}} to be used as argument to
+#'      a call of \code{\link{genAlg}}.
+#' @export
+#' @family GenAlg Evaluators
+#' @example examples/genAlg.R
+#' @rdname GenAlgFitEvaluator-constructor
+evaluatorFit <- function(numSegments = 7L, statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"), numThreads = NULL, maxNComp = NULL, method = c("simpls")) {
+	statistic <- match.arg(statistic);
+
+    statId = switch(statistic,
+        BIC = 0L,
+        AIC = 1L,
+        adjusted.r.squared = 2L,
+        r.squared = 3L
+    );
+
+    if(missing(numThreads) || is.null(numThreads)) {
+        numThreads <- 1L;
+    } else if(is.numeric(numThreads)) {
+        numThreads <- as.integer(numThreads);
+    }
+
+	if(is.numeric(numSegments)) {
+		numSegments <- as.integer(numSegments);
+	}
+
+	if(missing(numThreads) || is.null(numThreads)) {
+		numThreads <- 1L;
+	} else if(is.numeric(numThreads)) {
+		numThreads <- as.integer(numThreads);
+	}
+
+    if(missing(maxNComp) || is.null(maxNComp)) {
+        maxNComp <- 0L;
+    } else if(is.numeric(maxNComp)) {
+        maxNComp <- as.integer(maxNComp);
+    }
+
+	return(new("GenAlgFitEvaluator",
+		numSegments = numSegments,
+		numThreads = numThreads,
+        maxNComp = maxNComp,
+		statistic = statistic,
+		statisticId = statId
 	));
 };
 

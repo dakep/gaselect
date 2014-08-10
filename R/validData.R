@@ -17,6 +17,14 @@ setMethod("validData", signature(object = "GenAlgPLSEvaluator", genAlg = "GenAlg
 		return("The covariates have to be numerical");
 	}
 });
+#' @rdname validData-methods
+setMethod("validData", signature(object = "GenAlgFitEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
+	if(is.numeric(genAlg@covariates)) {
+		return(TRUE);
+	} else {
+		return("The covariates have to be numerical");
+	}
+});
 
 #' @rdname validData-methods
 setMethod("validData", signature(object = "GenAlgLMEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
