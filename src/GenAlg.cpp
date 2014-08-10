@@ -262,15 +262,15 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 			Rcpp::NumericMatrix YMat(Sy);
 			arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
-			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
+			PLSMethod method = (PLSMethod) as<int>(evaluator["plsMethod"]);
 			
 			pls = PLS::getInstance(method, X, Y.col(0));
 			toFree |= 2; // pls has to be freed
 
-			BICEvaluator::Statistic stat = (BICEvaluator::Statistic) as<int>(control["statistic"]);
+			BICEvaluator::Statistic stat = (BICEvaluator::Statistic) as<int>(evaluator["statistic"]);
 
-			eval = new BICEvaluator(pls, as<uint16_t>(control["maxNComp"]), seed,
-				ctrl.verbosity, as<uint16_t>(control["innerSegments"]), stat);
+			eval = new BICEvaluator(pls, as<uint16_t>(evaluator["maxNComp"]), seed,
+				(VerbosityLevel) as<int>(evaluator["verbosity"]), as<uint16_t>(evaluator["innerSegments"]), stat);
 
 			break;
 		}
