@@ -35,6 +35,8 @@ BICEvaluator::BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32
 	if(this->maxNComp <= 1) {
 		this->maxNComp = this->nrows - 1;
 	}
+
+	this->initSegmentation(seed);
 }
 
 BICEvaluator::BICEvaluator(const BICEvaluator &other) :
@@ -104,18 +106,19 @@ inline void BICEvaluator::initSegmentation(const std::vector<uint32_t> &seed) {
 	IF_DEBUG(GAout << "Initialize segments with a segment length of " << segmentLength << std::endl);
 
 	for(uint16_t i = 0; i < this->numSegments; ++i) {
+		segLen = segmentLength;
 		if(i < segmentLengthRem) {
-			segLen = segmentLength + 1;
+			++segLen;
 		}
 
-		arma::uvec inSegment(segLen);
+		arma::uvec inSegment(this->nrows - segLen);
 
 		if(n > 0) {
 			inSegment.rows(0, n - 1) = shuffledRowNumbers.rows(0, n - 1);
 		}
 
 		if(n < this->nrows - segLen) {
-			inSegment.rows(n, segLen - 1) = shuffledRowNumbers.rows(n + segLen, this->nrows - 1);
+			inSegment.rows(n, inSegment.n_elem - 1) = shuffledRowNumbers.rows(n + segLen, this->nrows - 1);
 		}
 
 		std::sort(inSegment.begin(), inSegment.end());
