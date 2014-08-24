@@ -192,7 +192,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 					 */
 					++child1It;
 				} else if(++discSol1 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
-					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+					GAout << GAout.lock() << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << GAout.unlock();
 					discSol1 = 0;
 					++child1It;
 				}
@@ -222,7 +222,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 					 */
 					++child2It;
 				} else if(++discSol2 > Population::MAX_DISCARDED_SOLUTIONS_RATIO * numChildren) {
-					GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
+					GAout << GAout.lock() << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << GAout.unlock();
 					discSol2 = 0;
 					++child2It;
 				}
