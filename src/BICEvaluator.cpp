@@ -30,7 +30,8 @@ BICEvaluator::BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32
 		throw std::invalid_argument("For CV at least 2 segments are needed");
 	}
 
-	this->r2denom = arma::sum(arma::square(this->pls->getY() - arma::mean(this->pls->getY())));
+//	this->r2denom = arma::sum(arma::square(this->pls->getY() - arma::mean(this->pls->getY())));
+	this->r2denom = this->pls->getNumberOfObservations() * arma::var(this->pls->getY(), 1); // N * Var(Y)
 
 	if(this->maxNComp <= 1) {
 		this->maxNComp = this->nrows - 1;
