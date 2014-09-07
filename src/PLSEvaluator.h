@@ -51,6 +51,7 @@ private:
 	const uint16_t numReplications;
 	const uint16_t outerSegments;
 	const uint16_t innerSegments;
+	const double innerSegmentsSQRT;
 	const arma::uword nrows;
 	const bool cloned;
 

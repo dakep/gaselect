@@ -28,6 +28,7 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 	Evaluator(verbosity), numReplications(numReplications),
 	outerSegments((outerSegments < 1) ? 1 : outerSegments),
 	innerSegments((outerSegments <= 1 && testSetSize == 0.0) ? innerSegments - 1 : innerSegments),
+	innerSegmentsSQRT(sqrt(this->innerSegments)),
 	nrows(pls->getNumberOfObservations()), cloned(false), pls(pls), maxNComp(maxNComp)
 {
 	/* assert outerSegments > 0 */
@@ -49,8 +50,10 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 }
 
 PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
-	Evaluator(other.verbosity), numReplications(other.numReplications), outerSegments(other.outerSegments),
-	innerSegments(other.innerSegments), nrows(other.nrows), cloned(true), maxNComp(other.maxNComp), segmentation(other.segmentation)
+	Evaluator(other.verbosity), numReplications(other.numReplications),
+	outerSegments(other.outerSegments), innerSegments(other.innerSegments),
+	innerSegmentsSQRT(other.innerSegmentsSQRT), nrows(other.nrows), cloned(true),
+	maxNComp(other.maxNComp), segmentation(other.segmentation)
 {
 	this->pls = other.pls->clone();
 }
@@ -273,7 +276,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 
 			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
 			
-			cutoff += trainMSEP.stddev(minNComp);
+			cutoff += trainMSEP.stddev(minNComp) + this->innerSegmentsSQRT;
 
 			if(minNComp == 0) {
 				optNComp = 1;
