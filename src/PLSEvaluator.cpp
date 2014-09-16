@@ -315,10 +315,10 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 		 * Calculate standard deviation of the residuals
 		 */
 		IF_DEBUG(GAout << "EVALUATOR: Resulting SEP: " << predSD.stddev() << std::endl)
-		sumSEP -= predSD.stddev();
+		sumSEP += predSD.stddev();
 	}
 
-	return sumSEP;
+	return -log(sumSEP);
 }
 
 Evaluator* PLSEvaluator::clone() const {
