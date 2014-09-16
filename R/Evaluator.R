@@ -13,7 +13,9 @@ setClass("GenAlgEvaluator", representation(), contains = "VIRTUAL");
 #' @slot testSetSize The relative size of the test set (between 0 and 1).
 #' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
 #' @slot method The PLS method used to fit the PLS model (currently only SIMPLS is implemented).
-#' @slot methodId The ID of the PLS method used to fit the PLS model.
+#' @slot methodId The ID of the PLS method used to fit the PLS model (see C++ code for allowed values).
+#' @slot sepTransformation The SEP transformation to use (currently NONE or LOG are supported).
+#' @slot sepTransformationId The numeric ID of the SEP transformation to use (see C++ code for allowed values).
 #' @aliases GenAlgPLSEvaluator
 #' @rdname GenAlgPLSEvaluator-class
 setClass("GenAlgPLSEvaluator", representation(
@@ -24,7 +26,9 @@ setClass("GenAlgPLSEvaluator", representation(
 	numThreads = "integer",
     maxNComp = "integer",
 	method = "character",
-	methodId = "integer"
+	methodId = "integer",
+	sepTransformation = "character",
+	sepTransformationId = "integer"
 ), validity = function(object) {
 	errors <- character(0);
 	MAXUINT16 <- 2^16; # unsigned 16bit integers are used (uint16_t) in the C++ code
@@ -179,18 +183,26 @@ validity = function(object) {
 #' @param maxNComp The maximum number of components the PLS models should consider (if not specified,
 #'      the number of components is not constrained)
 #' @param method The PLS method used to fit the PLS model (currently only SIMPLS is implemented)
+#' @param sepTransformation How the SEP should be transformed. Currently NONE and LOG are implemented.
 #' @return Returns an S4 object of type \code{\link{GenAlgPLSEvaluator}} to be used as argument to
 #'      a call of \code{\link{genAlg}}.
 #' @export
 #' @family GenAlg Evaluators
 #' @example examples/genAlg.R
 #' @rdname GenAlgPLSEvaluator-constructor
-evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegments = 1L, testSetSize = NULL, numThreads = NULL, maxNComp = NULL, method = c("simpls")) {
+evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegments = 1L, testSetSize = NULL,
+    numThreads = NULL, maxNComp = NULL, method = c("simpls"), sepTransformation = c("none", "log")) {
 	method <- match.arg(method);
+	sepTransformation <- match.arg(sepTransformation);
 
 	methodId <- switch(method,
 		simpls = 0L
 	);
+
+    sepTransformationId <- switch(sepTransformation,
+        log = 1L,
+        0L
+    );
 
 	if(is.numeric(numReplications)) {
 		numReplications <- as.integer(numReplications);
@@ -232,7 +244,9 @@ evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegment
 		numThreads = numThreads,
         maxNComp = maxNComp,
 		method = method,
-		methodId = methodId
+		methodId = methodId,
+		sepTransformation = sepTransformation,
+		sepTransformationId = sepTransformationId
 	));
 };
 
