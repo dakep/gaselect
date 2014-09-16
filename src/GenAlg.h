@@ -51,6 +51,7 @@ enum EvaluatorClass {
  *		uint16_t outerSegments ... Number of outer CV segments (0 or 1 = use srCV, > 0 use the rdCV strategy)
  *		double testSetSize ... If srCV should be used, the rel. size of the test set between 0 and 1 (ignored if outerSegments > 1)
  *		uint16_t maxNComp ... The maximum number of componentes the PLS models should consider
+ *		int sepTransformation ... The type of transformation for the SEP (NONE or LOG)
  *		int statistic ... The statistic the LM Evaluator should use
  *	X ... A numeric matrix with dimensions n x p (optional - only needed if using internal evaluation methods)
  *	y ... A numeric vector with length n (optional - only needed if using internal evaluation methods)

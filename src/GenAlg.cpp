@@ -100,7 +100,8 @@ BEGIN_RCPP
 				as<uint16_t>(control["maxNComp"]), seed, ctrl.verbosity,
 				as<uint16_t>(control["innerSegments"]),
 				as<uint16_t>(control["outerSegments"]),
-				as<double>(control["testSetSize"]));
+				as<double>(control["testSetSize"]),
+				(PLSEvaluator::SEPTransformation) as<int>(control["sepTransformation"]));
 
 			break;
 		}
@@ -253,7 +254,8 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 				as<uint16_t>(evaluator["maxNComp"]), seed, (VerbosityLevel) as<int>(evaluator["verbosity"]),
 				as<uint16_t>(evaluator["innerSegments"]),
 				as<uint16_t>(evaluator["outerSegments"]),
-				as<double>(evaluator["testSetSize"]));
+				as<double>(evaluator["testSetSize"]),
+				(PLSEvaluator::SEPTransformation) as<int>(evaluator["sepTransformation"]));
 			
 			break;
 		}

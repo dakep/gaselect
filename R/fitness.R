@@ -36,7 +36,7 @@ setGeneric("fitnessEval", function(object, genAlg) { standardGeneric("fitnessEva
 #' @rdname fitnessEval-methods
 setMethod("fitnessEval", signature(object = "GenAlgPLSEvaluator", genAlg = "GenAlg"), function(object, genAlg) {
 	sumSEP <- (-genAlg@rawFitness);
-	return(sumSEP / object@numReplications);
+	return(switch(object@sepTransformation, log = exp(sumSEP), sumSEP) / object@numReplications);
 });
 
 #' @rdname fitnessEval-methods
