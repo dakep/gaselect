@@ -148,7 +148,7 @@ double BICEvaluator::getRSS(uint16_t maxNComp) {
 	arma::mat leftOutX;
 	arma::vec leftOutY;
 
-	uint16_t rep = 0, seg = 0, comp;
+	uint16_t seg = 0, comp;
 	std::vector<arma::uvec>::const_iterator segmentIter = this->segmentation.begin();
 
 	/*

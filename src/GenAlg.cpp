@@ -177,6 +177,7 @@ BEGIN_RCPP
 
 	Population::SortedChromosomes result = pop->getResult();
 
+	Rcpp::NumericVector retFitnessEvolution(pop->getFitnessEvolution().begin(), pop->getFitnessEvolution().end());
 	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());
 	Rcpp::NumericVector retFitnesses((const int) result.size());
 	uint16_t i = (uint16_t) result.size() - 1;
@@ -197,7 +198,8 @@ BEGIN_RCPP
 	}
 
 	return Rcpp::List::create(Rcpp::Named("subsets") = retMatrix,
-							  Rcpp::Named("fitness") = retFitnesses);
+							  Rcpp::Named("fitness") = retFitnesses,
+							  Rcpp::Named("fitnessEvolution") = retFitnessEvolution);
 VOID_END_RCPP
 	if((toFree & 1) > 0) {
 		delete eval;
