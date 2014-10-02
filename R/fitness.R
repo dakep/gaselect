@@ -50,7 +50,7 @@ setGeneric("fitness", function(object) { standardGeneric("fitness") });
 
 #' @rdname fitness-methods
 setMethod("fitness", signature(object = "GenAlg"), function(object) {
-    return(trueFitnessVal(object@evaluator, object@fitness));
+    return(trueFitnessVal(object@evaluator, object@rawFitness));
 });
 
 #' Get the transformed fitness values
