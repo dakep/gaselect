@@ -20,7 +20,7 @@
 
 BICEvaluator::BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity, uint16_t numSegments, BICEvaluator::Statistic stat) :
 	Evaluator(verbosity), numSegments(numSegments),	nrows(pls->getNumberOfObservations()),
-	stat(stat), cloned(false), pls(pls), maxNComp(maxNComp)
+	innerSegmentsSQRT(sqrt(numSegments)), stat(stat), cloned(false), pls(pls), maxNComp(maxNComp)
 {
 	if(pls->getNumberOfResponseVariables() > 1) {
 		throw std::invalid_argument("PLS evaluator only available for models with 1 response variable");
@@ -42,8 +42,8 @@ BICEvaluator::BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32
 
 BICEvaluator::BICEvaluator(const BICEvaluator &other) :
 	Evaluator(other.verbosity), numSegments(other.numSegments), nrows(other.nrows),
-	stat(other.stat), cloned(true), maxNComp(other.maxNComp),
-	segmentation(other.segmentation), r2denom(other.r2denom)
+	innerSegmentsSQRT(other.innerSegmentsSQRT), stat(other.stat), cloned(true),
+	maxNComp(other.maxNComp), segmentation(other.segmentation), r2denom(other.r2denom)
 {
 	this->pls = other.pls->clone();
 }
@@ -195,7 +195,7 @@ double BICEvaluator::getRSS(uint16_t maxNComp) {
 
 	IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
 	
-	cutoff += trainMSEP.stddev(minNComp);
+	cutoff += trainMSEP.stddev(minNComp) / this->innerSegmentsSQRT;
 
 	if(minNComp == 0) {
 		optNComp = 1;
