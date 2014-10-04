@@ -28,6 +28,9 @@ void PLS::viewSelectAllRows() {
 	this->currentViewState = ROWS;
 }
 
+/**
+ * uint16_t ncomp ... The 0-based
+ */
 arma::vec PLS::predict(const arma::mat &newX, uint16_t ncomp) const {
 	const arma::mat& coefs = this->getCoefficients();
 	const arma::vec& intercepts = this->getIntercepts();
@@ -35,7 +38,7 @@ arma::vec PLS::predict(const arma::mat &newX, uint16_t ncomp) const {
 		GAerr << "Trying to predict with " << ncomp << " components when only " << coefs.n_cols << " components are available" << std::endl;
 		throw Rcpp::exception("Can not predict values for a model with more components than fit components", __FILE__, __LINE__);
 	}
-	
+
 	--ncomp;
 
 	arma::vec pred = newX * coefs.col(ncomp);

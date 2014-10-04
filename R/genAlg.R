@@ -7,6 +7,7 @@
 #' @slot covariates The original covariates matrix.
 #' @slot evaluator The evaluator used in the genetic algorithm.
 #' @slot control The control object.
+#' @slot segmentation The segments used by the evaluator. Empty list if the evaluator doesn't use segmentation.
 #' @slot seed The seed the algorithm is started with.
 #' @aliases GenAlg
 #' @include Evaluator.R GenAlgControl.R
@@ -19,6 +20,7 @@ setClass("GenAlg", representation(
 	covariates = "matrix",
 	evaluator = "GenAlgEvaluator",
 	control = "GenAlgControl",
+	segmentation = "list",
 	seed = "integer"
 ), prototype(
 	subsets = matrix(),
@@ -80,7 +82,7 @@ setClass("GenAlg", representation(
 #' @param seed Integer with the seed for the random number generator or NULL to automatically seed the RNG
 #' @export
 #' @import Rcpp
-#' @include Evaluator.R GenAlgControl.R
+#' @include Evaluator.R GenAlgControl.R formatSegmentation.R
 #' @return An object of type \code{\link{GenAlg}}
 #' @rdname GenAlg-constructor
 #' @useDynLib gaselect
@@ -144,6 +146,7 @@ function(y, X, control, evaluator, seed) {
 	}
 
 	ret@subsets <- res$subsets;
+	ret@segmentation <- formatSegmentation(ret@evaluator, res$segmentation);
 	ret@rawFitness <- res$fitness;
 	ret@rawFitnessEvolution <- matrix(res$fitnessEvolution, ncol = 2L, byrow = TRUE, dimnames = list(NULL, c("best", "sum")));
 

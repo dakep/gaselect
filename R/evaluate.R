@@ -10,7 +10,7 @@
 #' @param verbosity A value between 0 (no output at all) and 5 (maximum verbosity)
 #' @import Rcpp
 #' @useDynLib gaselect
-#' @include Evaluator.R
+#' @include Evaluator.R formatSegmentation.R
 #' @rdname evaluate-methods
 setGeneric("evaluate", function(object, X, y, subsets, seed, verbosity) { standardGeneric("evaluate"); });
 
@@ -40,9 +40,8 @@ function(object, X, y, subsets, seed, verbosity) {
     ctrlArg$verbosity <- verbosity;
     res <- .Call("evaluate", ctrlArg, as.matrix(X), as.matrix(y), subsets, seed, PACKAGE = "gaselect");
 
-    if(class(object) == "GenAlgPLSEvaluator") {
-        res <- -res / object@numReplications;
-    }
+    res$fitness <- trueFitnessVal(object, res$fitness);
+    res$segmentation <- formatSegmentation(object, res$segmentation);
 
     return(res);
 });

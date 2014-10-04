@@ -10,6 +10,7 @@
 #define GenAlgPLS_Evaluator_h
 
 #include "config.h"
+#include <vector>
 #include <RcppArmadillo.h>
 #include "Control.h"
 #include "Chromosome.h"
@@ -30,6 +31,10 @@ public:
 	virtual double evaluate(Chromosome &ch) = 0;
 	
 	virtual Evaluator* clone() const = 0;
+
+	virtual std::vector<arma::uvec> getSegmentation() const {
+		return std::vector<arma::uvec>();
+	}
 protected:
 	const VerbosityLevel verbosity;
 };

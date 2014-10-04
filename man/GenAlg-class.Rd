@@ -22,6 +22,8 @@ Return object of a run of the genetic algorithm genAlg
 
 \item{\code{control}}{The control object.}
 
+\item{\code{segmentation}}{The segments used by the evaluator. Empty list if the evaluator doesn't use segmentation.}
+
 \item{\code{seed}}{The seed the algorithm is started with.}
 }}
 
