@@ -49,6 +49,7 @@ public:
 	/**
 	 * Fit a PLS model to the data with the previously set view
 	 * with up to ncomp components
+	 * @param ncomp The maximum number of components to fit (0 ... fit as many as possible)
 	 */
 	virtual void fit(uint16_t ncomp = 0) =0;
 
@@ -78,7 +79,8 @@ public:
 	uint16_t getResultNComp() const { return this->resultNComp; }
 
 	/**
-	 * ncomp should be 0 based (as in the fit method)
+	 * Predict the values with all or `ncomp` components
+	 * @param ncomp The 1-based number of components
 	 */
 	arma::vec predict(const arma::mat &newX, uint16_t ncomp) const;
 	arma::mat predict(const arma::mat &newX) const;
