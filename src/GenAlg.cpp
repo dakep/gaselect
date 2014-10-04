@@ -175,9 +175,14 @@ BEGIN_RCPP
 		GAout << "Interrupted - returning best solutions found so far" << std::endl;
 	}
 
+	/*
+	 * Gather data for return
+	 */
+
 	Population::SortedChromosomes result = pop->getResult();
 
 	Rcpp::NumericVector retFitnessEvolution(pop->getFitnessEvolution().begin(), pop->getFitnessEvolution().end());
+	std::vector<arma::uvec> segmentation = eval->getSegmentation();
 	Rcpp::LogicalMatrix retMatrix(ctrl.chromosomeSize, (const int) result.size());
 	Rcpp::NumericVector retFitnesses((const int) result.size());
 	uint16_t i = (uint16_t) result.size() - 1;
@@ -199,7 +204,8 @@ BEGIN_RCPP
 
 	return Rcpp::List::create(Rcpp::Named("subsets") = retMatrix,
 							  Rcpp::Named("fitness") = retFitnesses,
-							  Rcpp::Named("fitnessEvolution") = retFitnessEvolution);
+							  Rcpp::Named("fitnessEvolution") = retFitnessEvolution,
+							  Rcpp::Named("segmentation") = Rcpp::wrap(segmentation));
 VOID_END_RCPP
 	if((toFree & 1) > 0) {
 		delete eval;
@@ -230,6 +236,7 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 	Rcpp::NumericMatrix YMat(Sy);
 	Rcpp::LogicalMatrix subsets(Ssubsets);
 	Rcpp::NumericVector fitness(subsets.cols());
+	std::vector<arma::uvec> segmentation;
 	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 	EvaluatorClass evalClass = (EvaluatorClass) as<int>(evaluator["evaluatorClass"]);
@@ -267,7 +274,13 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 			arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 			PLSMethod method = (PLSMethod) as<int>(evaluator["plsMethod"]);
-			
+			RNG rng(as<uint32_t>(Sseed));
+
+			seed.reserve(RNG::SEED_SIZE);
+			for (uint32_t i = 0; i < RNG::SEED_SIZE; ++i) {
+				seed.push_back(rng());
+			}
+
 			pls = PLS::getInstance(method, X, Y.col(0));
 			toFree |= 2; // pls has to be freed
 
@@ -310,13 +323,16 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 		}
 	}
 
+	segmentation = eval->getSegmentation();
+
 	delete eval;
 
 	if((toFree & 2) > 0) {
 		delete pls;
 	}
 	
-	return Rcpp::wrap(fitness);
+	return Rcpp::List::create(Rcpp::Named("fitness") = Rcpp::wrap(fitness),
+							  Rcpp::Named("segmentation") = Rcpp::wrap(segmentation));
 	
 	VOID_END_RCPP
 	if((toFree & 1) > 0) {

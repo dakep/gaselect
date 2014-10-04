@@ -280,7 +280,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 				}
 			}
 
-			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
+			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << minNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
 			
 			cutoff += trainMSEP.stddev(minNComp) / this->innerSegmentsSQRT;
 
@@ -291,7 +291,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 				while(optNComp < minNComp && trainMSEP.mean(optNComp) > cutoff) {
 					++optNComp;
 				}
-				if(optNComp < minNComp) {
+				if(optNComp <= minNComp) {
 					++optNComp;
 				}
 			}

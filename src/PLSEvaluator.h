@@ -45,6 +45,10 @@ public:
 	};
 
 	double evaluate(arma::uvec &columnSubset);
+
+	std::vector<arma::uvec> getSegmentation() const {
+		return this->segmentation;
+	}
 	
 	Evaluator* clone() const;
 

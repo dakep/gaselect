@@ -204,7 +204,7 @@ double BICEvaluator::getRSS(uint16_t maxNComp) {
 		while(optNComp < minNComp && trainMSEP.mean(optNComp) > cutoff) {
 			++optNComp;
 		}
-		if(optNComp < minNComp) {
+		if(optNComp <= minNComp) {
 			++optNComp;
 		}
 	}

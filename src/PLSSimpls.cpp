@@ -58,6 +58,9 @@ inline void PLSSimpls::centerView() {
 	this->viewY -= this->Ymean;
 }
 
+/**
+ * ncomp is 1-based!!!
+ */
 void PLSSimpls::fit(uint16_t ncomp) {
 	uint16_t maxNComp = ((this->viewX.n_cols < this->viewX.n_rows) ? this->viewX.n_cols : this->viewX.n_rows - 1);
 	if(ncomp == 0 || ncomp > maxNComp) {
