@@ -51,6 +51,7 @@ public:
 private:
 	const uint16_t numSegments;
 	const arma::uword nrows;
+	const double innerSegmentsSQRT;
 	const BICEvaluator::Statistic stat;
 	const bool cloned;
 

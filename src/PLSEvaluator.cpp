@@ -282,7 +282,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 
 			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
 			
-			cutoff += trainMSEP.stddev(minNComp) + this->innerSegmentsSQRT;
+			cutoff += trainMSEP.stddev(minNComp) / this->innerSegmentsSQRT;
 
 			if(minNComp == 0) {
 				optNComp = 1;

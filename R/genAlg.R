@@ -14,6 +14,7 @@
 setClass("GenAlg", representation(
 	subsets = "matrix",
 	rawFitness = "numeric",
+	rawFitnessEvolution = "matrix",
 	response = "numeric",
 	covariates = "matrix",
 	evaluator = "GenAlgEvaluator",
@@ -144,6 +145,7 @@ function(y, X, control, evaluator, seed) {
 
 	ret@subsets <- res$subsets;
 	ret@rawFitness <- res$fitness;
+	ret@rawFitnessEvolution <- matrix(res$fitnessEvolution, ncol = 2L, byrow = TRUE, dimnames = list(NULL, c("best", "sum")));
 
 	return(ret);
 });

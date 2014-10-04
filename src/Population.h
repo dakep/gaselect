@@ -53,6 +53,10 @@ protected:
 	double minEliteFitness;
 	bool interrupted;
 
+private:
+	ChVec currentGeneration;
+	std::vector<double> fitnessHistory;
+
 public:
 	class InterruptException : public std::exception {
 	public:
@@ -68,6 +72,8 @@ public:
 		this->currentGeneration.reserve(this->ctrl.populationSize + this->ctrl.elitism);
 
 		this->minEliteFitness = 0.0;
+
+		this->fitnessHistory.reserve(2 * this->ctrl.numGenerations);
 	}
 	
 	virtual ~Population() {
@@ -78,9 +84,13 @@ public:
 
 	virtual void run() = 0;
 
-	inline bool wasInterrupted() {
+	inline bool wasInterrupted() const {
 		return this->interrupted;
 	}
+
+	inline const std::vector<double>& getFitnessEvolution() {
+		return this->fitnessHistory;
+	};
 
 	inline SortedChromosomes getResult() const {
 		SortedChromosomes result(this->elite);
@@ -95,9 +105,6 @@ public:
 		
 		return result;
 	}
-
-private:
-	ChVec currentGeneration;
 
 protected:
 	inline void initCurrentGeneration(ShuffledSet &shuffledSet, RNG &rng) {
@@ -160,7 +167,10 @@ protected:
 		}
 
 		IF_DEBUG(GAout << std::endl)
-		
+
+		this->fitnessHistory.push_back(this->elite.begin()->getFitness());
+		this->fitnessHistory.push_back(sumFitness + minFitness * i);
+
 		return sumFitness;
 	}
 	
