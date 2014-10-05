@@ -29,7 +29,8 @@ public:
 		R2 = 3
 	};
 
-	BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity, uint16_t numSegments = 7, Statistic stat = BIC);
+	BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
+		uint16_t numSegments = 7, Statistic stat = BIC, double sdfact = 1.0);
 
 	~BICEvaluator() {
 		if(this->cloned == true) {
@@ -55,7 +56,7 @@ public:
 private:
 	const uint16_t numSegments;
 	const arma::uword nrows;
-	const double innerSegmentsSQRT;
+	const double sdfact;
 	const BICEvaluator::Statistic stat;
 	const bool cloned;
 

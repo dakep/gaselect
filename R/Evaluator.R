@@ -11,7 +11,10 @@ setClass("GenAlgEvaluator", representation(), contains = "VIRTUAL");
 #' @slot innerSegments The number of inner RDCV segments used in one replication.
 #' @slot outerSegments The number of outer RDCV segments used in one replication.
 #' @slot testSetSize The relative size of the test set (between 0 and 1).
+#' @slot sdfact The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
+#'      of components. For the "one standard error rule", \code{sdfact} is 1.
 #' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
+#' @slot maxNComp The maximum number of components to consider in the PLS model.
 #' @slot method The PLS method used to fit the PLS model (currently only SIMPLS is implemented).
 #' @slot methodId The ID of the PLS method used to fit the PLS model (see C++ code for allowed values).
 #' @slot sepTransformation The SEP transformation to use (currently NONE or LOG are supported).
@@ -23,6 +26,7 @@ setClass("GenAlgPLSEvaluator", representation(
 	innerSegments = "integer",
 	outerSegments = "integer",
 	testSetSize = "numeric",
+	sdfact = "numeric",
 	numThreads = "integer",
     maxNComp = "integer",
 	method = "character",
@@ -47,6 +51,10 @@ setClass("GenAlgPLSEvaluator", representation(
 
     if(object@testSetSize < 0 || object@testSetSize >= 1) {
         errors <- c(errors, "The test set size must be between 0 and 1.");
+    }
+
+    if(object@sdfact < 0) {
+        errors <- c(errors, "The `sdfact` must be greater than or equal 0.");
     }
 
 	if(length(errors) == 0) {
@@ -76,6 +84,9 @@ setClass("GenAlgUserEvaluator", representation(
 #'
 #' @slot numSegments The number of CV segments used in one replication.
 #' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
+#' @slot maxNComp The maximum number of components to consider in the PLS model.
+#' @slot sdfact The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
+#'      of components. For the "one standard error rule", \code{sdfact} is 1.
 #' @slot statistic The statistic used to evaluate the fitness.
 #' @slot statisticId The (internal) numeric ID of the statistic.
 #' @aliases GenAlgFitEvaluator
@@ -84,6 +95,7 @@ setClass("GenAlgFitEvaluator", representation(
 	numSegments = "integer",
 	numThreads = "integer",
     maxNComp = "integer",
+	sdfact = "numeric",
 	statistic = "character",
 	statisticId = "integer"
 ), validity = function(object) {
@@ -100,6 +112,10 @@ setClass("GenAlgFitEvaluator", representation(
 
     if(object@maxNComp < 0L || object@maxNComp > MAXUINT16) {
         errors <- c(errors, paste("The maximum number of components must be greater than or equal 0 and less than", MAXUINT16));
+    }
+
+    if(object@sdfact < 0) {
+        errors <- c(errors, "The `sdfact` must be greater than or equal 0.");
     }
 
 	if(length(errors) == 0) {
@@ -183,6 +199,8 @@ validity = function(object) {
 #' @param maxNComp The maximum number of components the PLS models should consider (if not specified,
 #'      the number of components is not constrained)
 #' @param method The PLS method used to fit the PLS model (currently only SIMPLS is implemented)
+#' @param sdfact The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
+#'      of components. For the "one standard error rule", \code{sdfact} is 1.
 #' @param sepTransformation How the SEP should be transformed. Currently NONE and LOG are implemented.
 #' @return Returns an S4 object of type \code{\link{GenAlgPLSEvaluator}} to be used as argument to
 #'      a call of \code{\link{genAlg}}.
@@ -191,7 +209,7 @@ validity = function(object) {
 #' @example examples/genAlg.R
 #' @rdname GenAlgPLSEvaluator-constructor
 evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegments = 1L, testSetSize = NULL,
-    numThreads = NULL, maxNComp = NULL, method = c("simpls"), sepTransformation = c("none", "log")) {
+    numThreads = NULL, maxNComp = NULL, method = c("simpls"), sdfact = 1, sepTransformation = c("none", "log")) {
 	method <- match.arg(method);
 	sepTransformation <- match.arg(sepTransformation);
 
@@ -242,6 +260,7 @@ evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegment
 		outerSegments = outerSegments,
 		testSetSize = testSetSize,
 		numThreads = numThreads,
+		sdfact = sdfact,
         maxNComp = maxNComp,
 		method = method,
 		methodId = methodId,
@@ -263,13 +282,16 @@ evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegment
 #'      1 or NULL means no threads).
 #' @param maxNComp The maximum number of components the PLS models should consider (if not specified,
 #'      the number of components is not constrained)
+#' @param sdfact The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
+#'      of components. For the "one standard error rule", \code{sdfact} is 1.
 #' @return Returns an S4 object of type \code{\link{GenAlgFitEvaluator}} to be used as argument to
 #'      a call of \code{\link{genAlg}}.
 #' @export
 #' @family GenAlg Evaluators
 #' @example examples/genAlg.R
 #' @rdname GenAlgFitEvaluator-constructor
-evaluatorFit <- function(numSegments = 7L, statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"), numThreads = NULL, maxNComp = NULL, method = c("simpls")) {
+evaluatorFit <- function(numSegments = 7L, statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"),
+    numThreads = NULL, maxNComp = NULL, method = c("simpls"), sdfact = 1) {
 	statistic <- match.arg(statistic);
 
     statId = switch(statistic,
@@ -305,6 +327,7 @@ evaluatorFit <- function(numSegments = 7L, statistic = c("BIC", "AIC", "adjusted
 		numSegments = numSegments,
 		numThreads = numThreads,
         maxNComp = maxNComp,
+        sdfact = sdfact,
 		statistic = statistic,
 		statisticId = statId
 	));

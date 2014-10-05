@@ -101,6 +101,7 @@ BEGIN_RCPP
 				as<uint16_t>(control["innerSegments"]),
 				as<uint16_t>(control["outerSegments"]),
 				as<double>(control["testSetSize"]),
+				as<double>(control["sdfact"]),
 				(PLSEvaluator::SEPTransformation) as<int>(control["sepTransformation"]));
 
 			break;
@@ -117,8 +118,13 @@ BEGIN_RCPP
 
 			BICEvaluator::Statistic stat = (BICEvaluator::Statistic) as<int>(control["statistic"]);
 
-			eval = new BICEvaluator(pls, as<uint16_t>(control["maxNComp"]), seed,
-				ctrl.verbosity, as<uint16_t>(control["innerSegments"]), stat);
+			eval = new BICEvaluator(pls,
+				as<uint16_t>(control["maxNComp"]),
+				seed,
+				ctrl.verbosity,
+				as<uint16_t>(control["innerSegments"]),
+				stat,
+				as<double>(control["sdfact"]));
 
 			break;
 		}
@@ -264,6 +270,7 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 				as<uint16_t>(evaluator["innerSegments"]),
 				as<uint16_t>(evaluator["outerSegments"]),
 				as<double>(evaluator["testSetSize"]),
+				as<double>(evaluator["sdfact"]),
 				(PLSEvaluator::SEPTransformation) as<int>(evaluator["sepTransformation"]));
 			
 			break;
@@ -286,8 +293,13 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 
 			BICEvaluator::Statistic stat = (BICEvaluator::Statistic) as<int>(evaluator["statistic"]);
 
-			eval = new BICEvaluator(pls, as<uint16_t>(evaluator["maxNComp"]), seed,
-				(VerbosityLevel) as<int>(evaluator["verbosity"]), as<uint16_t>(evaluator["innerSegments"]), stat);
+			eval = new BICEvaluator(pls,
+				as<uint16_t>(evaluator["maxNComp"]),
+				seed,
+				(VerbosityLevel) as<int>(evaluator["verbosity"]),
+				as<uint16_t>(evaluator["innerSegments"]),
+				stat,
+				as<double>(evaluator["sdfact"]));
 
 			break;
 		}
