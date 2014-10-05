@@ -50,6 +50,7 @@ enum EvaluatorClass {
  *		uint16_t innerSegments ... Number of CV segments used in the internal evaluation method (> 0)
  *		uint16_t outerSegments ... Number of outer CV segments (0 or 1 = use srCV, > 0 use the rdCV strategy)
  *		double testSetSize ... If srCV should be used, the rel. size of the test set between 0 and 1 (ignored if outerSegments > 1)
+ *		double sdfact ... The factor to scale the SD with when selecting the optimal number of components
  *		uint16_t maxNComp ... The maximum number of componentes the PLS models should consider
  *		int sepTransformation ... The type of transformation for the SEP (NONE or LOG)
  *		int statistic ... The statistic the LM Evaluator should use
@@ -63,13 +64,19 @@ RcppExport SEXP genAlgPLS(SEXP control, SEXP X, SEXP y, SEXP seed);
  * evaluate the given data with the given evaluator
  * arguments:
  *	evaluator ... A R list with following entries
+ *		VerbosityLevel verbosity ... Level of verbosity
  *		EvaluatorClass evaluatorClass ... The evaluator to use
  *		Rcpp::Function userEvalFunction ... The function to be called for evaluating the fitness of a chromosome
  *		PLSMethod plsMethod ... PLS method to use in internal evaluation
- *		uint16_t numReplications ... Number of replications in the internal evaluation procedure (the variable subset is evaluted with CV numReplication times and the mean fitness is returned) (> 0)
- *		uint16_t numSegments ... Number of CV segments used in the internal evaluation method (> 0)
+ *		uint16_t numReplications ... Number of replications in the internal evaluation procedure
+ *			(the variable subset is evaluted with CV numReplication times and the mean fitness is returned) (> 0)
+ *		uint16_t innerSegments ... Number of CV segments used in the internal evaluation method (> 0)
+ *		uint16_t outerSegments ... Number of outer CV segments (0 or 1 = use srCV, > 0 use the rdCV strategy)
+ *		double testSetSize ... If srCV should be used, the rel. size of the test set between 0 and 1 (ignored if outerSegments > 1)
+ *		double sdfact ... The factor to scale the SD with when selecting the optimal number of components
+ *		uint16_t maxNComp ... The maximum number of componentes the PLS models should consider
+ *		int sepTransformation ... The type of transformation for the SEP (NONE or LOG)
  *		int statistic ... The statistic the LM Evaluator should use
- *		VerbosityLevel verbosity ... Level of verbosity
  *
  *	X ... A numeric matrix with dimensions n x p
  *	y ... A numeric vector with length n

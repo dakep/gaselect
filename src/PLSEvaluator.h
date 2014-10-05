@@ -29,7 +29,7 @@ public:
 	};
 
 	PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
-	uint16_t innerSegments, uint16_t outerSegments = 1, double testSetSize = 0.0, SEPTransformation sept = NONE);
+	uint16_t innerSegments, uint16_t outerSegments = 1, double testSetSize = 0.0, double sdfact = 1.0, SEPTransformation sept = NONE);
 
 	~PLSEvaluator() {
 		if(this->cloned == true) {
@@ -60,7 +60,7 @@ private:
 	const uint16_t numReplications;
 	const uint16_t outerSegments;
 	const uint16_t innerSegments;
-	const double innerSegmentsSQRT;
+	const double sdfact;
 	const arma::uword nrows;
 	const SEPTransformation sept;
 	const bool cloned;

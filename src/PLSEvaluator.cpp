@@ -24,12 +24,12 @@ uint32_t PLSEvaluator::counter = 0;
 #endif
 
 PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
-	uint16_t innerSegments, uint16_t outerSegments, double testSetSize, SEPTransformation sept) :
-	Evaluator(verbosity), numReplications(numReplications),
-	outerSegments((outerSegments < 1) ? 1 : outerSegments),
-	innerSegments((outerSegments <= 1 && testSetSize == 0.0) ? innerSegments - 1 : innerSegments),
-	innerSegmentsSQRT(sqrt(this->innerSegments)),
-	nrows(pls->getNumberOfObservations()), sept(sept), cloned(false), pls(pls), maxNComp(maxNComp)
+	uint16_t innerSegments, uint16_t outerSegments, double testSetSize, double sdfact, SEPTransformation sept) :
+		Evaluator(verbosity), numReplications(numReplications),
+		outerSegments((outerSegments < 1) ? 1 : outerSegments),
+		innerSegments((outerSegments <= 1 && testSetSize == 0.0) ? innerSegments - 1 : innerSegments),
+		sdfact(sdfact / sqrt(this->innerSegments)),
+		nrows(pls->getNumberOfObservations()), sept(sept), cloned(false), pls(pls), maxNComp(maxNComp)
 {
 	/* assert outerSegments > 0 */
 	if(pls->getNumberOfResponseVariables() > 1) {
@@ -52,7 +52,7 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
 	Evaluator(other.verbosity), numReplications(other.numReplications),
 	outerSegments(other.outerSegments), innerSegments(other.innerSegments),
-	innerSegmentsSQRT(other.innerSegmentsSQRT), nrows(other.nrows), sept(other.sept),
+	sdfact(other.sdfact), nrows(other.nrows), sept(other.sept),
 	cloned(true), maxNComp(other.maxNComp), segmentation(other.segmentation)
 {
 	this->pls = other.pls->clone();
@@ -282,7 +282,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 
 			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << minNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
 			
-			cutoff += trainMSEP.stddev(minNComp) / this->innerSegmentsSQRT;
+			cutoff += trainMSEP.stddev(minNComp) * this->sdfact;
 
 			if(minNComp == 0) {
 				optNComp = 1;
