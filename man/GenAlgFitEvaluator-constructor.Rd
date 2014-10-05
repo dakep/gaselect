@@ -5,7 +5,7 @@
 \usage{
 evaluatorFit(numSegments = 7L, statistic = c("BIC", "AIC",
   "adjusted.r.squared", "r.squared"), numThreads = NULL, maxNComp = NULL,
-  method = c("simpls"))
+  method = c("simpls"), sdfact = 1)
 }
 \arguments{
 \item{numSegments}{The number of CV segments used to estimate the optimal number of PLS components (between 2 and 2^16).}
@@ -17,6 +17,9 @@ evaluatorFit(numSegments = 7L, statistic = c("BIC", "AIC",
 
 \item{maxNComp}{The maximum number of components the PLS models should consider (if not specified,
 the number of components is not constrained)}
+
+\item{sdfact}{The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
+of components. For the "one standard error rule", \code{sdfact} is 1.}
 }
 \value{
 Returns an S4 object of type \code{\link{GenAlgFitEvaluator}} to be used as argument to
