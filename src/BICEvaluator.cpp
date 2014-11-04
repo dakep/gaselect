@@ -152,75 +152,80 @@ double BICEvaluator::getRSS(uint16_t maxNComp) {
 	uint16_t seg = 0, comp;
 	std::vector<arma::uvec>::const_iterator segmentIter = this->segmentation.begin();
 
-	/*
-	 * Fit PLS models to predict the values in each segment once
-	 */
-	while(seg++ < this->numSegments) {
-		/* Segmentation iterator currently points to the `fit` segment */
-		this->pls->viewSelectRows(*(segmentIter));
-		this->pls->fit(maxNComp);
+	try {
+		/*
+		 * Fit PLS models to predict the values in each segment once
+		 */
+		while(seg++ < this->numSegments) {
+			/* Segmentation iterator currently points to the `fit` segment */
+			this->pls->viewSelectRows(*(segmentIter));
+			this->pls->fit(maxNComp);
 
-		/* Increment segmentation iterator to point to the `predict` segment */
-		++segmentIter;
+			/* Increment segmentation iterator to point to the `predict` segment */
+			++segmentIter;
 
-		leftOutY = this->pls->getY().rows(*segmentIter);
-		leftOutX = this->pls->getXColumnView().rows(*segmentIter);
+			leftOutY = this->pls->getY().rows(*segmentIter);
+			leftOutX = this->pls->getXColumnView().rows(*segmentIter);
 
-		for(comp = 0; comp < maxNComp; ++comp) {
-			trainMSEP.update(arma::mean(arma::square(leftOutY - this->pls->predict(leftOutX, comp + 1))), comp);
+			for(comp = 0; comp < maxNComp; ++comp) {
+				trainMSEP.update(arma::mean(arma::square(leftOutY - this->pls->predict(leftOutX, comp + 1))), comp);
+			}
+
+			/* Increment segmentation iterator to point to the next `fit` segment */
+			++segmentIter;
 		}
 
-		/* Increment segmentation iterator to point to the next `fit` segment */
-		++segmentIter;
+		/*
+		 * Find best number of components based on the RSS plus one standard deviation
+		 */
+		IF_DEBUG(
+			GAout << "EVALUATOR: MSE and SD" << std::endl;
+			for(uint16_t j = 0; j < maxNComp; ++j) {
+				GAout << "\t (" << j + 1 << " comps.): " << trainMSEP.mean(j) << " +- " << trainMSEP.stddev(j) << std::endl;
+			}
+		)
+
+		cutoff = trainMSEP.mean(0);
+		minNComp = 0;
+		
+		for(comp = 1; comp < maxNComp; ++comp) {
+			if(trainMSEP.mean(comp) < cutoff) {
+				minNComp = comp;
+				cutoff = trainMSEP.mean(comp);
+			}
+		}
+
+		IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
+		
+		cutoff += trainMSEP.stddev(minNComp) * this->sdfact;
+
+		if(minNComp == 0) {
+			optNComp = 1;
+		} else {
+			optNComp = 0;
+			while(optNComp < minNComp && trainMSEP.mean(optNComp) > cutoff) {
+				++optNComp;
+			}
+			if(optNComp <= minNComp) {
+				++optNComp;
+			}
+		}
+
+		IF_DEBUG(GAout << "EVALUATOR: Opt. num. of components: " << optNComp
+			<< " (max. " << maxNComp << ")" << std::endl)
+
+		/*
+		 * Predict last segment with a model fit to the other observations using optNComp components
+		 * (segmentation iterator points to the `test fit` segment
+		 */
+		this->pls->viewSelectAllRows();
+		this->pls->fit(optNComp);
+
+		RSS = arma::accu(arma::square(this->pls->getY() - this->pls->predict(this->pls->getXColumnView(), optNComp)));
+	} catch(const ::std::underflow_error& ue) {
+		IF_DEBUG(GAout << GAout.lock() << ue.what() << "\n" << GAout.unlock())
+		throw Evaluator::EvaluatorException("Can not evaluate variable subset due to an underflow.");
 	}
-
-	/*
-	 * Find best number of components based on the RSS plus one standard deviation
-	 */
-	IF_DEBUG(
-		GAout << "EVALUATOR: MSE and SD" << std::endl;
-		for(uint16_t j = 0; j < maxNComp; ++j) {
-			GAout << "\t (" << j + 1 << " comps.): " << trainMSEP.mean(j) << " +- " << trainMSEP.stddev(j) << std::endl;
-		}
-	)
-
-	cutoff = trainMSEP.mean(0);
-	minNComp = 0;
-	
-	for(comp = 1; comp < maxNComp; ++comp) {
-		if(trainMSEP.mean(comp) < cutoff) {
-			minNComp = comp;
-			cutoff = trainMSEP.mean(comp);
-		}
-	}
-
-	IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
-	
-	cutoff += trainMSEP.stddev(minNComp) * this->sdfact;
-
-	if(minNComp == 0) {
-		optNComp = 1;
-	} else {
-		optNComp = 0;
-		while(optNComp < minNComp && trainMSEP.mean(optNComp) > cutoff) {
-			++optNComp;
-		}
-		if(optNComp <= minNComp) {
-			++optNComp;
-		}
-	}
-
-	IF_DEBUG(GAout << "EVALUATOR: Opt. num. of components: " << optNComp
-		<< " (max. " << maxNComp << ")" << std::endl)
-
-	/*
-	 * Predict last segment with a model fit to the other observations using optNComp components
-	 * (segmentation iterator points to the `test fit` segment
-	 */
-	this->pls->viewSelectAllRows();
-	this->pls->fit(optNComp);
-
-	RSS = arma::accu(arma::square(this->pls->getY() - this->pls->predict(this->pls->getXColumnView(), optNComp)));
 
 	return RSS;
 }

@@ -106,9 +106,10 @@ void PLSSimpls::fit(uint16_t ncomp) {
 		arma::vec r = this->R.unsafe_col(i); // X block factor weights
 		arma::vec v = this->V.unsafe_col(i); // Orthogonal loadings
 
-		r = S; // Only univariate responses are supported
+		// Only univariate responses are supported!!
+//		r = S;
 
-		t = this->viewX * r;
+		t = this->viewX * S;
 
 		t = t - arma::mean(t); // Center y block factor scores
 		tnorm = ( arma::sqrt(t.t() * t)[0] ); // Calculate norm
@@ -119,7 +120,7 @@ void PLSSimpls::fit(uint16_t ncomp) {
 		}
 
 		t = t / tnorm;  // Normalize scores
-		r = r / tnorm;
+		r = S / tnorm;
 
 		p = this->viewX.t() * t; // Calculate x loadings
 		q = this->viewY.t() * t; // Calculate y loadings
