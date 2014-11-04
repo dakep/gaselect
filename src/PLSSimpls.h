@@ -46,7 +46,7 @@ private:
 	 */
 	arma::mat R; // X factor weights
 	arma::mat V; // Orthogonal loadings
-	arma::mat tQ; // Y factor loadings (transposed)
+	arma::vec Qvec; // Y factor loadings (only a vector because only univariate responses are handled)
 };
 
 

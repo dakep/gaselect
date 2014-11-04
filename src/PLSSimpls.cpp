@@ -79,40 +79,28 @@ void PLSSimpls::fit(uint16_t ncomp) {
 
 	this->R.zeros(this->viewX.n_cols, ncomp);
 	this->V.zeros(this->viewX.n_cols, ncomp);
-	this->tQ.zeros(ncomp, this->viewY.n_cols);
-
-//	arma::mat TT; // X factor scores (only really needed if fitted values should be calculated)
-//	if(this->fitValues) {
-//		TT.zeros(this->viewX.n_rows, ncomp);
-//		this->fittedValues.zeros(this->viewY.n_rows, this->viewY.n_cols, ncomp);
-//	} else {
-//		this->fittedValues.zeros(1, 1, 1);
-//	}
+	this->Qvec.zeros(ncomp);
 
 	/*
 	 * Center X and Y views
 	 */
 	this->centerView();
 
-	arma::vec S = ((arma::mat) (this->viewX.t() * this->viewY)).col(0); // Cross product
+	arma::vec S = this->viewX.t() * this->viewY; // Cross product
 
 	// Working vectors
 	arma::vec t; // X block factor scores
 	double tnorm = 1.0;
 	arma::vec p; // X block factor loadings
-	arma::vec q; // Y block factor loadings / weights
 
 	for(uint16_t i = 0; i < ncomp; ++i) {
 		arma::vec r = this->R.unsafe_col(i); // X block factor weights
 		arma::vec v = this->V.unsafe_col(i); // Orthogonal loadings
 
-		// Only univariate responses are supported!!
-//		r = S;
-
 		t = this->viewX * S;
 
 		t = t - arma::mean(t); // Center y block factor scores
-		tnorm = ( arma::sqrt(t.t() * t)[0] ); // Calculate norm
+		tnorm = arma::norm(t, 2); // Calculate norm
 
 		// The norm of t can be zero (or close to it). This is unacceptable.
 		if (tnorm < PLSSimpls::NORM_TOL) {
@@ -123,29 +111,20 @@ void PLSSimpls::fit(uint16_t ncomp) {
 		r = S / tnorm;
 
 		p = this->viewX.t() * t; // Calculate x loadings
-		q = this->viewY.t() * t; // Calculate y loadings
+		this->Qvec[i] = arma::dot(this->viewY, t); // Calculate y loadings
 
 		if(i > 0) {
-			v = p - (V * V.t() * p); // Make v orthogonal to previous loadings
+			v = arma::normalise(p - (this->V * this->V.t() * p)); // Make v orthogonal to previous loadings
 		} else {
-			v = p;
+			v = arma::normalise(p);
 		}
 
-		v = v / ( arma::sqrt(v.t() * v)[0] ); // Normalize orthogonal loadings
-
-		S = S - v * v.t() * S; // deflate S
-		this->tQ.row(i) = q.t();
+		S -= v * v.t() * S; // deflate S
 
 		// R and V must not be updated because r resp. v are already pointers to the correct column
 
-		this->coef.col(i) = this->R.cols(0, i) * this->tQ.rows(0, i);
-		this->intercepts[i] = this->Ymean - ((arma::vec) (this->Xmean * this->coef.col(i)))[0];
-
-//		if(this->fitValues) {
-//			TT.col(i) = t;
-//			this->fittedValues.slice(i) = TT.cols(0, i) * tQ.rows(0, i);
-//			this->fittedValues.slice(i).each_row() += this->Ymean;
-//		}
+		this->coef.col(i) = this->R.cols(0, i) * this->Qvec.rows(0, i);
+		this->intercepts[i] = this->Ymean - arma::dot(this->Xmean, this->coef.col(i));
 	}
 
 	this->resultNComp = ncomp;
