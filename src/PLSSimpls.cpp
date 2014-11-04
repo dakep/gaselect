@@ -13,6 +13,8 @@
 #include <RcppArmadillo.h>
 #include "PLSSimpls.h"
 
+const double PLSSimpls::NORM_TOL = 1e-20;
+
 PLSSimpls::PLSSimpls(const arma::mat &X, const arma::vec &Y) : PLS(X, Y) {
 	if(Y.n_cols > 1) {
 		throw std::invalid_argument("The size of the seed must not be smaller than the RNG's seed size");
@@ -110,6 +112,12 @@ void PLSSimpls::fit(uint16_t ncomp) {
 
 		t = t - arma::mean(t); // Center y block factor scores
 		tnorm = ( arma::sqrt(t.t() * t)[0] ); // Calculate norm
+
+		// The norm of t can be zero (or close to it). This is unacceptable.
+		if (tnorm < PLSSimpls::NORM_TOL) {
+			throw std::underflow_error("All block-factor scores are (almost) zero.");
+		}
+
 		t = t / tnorm;  // Normalize scores
 		r = r / tnorm;
 

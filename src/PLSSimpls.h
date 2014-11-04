@@ -31,6 +31,7 @@ public:
 	virtual PLS* clone() const;
 
 private:
+	static const double NORM_TOL;
 //	arma::cube fittedValues;
 	arma::mat coef; // Cube with coefficients
 	arma::vec intercepts; // n x ncomp matrix with intercept terms

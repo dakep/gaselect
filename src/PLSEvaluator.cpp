@@ -229,99 +229,104 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 	uint16_t rep = 0, outer, seg, comp;
 	std::vector<arma::uvec>::const_iterator segmentIter = this->segmentation.begin();
 
-	while(rep++ < this->numReplications) {
-		outer = 0;
-		predSD.reset();
+	try {
+		while(rep++ < this->numReplications) {
+			outer = 0;
+			predSD.reset();
 
-		while(outer++ < this->outerSegments) {
-			/* Reset the variables to 0 */
-			seg = 0;
-			trainMSEP.reset();
+			while(outer++ < this->outerSegments) {
+				/* Reset the variables to 0 */
+				seg = 0;
+				trainMSEP.reset();
 
-			/*
-			 * Fit PLS models to predict the values in each segment once
-			 */
-			while(seg++ < this->innerSegments) {
-				/* Segmentation iterator currently points to the `fit` segment */
-				this->pls->viewSelectRows(*(segmentIter));
-				this->pls->fit(maxNComp);
+				/*
+				 * Fit PLS models to predict the values in each segment once
+				 */
+				while(seg++ < this->innerSegments) {
+					/* Segmentation iterator currently points to the `fit` segment */
+					this->pls->viewSelectRows(*(segmentIter));
+					this->pls->fit(maxNComp);
 
-				/* Increment segmentation iterator to point to the `predict` segment */
+					/* Increment segmentation iterator to point to the `predict` segment */
+					++segmentIter;
+
+					leftOutY = this->pls->getY().rows(*segmentIter);
+					leftOutX = this->pls->getXColumnView().rows(*segmentIter);
+
+					for(comp = 0; comp < maxNComp; ++comp) {
+						trainMSEP.update(arma::mean(arma::square(leftOutY - this->pls->predict(leftOutX, comp + 1))), comp);
+					}
+
+					/* Increment segmentation iterator to point to the next `fit` segment */
+					++segmentIter;
+				}
+
+				/*
+				 * Find best number of components based on the RSS plus one standard deviation
+				 */
+				IF_DEBUG(
+					GAout << "EVALUATOR: MSE and SD" << std::endl;
+					for(uint16_t j = 0; j < maxNComp; ++j) {
+						GAout << "\t (" << j + 1 << " comps.): " << trainMSEP.mean(j) << " +- " << trainMSEP.stddev(j) << std::endl;
+					}
+				)
+
+				cutoff = trainMSEP.mean(0);
+				minNComp = 0;
+				
+				for(comp = 1; comp < maxNComp; ++comp) {
+					if(trainMSEP.mean(comp) < cutoff) {
+						minNComp = comp;
+						cutoff = trainMSEP.mean(comp);
+					}
+				}
+
+				IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << minNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
+				
+				cutoff += trainMSEP.stddev(minNComp) * this->sdfact;
+
+				if(minNComp == 0) {
+					optNComp = 1;
+				} else {
+					optNComp = 0;
+					while(optNComp < minNComp && trainMSEP.mean(optNComp) > cutoff) {
+						++optNComp;
+					}
+					if(optNComp <= minNComp) {
+						++optNComp;
+					}
+				}
+
+				IF_DEBUG(GAout << "EVALUATOR: Opt. num. of components: " << optNComp << " (max. " << maxNComp << ")" << std::endl)
+
+				/*
+				 * Predict last segment with a model fit to the other observations using optNComp components
+				 * (segmentation iterator points to the `test fit` segment
+				 */
+				this->pls->viewSelectRows(*segmentIter);
+				this->pls->fit(optNComp);
+
+
+				/* Increment the segmentation iterator to point to the `test predict` segment */
 				++segmentIter;
 
-				leftOutY = this->pls->getY().rows(*segmentIter);
 				leftOutX = this->pls->getXColumnView().rows(*segmentIter);
+				leftOutY = this->pls->getY().rows(*segmentIter);
+				predSD.update(leftOutY - this->pls->predict(leftOutX, optNComp));
 
-				for(comp = 0; comp < maxNComp; ++comp) {
-					trainMSEP.update(arma::mean(arma::square(leftOutY - this->pls->predict(leftOutX, comp + 1))), comp);
-				}
-
-				/* Increment segmentation iterator to point to the next `fit` segment */
+				/* Increment the segmentation iterator to point to the next `fit` segment */
 				++segmentIter;
 			}
 
 			/*
-			 * Find best number of components based on the RSS plus one standard deviation
+			 * Calculate standard deviation of the residuals
 			 */
-			IF_DEBUG(
-				GAout << "EVALUATOR: MSE and SD" << std::endl;
-				for(uint16_t j = 0; j < maxNComp; ++j) {
-					GAout << "\t (" << j + 1 << " comps.): " << trainMSEP.mean(j) << " +- " << trainMSEP.stddev(j) << std::endl;
-				}
-			)
-
-			cutoff = trainMSEP.mean(0);
-			minNComp = 0;
-			
-			for(comp = 1; comp < maxNComp; ++comp) {
-				if(trainMSEP.mean(comp) < cutoff) {
-					minNComp = comp;
-					cutoff = trainMSEP.mean(comp);
-				}
-			}
-
-			IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << minNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
-			
-			cutoff += trainMSEP.stddev(minNComp) * this->sdfact;
-
-			if(minNComp == 0) {
-				optNComp = 1;
-			} else {
-				optNComp = 0;
-				while(optNComp < minNComp && trainMSEP.mean(optNComp) > cutoff) {
-					++optNComp;
-				}
-				if(optNComp <= minNComp) {
-					++optNComp;
-				}
-			}
-
-			IF_DEBUG(GAout << "EVALUATOR: Opt. num. of components: " << optNComp << " (max. " << maxNComp << ")" << std::endl)
-
-			/*
-			 * Predict last segment with a model fit to the other observations using optNComp components
-			 * (segmentation iterator points to the `test fit` segment
-			 */
-			this->pls->viewSelectRows(*segmentIter);
-			this->pls->fit(optNComp);
-
-
-			/* Increment the segmentation iterator to point to the `test predict` segment */
-			++segmentIter;
-
-			leftOutX = this->pls->getXColumnView().rows(*segmentIter);
-			leftOutY = this->pls->getY().rows(*segmentIter);
-			predSD.update(leftOutY - this->pls->predict(leftOutX, optNComp));
-
-			/* Increment the segmentation iterator to point to the next `fit` segment */
-			++segmentIter;
+			IF_DEBUG(GAout << "EVALUATOR: Resulting SEP: " << predSD.stddev() << std::endl)
+			sumSEP += predSD.stddev();
 		}
-
-		/*
-		 * Calculate standard deviation of the residuals
-		 */
-		IF_DEBUG(GAout << "EVALUATOR: Resulting SEP: " << predSD.stddev() << std::endl)
-		sumSEP += predSD.stddev();
+	} catch(const ::std::underflow_error& ue) {
+		IF_DEBUG(GAout << GAout.lock() << ue.what() << "\n" << GAout.unlock())
+		throw Evaluator::EvaluatorException("Can not evaluate variable subset due to an underflow.");
 	}
 
 	return sumSEP;
