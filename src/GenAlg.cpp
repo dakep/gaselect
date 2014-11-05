@@ -372,25 +372,25 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 //	return Rcpp::wrap(retMat);
 //}
 
-// SEXP simpls(SEXP Xs, SEXP Ys, SEXP numOfComp, SEXP newXs) {
-// BEGIN_RCPP
-// 	Rcpp::NumericMatrix XMat(Xs);
-// 	Rcpp::NumericMatrix YMat(Ys);
-// 	Rcpp::NumericMatrix newXMat(newXs);
-// 	uint16_t ncomp = Rcpp::as<uint16_t>(numOfComp);
+//SEXP simpls(SEXP Xs, SEXP Ys, SEXP ncomps, SEXP newXs) {
+//BEGIN_RCPP
+//	Rcpp::NumericMatrix XMat(Xs);
+//	Rcpp::NumericVector YVec(Ys);
+//	Rcpp::NumericMatrix newXMat(newXs);
+//	uint16_t ncomp = Rcpp::as<uint16_t>(ncomps);
 //
-// 	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
-// 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
-// 	arma::mat newX(newXMat.begin(), newXMat.nrow(), newXMat.ncol(), false);
+//	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
+//	arma::vec Y(YVec.begin(), YVec.length(), false);
+//	arma::mat newX(newXMat.begin(), newXMat.nrow(), newXMat.ncol(), false);
 //
-// 	PLSSimpls simpls(X, Y, true);
-// 	simpls.fit(ncomp);
+//	PLSSimpls simpls(X, Y);
+//	simpls.fit(ncomp);
 //
-// 	return Rcpp::List::create(Rcpp::Named("coefficients") = simpls.getCoefficients(),
-// 							  Rcpp::Named("fitted.values") = simpls.getFittedValues(),
-// 							  Rcpp::Named("predicted") = simpls.predict(newX));
-// END_RCPP
-// }
+//	return Rcpp::List::create(Rcpp::Named("coefficients") = simpls.getCoefficients(),
+//							  Rcpp::Named("predicted") = simpls.predict(newX));
+//END_RCPP
+//}
+
 //
 //
 // RcppExport SEXP evalTest(SEXP Xs, SEXP Ys, SEXP numReplications, SEXP numSegments) {

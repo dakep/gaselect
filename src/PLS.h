@@ -40,7 +40,7 @@ public:
 	virtual void viewSelectRows(const arma::uvec &rows);
 
 	/**
-	 * Select the all rows from the current column-view for further
+	 * Select all rows from the current column-view for further
 	 * processing
 	 */
 	virtual void viewSelectAllRows();

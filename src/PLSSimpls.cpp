@@ -1,6 +1,6 @@
 //
 //  PLSSimpls.cpp
-//  GenAlgPLS
+//  gaselect
 //
 //  Created by David Kepplinger on 16.04.2013.
 //  Copyright (c) 2013 __MyCompanyName__. All rights reserved.
@@ -16,9 +16,6 @@
 const double PLSSimpls::NORM_TOL = 1e-20;
 
 PLSSimpls::PLSSimpls(const arma::mat &X, const arma::vec &Y) : PLS(X, Y) {
-	if(Y.n_cols > 1) {
-		throw std::invalid_argument("The size of the seed must not be smaller than the RNG's seed size");
-	}
 }
 
 PLSSimpls::~PLSSimpls() {
@@ -70,36 +67,31 @@ void PLSSimpls::fit(uint16_t ncomp) {
 	}
 
 	/*
+	 * Center X and Y views
+	 */
+	this->centerView();
+
+	/*
 	 * Init neccessary matrices and vectors
 	 * Variable names are according to the original paper by S. de Jong (1993)
 	 */
 
 	this->coef.zeros(this->viewX.n_cols, ncomp);
 	this->intercepts.zeros(ncomp);
-
-	this->R.zeros(this->viewX.n_cols, ncomp);
-	this->V.zeros(this->viewX.n_cols, ncomp);
-	this->Qvec.zeros(ncomp);
-
-	/*
-	 * Center X and Y views
-	 */
-	this->centerView();
+	this->V.set_size(this->viewX.n_cols, ncomp);
 
 	arma::vec S = this->viewX.t() * this->viewY; // Cross product
 
 	// Working vectors
 	arma::vec t; // X block factor scores
 	double tnorm = 1.0;
-	arma::vec p; // X block factor loadings
+	double q;
 
 	for(uint16_t i = 0; i < ncomp; ++i) {
-		arma::vec r = this->R.unsafe_col(i); // X block factor weights
-		arma::vec v = this->V.unsafe_col(i); // Orthogonal loadings
-
+		arma::vec v = this->V.unsafe_col(i);
 		t = this->viewX * S;
 
-		t = t - arma::mean(t); // Center y block factor scores
+		t -= arma::mean(t); // Center y block factor scores
 		tnorm = arma::norm(t, 2); // Calculate norm
 
 		// The norm of t can be zero (or close to it). This is unacceptable.
@@ -107,23 +99,22 @@ void PLSSimpls::fit(uint16_t ncomp) {
 			throw std::underflow_error("All block-factor scores are (almost) zero.");
 		}
 
-		t = t / tnorm;  // Normalize scores
-		r = S / tnorm;
+		t /= tnorm;  // Normalize scores
 
-		p = this->viewX.t() * t; // Calculate x loadings
-		this->Qvec[i] = arma::dot(this->viewY, t); // Calculate y loadings
+		v = this->viewX.t() * t; // Calculate x loadings
+		q = arma::dot(this->viewY, t); // Calculate y loadings
 
 		if(i > 0) {
-			v = arma::normalise(p - (this->V * this->V.t() * p)); // Make v orthogonal to previous loadings
+			v = v - this->V.cols(0, i - 1) * this->V.cols(0, i - 1).t() * v; // Make v orthogonal to previous loadings
+			this->coef.col(i) = this->coef.col(i - 1) + (S * q / tnorm);
 		} else {
-			v = arma::normalise(p);
+			this->coef.col(i) = S * q / tnorm;
 		}
 
-		S -= v * v.t() * S; // deflate S
+		v /= arma::norm(v, 2);
 
-		// R and V must not be updated because r resp. v are already pointers to the correct column
+		S = S - v * v.t() * S; // deflate S
 
-		this->coef.col(i) = this->R.cols(0, i) * this->Qvec.rows(0, i);
 		this->intercepts[i] = this->Ymean - arma::dot(this->Xmean, this->coef.col(i));
 	}
 
