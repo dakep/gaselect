@@ -57,6 +57,47 @@ inline void PLSSimpls::centerView() {
 	this->viewY -= this->Ymean;
 }
 
+/* Small highly optimized functions */
+namespace {
+/**
+ * Stabilized Gram-Schmidt orthogonalization WITHOUT norming the vector! This is done in
+ * the call to `manualDeflate` more efficiently.
+ */
+inline void stabilizedGramSchmidt(arma::mat &V, arma::uword col) {
+	arma::vec v = V.unsafe_col(col);
+
+	for (arma::uword i = 0; i < col; ++i) {
+		v -= V.col(i) * arma::dot(V.col(i), v);
+	}
+}
+
+/**
+ * Deflate the vector s according to the formula
+ * v = v / norm(v)
+ * s = s - v * v.t() * s
+ */
+inline void manualDeflate(arma::vec& s, arma::vec &v) {
+	double *vm = v.memptr();
+	double *sm = s.memptr();
+	arma::uword i;
+	double dot = 0, norm = 0;
+
+	for (i = 0; i < s.n_elem; ++i) {
+		norm += vm[i] * vm[i];
+		dot += vm[i] * sm[i];
+	}
+
+	dot /= norm;
+	norm = sqrt(norm);
+
+	for (i = 0; i < s.n_elem; ++i) {
+		sm[i] -= vm[i] * dot;
+		vm[i] /= norm;
+	}
+}
+
+}
+
 /**
  * ncomp is 1-based!!!
  */
@@ -105,15 +146,15 @@ void PLSSimpls::fit(uint16_t ncomp) {
 		q = arma::dot(this->viewY, t); // Calculate y loadings
 
 		if(i > 0) {
-			v = v - this->V.cols(0, i - 1) * this->V.cols(0, i - 1).t() * v; // Make v orthogonal to previous loadings
-			this->coef.col(i) = this->coef.col(i - 1) + (S * q / tnorm);
+			stabilizedGramSchmidt(this->V, i); // Make v orthogonal to previous loadings
+			this->coef.col(i) = this->coef.col(i - 1) + S * (q / tnorm);
 		} else {
-			this->coef.col(i) = S * q / tnorm;
+			this->coef.col(i) = S * (q / tnorm);
 		}
 
-		v /= arma::norm(v, 2);
 
-		S = S - v * v.t() * S; // deflate S
+		/* deflate S and norm v */
+		manualDeflate(S, v);
 
 		this->intercepts[i] = this->Ymean - arma::dot(this->Xmean, this->coef.col(i));
 	}

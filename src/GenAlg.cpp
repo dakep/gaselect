@@ -384,7 +384,9 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 //	arma::mat newX(newXMat.begin(), newXMat.nrow(), newXMat.ncol(), false);
 //
 //	PLSSimpls simpls(X, Y);
-//	simpls.fit(ncomp);
+////	for(int i = 0; i < 1000; ++i) {
+//		simpls.fit(ncomp);
+////	}
 //
 //	return Rcpp::List::create(Rcpp::Named("coefficients") = simpls.getCoefficients(),
 //							  Rcpp::Named("predicted") = simpls.predict(newX));
