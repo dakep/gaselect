@@ -18,7 +18,12 @@ PLS Evaluator
 
 \item{\code{testSetSize}}{The relative size of the test set (between 0 and 1).}
 
+\item{\code{sdfact}}{The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
+of components. For the "one standard error rule", \code{sdfact} is 1.}
+
 \item{\code{numThreads}}{The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).}
+
+\item{\code{maxNComp}}{The maximum number of components to consider in the PLS model.}
 
 \item{\code{method}}{The PLS method used to fit the PLS model (currently only SIMPLS is implemented).}
 

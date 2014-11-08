@@ -101,8 +101,8 @@ void MultiThreadedPopulation::generateInitialChromosomes(uint16_t numChromosomes
 				++it;
 			} catch(const ::Evaluator::EvaluatorException &ee) {
 				delete (*it);
-				if(this->ctrl.verbosity >= ON) {
-					GAerr << "Could not evaluate chromosome: " << ee.what() << "\n";
+				if(this->ctrl.verbosity >= VERBOSE) {
+					GAout << GAout.lock() << "Could not evaluate chromosome: " << ee.what() << GAout.lock() << "\n";
 				}
 			}
 		} else {
@@ -197,7 +197,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 					++child1It;
 				}
 			} catch(const ::Evaluator::EvaluatorException& ee) {
-				if(this->ctrl.verbosity >= ON) {
+				if(this->ctrl.verbosity >= VERBOSE) {
 					GAout << GAout.lock() << "Could not evaluate chromosome: " << ee.what() << "\n" << GAout.unlock();
 				}
 			}

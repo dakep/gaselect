@@ -5,8 +5,8 @@
 \usage{
 evaluatorPLS(numReplications = 30L, innerSegments = 7L,
   outerSegments = 1L, testSetSize = NULL, numThreads = NULL,
-  maxNComp = NULL, method = c("simpls"), sepTransformation = c("none",
-  "log"))
+  maxNComp = NULL, method = c("simpls"), sdfact = 1,
+  sepTransformation = c("none", "log"))
 }
 \arguments{
 \item{numReplications}{The number of replications used to evaluate a variable subset (must be between 1 and 2^16)}
@@ -27,6 +27,9 @@ is ignored if outerSegments > 1 and a warning will be issued.}
 the number of components is not constrained)}
 
 \item{method}{The PLS method used to fit the PLS model (currently only SIMPLS is implemented)}
+
+\item{sdfact}{The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
+of components. For the "one standard error rule", \code{sdfact} is 1.}
 
 \item{sepTransformation}{How the SEP should be transformed. Currently NONE and LOG are implemented.}
 }

@@ -87,7 +87,7 @@ void SingleThreadPopulation::run() {
 				newGeneration.push_back(tmpChromosome1);
 			} catch(const ::Evaluator::EvaluatorException& ee) {
 				delete tmpChromosome1;
-				if(this->ctrl.verbosity >= ON) {
+				if(this->ctrl.verbosity >= VERBOSE) {
 					GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
 				}
 			}
@@ -180,7 +180,7 @@ void SingleThreadPopulation::run() {
 						GAout << "Warning: The algorithm may be stuck. Try increasing the badSolutionThreshold!" << std::endl;
 					}
 				} catch(const ::Evaluator::EvaluatorException& ee) {
-					if(this->ctrl.verbosity >= ON) {
+					if(this->ctrl.verbosity >= VERBOSE) {
 						GAout << "Could not evaluate chromosome: " << ee.what() << std::endl;
 					}
 				}

@@ -14,6 +14,11 @@ Fit Evaluator
 
 \item{\code{numThreads}}{The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).}
 
+\item{\code{maxNComp}}{The maximum number of components to consider in the PLS model.}
+
+\item{\code{sdfact}}{The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
+of components. For the "one standard error rule", \code{sdfact} is 1.}
+
 \item{\code{statistic}}{The statistic used to evaluate the fitness.}
 
 \item{\code{statisticId}}{The (internal) numeric ID of the statistic.}

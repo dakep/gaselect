@@ -54,6 +54,9 @@
 #undef HAVE_PTHREAD_H
 #endif
 
+#ifndef ENABLE_DEBUG_VERBOSITY
 #define ARMA_DONT_PRINT_RUNTIME_ERRORS 1
+#define ARMA_NO_DEBUG 1
+#endif
 
 #endif
