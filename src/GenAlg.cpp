@@ -372,26 +372,27 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 //	return Rcpp::wrap(retMat);
 //}
 
-//SEXP simpls(SEXP Xs, SEXP Ys, SEXP ncomps, SEXP newXs) {
-//BEGIN_RCPP
-//	Rcpp::NumericMatrix XMat(Xs);
-//	Rcpp::NumericVector YVec(Ys);
-//	Rcpp::NumericMatrix newXMat(newXs);
-//	uint16_t ncomp = Rcpp::as<uint16_t>(ncomps);
-//
-//	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
-//	arma::vec Y(YVec.begin(), YVec.length(), false);
-//	arma::mat newX(newXMat.begin(), newXMat.nrow(), newXMat.ncol(), false);
-//
-//	PLSSimpls simpls(X, Y);
-////	for(int i = 0; i < 1000; ++i) {
-//		simpls.fit(ncomp);
-////	}
-//
-//	return Rcpp::List::create(Rcpp::Named("coefficients") = simpls.getCoefficients(),
-//							  Rcpp::Named("predicted") = simpls.predict(newX));
-//END_RCPP
-//}
+SEXP simpls(SEXP Xs, SEXP Ys, SEXP ncomps, SEXP newXs, SEXP reps) {
+BEGIN_RCPP
+	Rcpp::NumericMatrix XMat(Xs);
+	Rcpp::NumericVector YVec(Ys);
+	Rcpp::NumericMatrix newXMat(newXs);
+	uint16_t ncomp = Rcpp::as<uint16_t>(ncomps);
+	int rep = Rcpp::as<int>(reps);
+
+	arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
+	arma::vec Y(YVec.begin(), YVec.length(), false);
+	arma::mat newX(newXMat.begin(), newXMat.nrow(), newXMat.ncol(), false);
+
+	PLSSimpls simpls(X, Y);
+	for(; rep >= 0; --rep) {
+		simpls.fit(ncomp);
+	}
+
+	return Rcpp::List::create(Rcpp::Named("coefficients") = simpls.getCoefficients(),
+							  Rcpp::Named("predicted") = simpls.predict(newX));
+END_RCPP
+}
 
 //
 //

@@ -13,7 +13,7 @@
 #include <RcppArmadillo.h>
 #include "PLSSimpls.h"
 
-const double PLSSimpls::NORM_TOL = 1e-20;
+const double PLSSimpls::NORM_TOL = 1e-25;
 
 PLSSimpls::PLSSimpls(const arma::mat &X, const arma::vec &Y) : PLS(X, Y) {
 }
@@ -96,6 +96,17 @@ inline void manualDeflate(arma::vec& s, arma::vec &v) {
 	}
 }
 
+/**
+ * Fast version of
+ * this->coef.col(i) = this->coef.col(i - 1) + S * q / tnorm;
+ * without the need of any memory copying whatsoever.
+ */
+inline void updateCoefs(double *Cm, const arma::vec& s, const double a, const arma::uword col) {
+	const double *sm = s.memptr();
+	for (arma::uword i = 0, n = col * s.n_elem, o = (col - 1) * s.n_elem; i < s.n_elem; ++o, ++n, ++i) {
+		Cm[n] = Cm[o] + sm[i] * a;
+	}
+}
 }
 
 /**
@@ -147,9 +158,10 @@ void PLSSimpls::fit(uint16_t ncomp) {
 
 		if(i > 0) {
 			stabilizedGramSchmidt(this->V, i); // Make v orthogonal to previous loadings
-			this->coef.col(i) = this->coef.col(i - 1) + S * (q / tnorm);
+			updateCoefs(this->coef.memptr(), S, q / tnorm, i);
+//			this->coef.col(i) = this->coef.col(i - 1) + S * q / tnorm;
 		} else {
-			this->coef.col(i) = S * (q / tnorm);
+			this->coef.col(i) = S * q / tnorm;
 		}
 
 
