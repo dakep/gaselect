@@ -35,12 +35,12 @@ setMethod("formatSegmentation", signature(object = "GenAlgPLSEvaluator", segment
 
 #' @rdname formatSegmentation-methods
 setMethod("formatSegmentation", signature(object = "GenAlgUserEvaluator", segments = "list"), function(object, segments) {
-    return(NULL);
+    return(vector("list"));
 });
 
 #' @rdname formatSegmentation-methods
 setMethod("formatSegmentation", signature(object = "GenAlgLMEvaluator", segments = "list"), function(object, segments) {
-    return(NULL);
+    return(vector("list"));
 });
 
 #' @rdname formatSegmentation-methods

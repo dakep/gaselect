@@ -227,7 +227,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 					++child2It;
 				}
 			} catch(const ::Evaluator::EvaluatorException& ee) {
-				if(this->ctrl.verbosity >= ON) {
+				if(this->ctrl.verbosity >= VERBOSE) {
 					GAout << GAout.lock() << "Could not evaluate chromosome: " << ee.what() << "\n" << GAout.unlock();
 				}
 			}
