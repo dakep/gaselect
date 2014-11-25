@@ -23,6 +23,9 @@ setClass("GenAlgControl", representation(
 	mutationProbability = "numeric",
 	crossover = "character",
 	crossoverId = "integer",
+	fitnessScaling = "character",
+	fitnessScalingId = "integer",
+	fitnessScalingParameter = "numeric",
 	badSolutionThreshold = "numeric",
 	maxDuplicateEliminationTries = "integer",
 	verbosity = "integer"
@@ -110,6 +113,13 @@ setClass("GenAlgControl", representation(
 #' Elitism is a method of enhancing the GA by keeping track of very good solutions. The parameter \code{elitism}
 #' specifies how many "very good" solutions should be kept.
 #'
+#' Scaling the fitness values can help the algorithm to find good solution faster when the fitness value
+#' is bounded by definition (e.g., SEP is bounded by 0, it can not be less). When setting \code{fitnessScaling} to \code{"exp"}, the fitness
+#' \eqn{f} will be scaled by \eqn{exp(f * s)},
+#' where \eqn{s} is the given \code{fitnessScalingParameter} or, if no value was supplied, a constant
+#' automatically chosen. Depending on the value of \eqn{s}, good solutions will be more or less promoted.
+#' The automatic value for \eqn{s} is chosen such that the average value of \eqn{f * s} is 4.
+#'
 #' @param populationSize The number of "chromosomes" in the population (between 1 and 2^16)
 #' @param numGenerations The number of generations to produce (between 1 and 2^16)
 #' @param minVariables The minimum number of variables in the variable subset (between 0 and p - 1 where p is the total number of variables)
@@ -123,13 +133,18 @@ setClass("GenAlgControl", representation(
 #' @param maxDuplicateEliminationTries The maximum number of tries to eliminate duplicates
 #'        (a value of \code{0} or \code{NULL} means that no checks for duplicates are done.
 #' @param verbosity The level of verbosity. 0 means no output at all, 2 is very verbose.
+#' @param fitnessScaling How the fitness values are internally scaled before the selection probabilities are assigned
+#'          to the chromosomes. See the details for possible values and their meaning.
+#' @param fitnessScalingParameter If \code{fitnessScaling = "exp"}, the fitness value will be multiplied
+#'          by this constant before raising the exponent (see details).
 #' @return An object of type \code{\link{GenAlgControl}}
 #' @export
 #' @example examples/genAlg.R
 #' @rdname GenAlgControl-constructor
 genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables,
 							elitism = 10L, mutationProbability = 0.01, crossover = c("single", "random"),
-							maxDuplicateEliminationTries = 0L, verbosity = 0L, badSolutionThreshold = 2) {
+							maxDuplicateEliminationTries = 0L, verbosity = 0L, badSolutionThreshold = 2,
+							fitnessScaling = c("none", "exp"), fitnessScalingParameter) {
 	if(is.numeric(populationSize)) {
 		populationSize <- as.integer(populationSize);
 	}
@@ -165,6 +180,16 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 		random = 1L
 	);
 
+    fitnessScaling <- match.arg(fitnessScaling);
+    fitnessScalingId <- switch(fitnessScaling,
+		none = 0L,
+		exp = 1L
+	);
+
+    if (missing(fitnessScalingParameter)) {
+        fitnessScalingParameter <- -1;
+    }
+
 	return(new("GenAlgControl",
 				populationSize = populationSize,
 				numGenerations = numGenerations,
@@ -176,5 +201,8 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 				crossoverId = crossoverId,
 				maxDuplicateEliminationTries = as.integer(maxDuplicateEliminationTries),
 				badSolutionThreshold = badSolutionThreshold,
+				fitnessScaling = fitnessScaling,
+				fitnessScalingId = fitnessScalingId,
+				fitnessScalingParameter = fitnessScalingParameter,
 				verbosity = verbosity));
 };

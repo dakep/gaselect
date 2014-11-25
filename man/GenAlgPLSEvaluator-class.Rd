@@ -28,9 +28,5 @@ of components. For the "one standard error rule", \code{sdfact} is 1.}
 \item{\code{method}}{The PLS method used to fit the PLS model (currently only SIMPLS is implemented).}
 
 \item{\code{methodId}}{The ID of the PLS method used to fit the PLS model (see C++ code for allowed values).}
-
-\item{\code{sepTransformation}}{The SEP transformation to use (currently NONE or LOG are supported).}
-
-\item{\code{sepTransformationId}}{The numeric ID of the SEP transformation to use (see C++ code for allowed values).}
 }}
 

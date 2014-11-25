@@ -23,13 +23,8 @@
 
 class PLSEvaluator : public Evaluator {
 public:
-	enum SEPTransformation {
-		NONE = 0,
-		LOG = 1
-	};
-
 	PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
-	uint16_t innerSegments, uint16_t outerSegments = 1, double testSetSize = 0.0, double sdfact = 1.0, SEPTransformation sept = NONE);
+	uint16_t innerSegments, uint16_t outerSegments = 1, double testSetSize = 0.0, double sdfact = 1.0);
 
 	~PLSEvaluator() {
 		if(this->cloned == true) {
@@ -62,7 +57,6 @@ private:
 	const uint16_t innerSegments;
 	const double sdfact;
 	const arma::uword nrows;
-	const SEPTransformation sept;
 	const bool cloned;
 
 	PLS *pls;

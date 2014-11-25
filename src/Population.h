@@ -43,6 +43,7 @@ protected:
 	typedef std::vector<Chromosome*>::reverse_iterator ChVecRIt;
 
 	static const uint8_t MAX_DISCARDED_SOLUTIONS_RATIO = 20;
+	static const int16_t DEFAULT_SCALING_MEAN = -4;
 
 	const Control& ctrl;
 	::Evaluator& evaluator;
@@ -52,6 +53,8 @@ protected:
 	std::vector<double> currentGenFitnessMap;
 	double minEliteFitness;
 	bool interrupted;
+
+	double fitScale;
 
 private:
 	ChVec currentGeneration;
@@ -68,12 +71,24 @@ public:
 	};
 	
 	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) :
-		ctrl(ctrl), evaluator(evaluator), seed(seed), currentGenFitnessMap(ctrl.populationSize + ctrl.elitism, 0.0), interrupted(false) {
+		ctrl(ctrl), evaluator(evaluator), seed(seed), currentGenFitnessMap(ctrl.populationSize + ctrl.elitism, 0.0),
+		interrupted(false), fitScale(ctrl.fitnessScalingParameter) {
 		this->currentGeneration.reserve(this->ctrl.populationSize + this->ctrl.elitism);
 
 		this->minEliteFitness = 0.0;
 
 		this->fitnessHistory.reserve(2 * this->ctrl.numGenerations);
+
+		if (this->fitScale <= 0) {
+			this->fitScale = 1.0;
+		}
+
+		switch (this->ctrl.fitnessScaling) {
+			case EXP:
+				this->transformFitness = &Population::transformFitnessExp;
+			default:
+				this->transformFitness = &Population::transformFitnessNone;
+		}
 	}
 	
 	virtual ~Population() {
@@ -106,6 +121,17 @@ public:
 		return result;
 	}
 
+private:
+	double (Population::*transformFitness)(double&) const;
+
+	inline double transformFitnessExp(double& fitness) const {
+		return std::exp(fitness * this->fitScale);
+	}
+
+	inline double transformFitnessNone(double& fitness) const {
+		return fitness;
+	}
+
 protected:
 	inline void initCurrentGeneration(ShuffledSet &shuffledSet, RNG &rng) {
 		for(uint32_t i = this->ctrl.elitism + this->ctrl.populationSize; i > 0; --i) {
@@ -122,7 +148,7 @@ protected:
 	 */
 	inline double updateCurrentGeneration(const ChVec &newGeneration, double minFitness, bool updateElite = false) {
 		uint16_t i = 0;
-		double sumFitness = 0.0;
+		double sumFitness = 0.0, sumFitnessScaled = 0.0, fitt;
 
 		if(this->ctrl.elitism > 0 && this->elite.size() > 0 && minFitness > this->elite.rbegin()->getFitness()) {
 			minFitness = this->elite.rbegin()->getFitness();
@@ -142,13 +168,16 @@ protected:
 			}
 
 			*(this->currentGeneration[i]) = *(newGeneration[i]);
-			sumFitness += (this->currentGeneration[i]->getFitness() - minFitness);
 
-			this->currentGenFitnessMap[i] = sumFitness;
+			fitt = this->currentGeneration[i]->getFitness() - minFitness;
+			sumFitness += fitt;
+			sumFitnessScaled += (this->*transformFitness)(fitt);
+
+			this->currentGenFitnessMap[i] = sumFitnessScaled;
 
 			IF_DEBUG(
 				GAout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
-				<< TAB_DELIMITER << sumFitness << "\n";
+				<< TAB_DELIMITER << sumFitness << (sumFitnessScaled) << "\n";
 			)
 		}
 
@@ -158,11 +187,14 @@ protected:
 		for(SortedChromosomes::iterator eliteIt = this->elite.begin(); eliteIt != this->elite.end(); ++eliteIt, ++i) {
 			*(this->currentGeneration[i]) = *(eliteIt);
 
-			sumFitness += (eliteIt->getFitness() - minFitness);
-			this->currentGenFitnessMap[i] = sumFitness;
+			fitt = eliteIt->getFitness() - minFitness;
+			sumFitness += fitt;
+			sumFitnessScaled += (this->*transformFitness)(fitt);
+
+			this->currentGenFitnessMap[i] = sumFitnessScaled;
 			IF_DEBUG(
 				GAout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
-				<< TAB_DELIMITER << this->currentGenFitnessMap[i] << "\n";
+				<< TAB_DELIMITER << sumFitness << (sumFitnessScaled) << "\n";
 			)
 		}
 
@@ -171,7 +203,11 @@ protected:
 		this->fitnessHistory.push_back(this->elite.begin()->getFitness());
 		this->fitnessHistory.push_back(sumFitness + minFitness * i);
 
-		return sumFitness;
+		return sumFitnessScaled;
+	}
+
+	inline double getCurrentMeanFitness() const {
+		return this->fitnessHistory.back() / (this->ctrl.populationSize + this->elite.size());
 	}
 	
 	/**
@@ -179,7 +215,7 @@ protected:
 	 * where the probability to pick a chromosome is taken from
 	 * the currentGenFitnessMap
 	 */
-	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand) {
+	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand) const {
 		int imin = 0, imax = static_cast<int>(this->currentGenFitnessMap.size());
 		int imid = 0;
 		
@@ -214,7 +250,7 @@ protected:
 		return c1->isFitterThan(*c2);
 	}
 	
-	inline uint16_t countUniques() {
+	inline uint16_t countUniques() const {
 		std::vector<Chromosome*> gen = this->currentGeneration;
 		std::sort(gen.begin(), gen.end(), Population::compLT);
 		return std::distance(gen.begin(), std::unique(gen.begin(), gen.end(), Population::compEqual));
