@@ -9,18 +9,8 @@
 #' or \code{"avg"} to return the average fitness during each generation
 #' @return A vector with the best or average fitness value after each generation
 #' @export
-#' @include genAlg.R Evaluator.R
-#' @docType methods
-#' @rdname getFitnessEvolution-methods
-setGeneric("getFitnessEvolution", function(object, type = "avg") { standardGeneric("getFitnessEvolution") });
-
-#' @rdname fitness-methods
-setMethod("getFitnessEvolution", signature(object = "GenAlg", type = "missing"), function(object, type) {
-	return(getFitnessEvolution(object, type));
-});
-#' @rdname fitness-methods
-setMethod("getFitnessEvolution", signature(object = "GenAlg", type = "character"), function(object, type) {
-    type <- match.arg(type, c("avg", "best"));
+getFitnessEvolution <- function(object, type = c("avg", "best")) {
+    type <- match.arg(type);
     column <- switch(type, avg = "sum", "best");
     fit <- object@rawFitnessEvolution[ , column, drop = TRUE];
 
@@ -29,8 +19,7 @@ setMethod("getFitnessEvolution", signature(object = "GenAlg", type = "character"
     }
 
 	return(trueFitnessVal(object@evaluator, fit));
-});
-
+}
 
 #' Get the fitness of a variable subset
 #'
@@ -42,16 +31,10 @@ setMethod("getFitnessEvolution", signature(object = "GenAlg", type = "character"
 #' @param object The \code{\link{GenAlg}} object returned by \code{\link{genAlg}}
 #' @return A vector with the estimated fitness for each solution
 #' @export
-#' @include genAlg.R Evaluator.R
-#' @docType methods
-#' @rdname fitness-methods
 #' @example examples/fitness.R
-setGeneric("fitness", function(object) { standardGeneric("fitness") });
-
-#' @rdname fitness-methods
-setMethod("fitness", signature(object = "GenAlg"), function(object) {
+fitness <- function(object) {
     return(trueFitnessVal(object@evaluator, object@rawFitness));
-});
+}
 
 #' Get the transformed fitness values
 #'
@@ -69,7 +52,7 @@ setGeneric("trueFitnessVal", function(object, fitness) { standardGeneric("trueFi
 
 #' @rdname trueFitnessVal-methods
 setMethod("trueFitnessVal", signature(object = "GenAlgPLSEvaluator", fitness = "numeric"), function(object, fitness) {
-	return(switch(object@sepTransformation, log = exp((-fitness)), (-fitness)) / object@numReplications);
+	return(-fitness);
 });
 
 #' @rdname trueFitnessVal-methods

@@ -9,6 +9,7 @@
 #include "config.h"
 
 #include <limits>
+#include <RcppArmadillo.h>
 
 #include "LMEvaluator.h"
 #include "Logger.h"

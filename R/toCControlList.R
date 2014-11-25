@@ -22,8 +22,7 @@ setMethod("toCControlList", signature(object = "GenAlgPLSEvaluator"), function(o
 		"numThreads" = object@numThreads,
         "maxNComp" = object@maxNComp,
 		"userEvalFunction" = function() {NULL;},
-		"statistic" = 0L,
-		"sepTransformation" = object@sepTransformationId
+		"statistic" = 0L
 	));
 });
 #' @rdname toCControlList-methods
@@ -39,8 +38,7 @@ setMethod("toCControlList", signature(object = "GenAlgFitEvaluator"), function(o
 		"numThreads" = object@numThreads,
         "maxNComp" = object@maxNComp,
 		"userEvalFunction" = function() {NULL;},
-		"statistic" = object@statisticId,
-		"sepTransformation" = 0L
+		"statistic" = object@statisticId
 	));
 });
 
@@ -57,8 +55,7 @@ setMethod("toCControlList", signature(object = "GenAlgUserEvaluator"), function(
 		"numThreads" = 1L,
 	    "maxNComp" = 0L,
 		"userEvalFunction" = object@evalFunction,
-		"statistic" = 0L,
-		"sepTransformation" = 0L
+		"statistic" = 0L
 	));
 });
 
@@ -75,8 +72,7 @@ setMethod("toCControlList", signature(object = "GenAlgLMEvaluator"), function(ob
 		"numThreads" = object@numThreads,
 	    "maxNComp" = 0L,
 		"userEvalFunction" = function() {NULL;},
-		"statistic" = object@statisticId,
-		"sepTransformation" = 0L
+		"statistic" = object@statisticId
 	));
 });
 
@@ -92,6 +88,8 @@ setMethod("toCControlList", signature(object = "GenAlgControl"), function(object
 		"crossover" = object@crossoverId,
 		"maxDuplicateEliminationTries" = object@maxDuplicateEliminationTries,
 		"badSolutionThreshold" = object@badSolutionThreshold,
-		"verbosity" = object@verbosity
+		"verbosity" = object@verbosity,
+		"fitnessScaling" = object@fitnessScalingId,
+		"fitnessScalingParameter" = object@fitnessScalingParameter
 	));
 });

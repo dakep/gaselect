@@ -17,8 +17,6 @@ setClass("GenAlgEvaluator", representation(), contains = "VIRTUAL");
 #' @slot maxNComp The maximum number of components to consider in the PLS model.
 #' @slot method The PLS method used to fit the PLS model (currently only SIMPLS is implemented).
 #' @slot methodId The ID of the PLS method used to fit the PLS model (see C++ code for allowed values).
-#' @slot sepTransformation The SEP transformation to use (currently NONE or LOG are supported).
-#' @slot sepTransformationId The numeric ID of the SEP transformation to use (see C++ code for allowed values).
 #' @aliases GenAlgPLSEvaluator
 #' @rdname GenAlgPLSEvaluator-class
 setClass("GenAlgPLSEvaluator", representation(
@@ -30,9 +28,7 @@ setClass("GenAlgPLSEvaluator", representation(
 	numThreads = "integer",
     maxNComp = "integer",
 	method = "character",
-	methodId = "integer",
-	sepTransformation = "character",
-	sepTransformationId = "integer"
+	methodId = "integer"
 ), validity = function(object) {
 	errors <- character(0);
 	MAXUINT16 <- 2^16; # unsigned 16bit integers are used (uint16_t) in the C++ code
@@ -201,7 +197,6 @@ validity = function(object) {
 #' @param method The PLS method used to fit the PLS model (currently only SIMPLS is implemented)
 #' @param sdfact The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
 #'      of components. For the "one standard error rule", \code{sdfact} is 1.
-#' @param sepTransformation How the SEP should be transformed. Currently NONE and LOG are implemented.
 #' @return Returns an S4 object of type \code{\link{GenAlgPLSEvaluator}} to be used as argument to
 #'      a call of \code{\link{genAlg}}.
 #' @export
@@ -209,18 +204,12 @@ validity = function(object) {
 #' @example examples/genAlg.R
 #' @rdname GenAlgPLSEvaluator-constructor
 evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegments = 1L, testSetSize = NULL,
-    numThreads = NULL, maxNComp = NULL, method = c("simpls"), sdfact = 1, sepTransformation = c("none", "log")) {
+    numThreads = NULL, maxNComp = NULL, method = c("simpls"), sdfact = 1) {
 	method <- match.arg(method);
-	sepTransformation <- match.arg(sepTransformation);
 
 	methodId <- switch(method,
 		simpls = 0L
 	);
-
-    sepTransformationId <- switch(sepTransformation,
-        log = 1L,
-        0L
-    );
 
 	if(is.numeric(numReplications)) {
 		numReplications <- as.integer(numReplications);
@@ -263,9 +252,7 @@ evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegment
 		sdfact = sdfact,
         maxNComp = maxNComp,
 		method = method,
-		methodId = methodId,
-		sepTransformation = sepTransformation,
-		sepTransformationId = sepTransformationId
+		methodId = methodId
 	));
 };
 
@@ -291,7 +278,7 @@ evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegment
 #' @example examples/genAlg.R
 #' @rdname GenAlgFitEvaluator-constructor
 evaluatorFit <- function(numSegments = 7L, statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"),
-    numThreads = NULL, maxNComp = NULL, method = c("simpls"), sdfact = 1) {
+    numThreads = NULL, maxNComp = NULL, sdfact = 1) {
 	statistic <- match.arg(statistic);
 
     statId = switch(statistic,

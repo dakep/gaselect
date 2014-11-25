@@ -87,35 +87,13 @@ setClass("GenAlg", representation(
 #' @rdname GenAlg-constructor
 #' @useDynLib gaselect
 #' @example examples/genAlg.R
-setGeneric("genAlg", function(y, X, control, evaluator = evaluatorPLS(), seed = NULL) { standardGeneric("genAlg") });
+genAlg <- function(y, X, control, evaluator = evaluatorPLS(), seed) {
+    seed <- as.integer(seed)[1];
 
-#' @rdname GenAlg-constructor
-setMethod("genAlg", signature(y = "numeric", X = "data.frame", control = "GenAlgControl", evaluator = "ANY", seed = "ANY"),
-function(y, X, control, evaluator, seed) {
-    genAlg(y, as.matrix(X), control, evaluator, seed);
-});
+    if (!is.numeric(seed) | is.na(seed)) {
+        stop("`seed` must be an integer.");
+    }
 
-#' @rdname GenAlg-constructor
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "ANY", seed = "ANY"),
-function(y, X, control, evaluator, seed) {
-    genAlg(y, as.matrix(X), control, evaluator, seed);
-});
-
-#' @rdname GenAlg-constructor
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "NULL"),
-function(y, X, control, evaluator, seed) {
-	genAlg(y, X, control, evaluator, as.integer(sample.int(2^30, 1)));
-});
-
-#' @rdname GenAlg-constructor
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "numeric"),
-function(y, X, control, evaluator, seed) {
-	genAlg(y, X, control, evaluator, as.integer(seed));
-});
-
-#' @rdname GenAlg-constructor
-setMethod("genAlg", signature(y = "numeric", X = "matrix", control = "GenAlgControl", evaluator = "GenAlgEvaluator", seed = "integer"),
-function(y, X, control, evaluator, seed) {
 	ret <- new("GenAlg",
 		response = y,
 		covariates = X,
@@ -126,6 +104,8 @@ function(y, X, control, evaluator, seed) {
 
 	possSubsetCutoff <- 0.85;
 	numPossibleSubsets <- sum(choose(ncol(ret@covariates), seq.int(ret@control@minVariables, ret@control@maxVariables)));
+
+    seed <- as.integer(seed);
 
 	if(ret@control@populationSize > possSubsetCutoff * numPossibleSubsets) {
 		stop(paste("Requested a population that is almost as large as the number of all possible subsets. The population size can be at most ",
@@ -151,4 +131,4 @@ function(y, X, control, evaluator, seed) {
 	ret@rawFitnessEvolution <- matrix(res$fitnessEvolution, ncol = 2L, byrow = TRUE, dimnames = list(NULL, c("best", "sum")));
 
 	return(ret);
-});
+}

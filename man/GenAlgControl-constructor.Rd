@@ -6,7 +6,8 @@
 genAlgControl(populationSize, numGenerations, minVariables, maxVariables,
   elitism = 10L, mutationProbability = 0.01, crossover = c("single",
   "random"), maxDuplicateEliminationTries = 0L, verbosity = 0L,
-  badSolutionThreshold = 2)
+  badSolutionThreshold = 2, fitnessScaling = c("none", "exp"),
+  fitnessScalingParameter)
 }
 \arguments{
 \item{populationSize}{The number of "chromosomes" in the population (between 1 and 2^16)}
@@ -31,6 +32,12 @@ in a long time it issues a warning and uses the last found child to continue.}
 (a value of \code{0} or \code{NULL} means that no checks for duplicates are done.}
 
 \item{verbosity}{The level of verbosity. 0 means no output at all, 2 is very verbose.}
+
+\item{fitnessScaling}{How the fitness values are internally scaled before the selection probabilities are assigned
+to the chromosomes. See the details for possible values and their meaning.}
+
+\item{fitnessScalingParameter}{If \code{fitnessScaling = "exp"}, the fitness value will be multiplied
+by this constant before raising the exponent (see details).}
 }
 \value{
 An object of type \code{\link{GenAlgControl}}
@@ -59,6 +66,13 @@ from one parent to the other in order to generate the children.
 
 Elitism is a method of enhancing the GA by keeping track of very good solutions. The parameter \code{elitism}
 specifies how many "very good" solutions should be kept.
+
+Scaling the fitness values can help the algorithm to find good solution faster when the fitness value
+is bounded by definition (e.g., SEP is bounded by 0, it can not be less). When setting \code{fitnessScaling} to \code{"exp"}, the fitness
+\eqn{f} will be scaled by \eqn{exp(f * s)},
+where \eqn{s} is the given \code{fitnessScalingParameter} or, if no value was supplied, a constant
+automatically chosen. Depending on the value of \eqn{s}, good solutions will be more or less promoted.
+The automatic value for \eqn{s} is chosen such that the average value of \eqn{f * s} is 4.
 }
 \examples{
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,

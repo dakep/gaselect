@@ -43,6 +43,14 @@ public:
 		return std::sqrt(this->M2[dim] / (this->counter[dim] - 1));
 	};
 
+	inline double var(uint16_t dim = 0) const {
+		return this->M2[dim] / (this->counter[dim] - 1);
+	};
+
+	inline uint16_t N(uint16_t dim = 0) const {
+		return this->counter[dim];
+	}
+
 	inline double mean(uint16_t dim = 0) const {
 		return this->meanVec[dim];
 	};

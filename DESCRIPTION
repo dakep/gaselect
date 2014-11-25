@@ -1,8 +1,8 @@
 Package: gaselect
 Type: Package
 Title: Genetic algorithm (GA) for variable selection from high dimensional data
-Version: 0.4.7
-Date: 2014-11-24
+Version: 0.5.0
+Date: 2014-11-25
 Author: David Kepplinger
 Maintainer: David Kepplinger <david@dkepplinger.org>
 Description: This package provides a genetic algorithm for finding variable
@@ -26,9 +26,11 @@ Collate:
     'GenAlgControl.R'
     'formatSegmentation.R'
     'evaluate.R'
-    'genAlg.R'
     'fitness.R'
+    'genAlg.R'
     'getEvalFun.R'
     'subsets.R'
     'toCControlList.R'
     'validData.R'
+Suggests:
+    chemometrics

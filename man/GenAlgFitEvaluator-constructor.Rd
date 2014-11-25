@@ -5,7 +5,7 @@
 \usage{
 evaluatorFit(numSegments = 7L, statistic = c("BIC", "AIC",
   "adjusted.r.squared", "r.squared"), numThreads = NULL, maxNComp = NULL,
-  method = c("simpls"), sdfact = 1)
+  sdfact = 1)
 }
 \arguments{
 \item{numSegments}{The number of CV segments used to estimate the optimal number of PLS components (between 2 and 2^16).}

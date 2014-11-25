@@ -41,6 +41,8 @@ enum EvaluatorClass {
  *		uint16_t maxDuplicateEliminationTries ... The maximum number of tries to eliminate duplicates
  *		double badSolutionThreshold ... The better child must not be more than badSolutionThreadshold percent worse than the worse parent
  *		CrossoverType crossover ... Type of crossover to use
+ *		FitnessScaling fitnessScaling ... How to scale the fitness (0 = NONE, 1 = EXP)
+ *		double fitnessScalingParameter ... An optional parameter for scaling the fitness
  *		VerbosityLevel verbosity ... Level of verbosity
  *		EvaluatorClass evaluatorClass ... The evaluator to use
  *		Rcpp::Function userEvalFunction ... The function to be called for evaluating the fitness of a chromosome
@@ -52,7 +54,6 @@ enum EvaluatorClass {
  *		double testSetSize ... If srCV should be used, the rel. size of the test set between 0 and 1 (ignored if outerSegments > 1)
  *		double sdfact ... The factor to scale the SD with when selecting the optimal number of components
  *		uint16_t maxNComp ... The maximum number of componentes the PLS models should consider
- *		int sepTransformation ... The type of transformation for the SEP (NONE or LOG)
  *		int statistic ... The statistic the LM Evaluator should use
  *	X ... A numeric matrix with dimensions n x p (optional - only needed if using internal evaluation methods)
  *	y ... A numeric vector with length n (optional - only needed if using internal evaluation methods)

@@ -26,6 +26,11 @@ enum CrossoverType {
 	RANDOM = 1
 };
 
+enum FitnessScaling {
+	NONE = 0,
+	EXP = 1
+};
+
 class Control {
 public:
 	Control(const uint16_t chromosomeSize,
@@ -39,6 +44,8 @@ public:
 			const uint16_t maxDuplicateEliminationTries,
 			const double badSolutionThreshold,
 			const enum CrossoverType crossover,
+			const enum FitnessScaling fitnessScaling,
+			const double fitnessScalingParameter,
 			const enum VerbosityLevel verbosity) :
 	chromosomeSize(chromosomeSize),
 	populationSize(popSize),
@@ -51,6 +58,8 @@ public:
 	maxDuplicateEliminationTries(maxDuplicateEliminationTries),
 	badSolutionThreshold(badSolutionThreshold),
 	crossover(crossover),
+	fitnessScaling(fitnessScaling),
+	fitnessScalingParameter(fitnessScalingParameter),
 	verbosity(verbosity) {};
 
 	const uint16_t chromosomeSize;
@@ -64,6 +73,8 @@ public:
 	const uint16_t maxDuplicateEliminationTries;
 	const double badSolutionThreshold;
 	const enum CrossoverType crossover;
+	const enum FitnessScaling fitnessScaling;
+	const double fitnessScalingParameter;
 	const enum VerbosityLevel verbosity;
 
 	friend std::ostream& operator<<(std::ostream &os, const Control &ctrl) {
@@ -75,8 +86,15 @@ public:
 		<< "Mutation probability: " << ctrl.mutationProbability << std::endl
 		<< "Maximum number of tries to eliminate duplicates: " << ctrl.maxDuplicateEliminationTries << std::endl
 		<< "Bad solution threshold: " << ctrl.badSolutionThreshold << std::endl
-		<< "Crossover-type: " << ((ctrl.crossover == SINGLE) ? "Single" : "Random") << std::endl
-		<< "Number of threads: " << ctrl.numThreads << std::endl
+		<< "Crossover-type: " << ((ctrl.crossover == SINGLE) ? "Single" : "Random") << std::endl;
+
+		if (ctrl.fitnessScaling == EXP) {
+			os << "Fitness-scaling:  exp (" << ctrl.fitnessScalingParameter << ")" << std::endl;
+		} else {
+			os << "Fitness-scaling: none" << std::endl;
+		}
+
+		os << "Number of threads: " << ctrl.numThreads << std::endl
 		<< "Verbosity Level: " << ctrl.verbosity << std::endl
 #ifdef ENABLE_DEBUG_VERBOSITY
 		<< "Debug enabled"
