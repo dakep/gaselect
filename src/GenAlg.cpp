@@ -70,6 +70,8 @@ BEGIN_RCPP
 				 as<uint16_t>(control["maxDuplicateEliminationTries"]),
 				 as<double>(control["badSolutionThreshold"]),
 				 (CrossoverType) as<int>(control["crossover"]),
+				 (FitnessScaling) as<int>(control["fitnessScaling"]),
+				 as<double>(control["fitnessScalingParameter"]),
 				 verbosity);
 
 	/*
@@ -101,8 +103,7 @@ BEGIN_RCPP
 				as<uint16_t>(control["innerSegments"]),
 				as<uint16_t>(control["outerSegments"]),
 				as<double>(control["testSetSize"]),
-				as<double>(control["sdfact"]),
-				(PLSEvaluator::SEPTransformation) as<int>(control["sepTransformation"]));
+				as<double>(control["sdfact"]));
 
 			break;
 		}
@@ -270,8 +271,7 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 				as<uint16_t>(evaluator["innerSegments"]),
 				as<uint16_t>(evaluator["outerSegments"]),
 				as<double>(evaluator["testSetSize"]),
-				as<double>(evaluator["sdfact"]),
-				(PLSEvaluator::SEPTransformation) as<int>(evaluator["sepTransformation"]));
+				as<double>(evaluator["sdfact"]));
 			
 			break;
 		}

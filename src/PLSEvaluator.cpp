@@ -24,12 +24,12 @@ uint32_t PLSEvaluator::counter = 0;
 #endif
 
 PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
-	uint16_t innerSegments, uint16_t outerSegments, double testSetSize, double sdfact, SEPTransformation sept) :
+	uint16_t innerSegments, uint16_t outerSegments, double testSetSize, double sdfact) :
 		Evaluator(verbosity), numReplications(numReplications),
 		outerSegments((outerSegments < 1) ? 1 : outerSegments),
 		innerSegments((outerSegments <= 1 && testSetSize == 0.0) ? innerSegments - 1 : innerSegments),
 		sdfact(sdfact / sqrt(this->innerSegments)),
-		nrows(pls->getNumberOfObservations()), sept(sept), cloned(false), pls(pls), maxNComp(maxNComp)
+		nrows(pls->getNumberOfObservations()), cloned(false), pls(pls), maxNComp(maxNComp)
 {
 	/* assert outerSegments > 0 */
 	if(pls->getNumberOfResponseVariables() > 1) {
@@ -52,8 +52,8 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
 	Evaluator(other.verbosity), numReplications(other.numReplications),
 	outerSegments(other.outerSegments), innerSegments(other.innerSegments),
-	sdfact(other.sdfact), nrows(other.nrows), sept(other.sept),
-	cloned(true), maxNComp(other.maxNComp), segmentation(other.segmentation)
+	sdfact(other.sdfact), nrows(other.nrows), cloned(true), maxNComp(other.maxNComp),
+	segmentation(other.segmentation)
 {
 	this->pls = other.pls->clone();
 }
@@ -68,16 +68,10 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 #endif
 	this->pls->viewSelectColumns(columnSubset);
 
-	double sumSEP = this->estSEP(((this->maxNComp < columnSubset.n_elem) ? this->maxNComp : columnSubset.n_elem));
+	double sumSEP = this->estSEP(((this->maxNComp < columnSubset.n_elem) ? this->maxNComp : columnSubset.n_elem)) / this->numReplications;
 
-	IF_DEBUG(GAout << "EVALUATOR: Sum of SEP:" << std::endl << sumSEP << std::endl)
-
-	switch(this->sept) {
-		case LOG:
-			return -log(sumSEP);
-		default:
-			return -sumSEP;
-	}
+	IF_DEBUG(GAout << "EVALUATOR: SEP:" << std::endl << sumSEP << std::endl)
+	return -sumSEP;
 }
 
 /**
