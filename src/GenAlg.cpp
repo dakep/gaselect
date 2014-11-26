@@ -71,7 +71,6 @@ BEGIN_RCPP
 				 as<double>(control["badSolutionThreshold"]),
 				 (CrossoverType) as<int>(control["crossover"]),
 				 (FitnessScaling) as<int>(control["fitnessScaling"]),
-				 as<double>(control["fitnessScalingParameter"]),
 				 verbosity);
 
 	/*

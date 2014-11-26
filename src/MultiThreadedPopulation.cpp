@@ -365,14 +365,6 @@ void MultiThreadedPopulation::run() {
 
 		this->sumCurrentGenFitness = this->updateCurrentGeneration(this->nextGeneration, minFitness, true);
 
-		/*
-		 * If the user didn't supply a SEP scaling constant, set proportional to the mean of the
-		 * initial generation
-		 */
-		if (this->ctrl.fitnessScalingParameter <= 0) {
-			this->fitScale = Population::DEFAULT_SCALING_MEAN / this->getCurrentMeanFitness();
-		}
-
 		if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
 			this->printCurrentGeneration();
 		}
