@@ -423,7 +423,7 @@ void MultiThreadedPopulation::run() {
 		 **********************************************************************/
 		minFitness = (*(std::min_element(this->nextGeneration.begin(), this->nextGeneration.end(), MultiThreadedPopulation::OrderChromosomePtr())))->getFitness();
 
-		this->sumCurrentGenFitness = this->updateCurrentGeneration(this->nextGeneration, minFitness, true);
+		this->sumCurrentGenFitness = this->updateCurrentGeneration(this->nextGeneration, minFitness, false, true);
 
 		if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
 			this->printCurrentGeneration();
