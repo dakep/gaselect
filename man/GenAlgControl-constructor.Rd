@@ -6,8 +6,7 @@
 genAlgControl(populationSize, numGenerations, minVariables, maxVariables,
   elitism = 10L, mutationProbability = 0.01, crossover = c("single",
   "random"), maxDuplicateEliminationTries = 0L, verbosity = 0L,
-  badSolutionThreshold = 2, fitnessScaling = c("none", "exp"),
-  fitnessScalingParameter)
+  badSolutionThreshold = 2, fitnessScaling = c("none", "exp"))
 }
 \arguments{
 \item{populationSize}{The number of "chromosomes" in the population (between 1 and 2^16)}
@@ -35,9 +34,6 @@ in a long time it issues a warning and uses the last found child to continue.}
 
 \item{fitnessScaling}{How the fitness values are internally scaled before the selection probabilities are assigned
 to the chromosomes. See the details for possible values and their meaning.}
-
-\item{fitnessScalingParameter}{If \code{fitnessScaling = "exp"}, the fitness value will be multiplied
-by this constant before raising the exponent (see details).}
 }
 \value{
 An object of type \code{\link{GenAlgControl}}
@@ -67,12 +63,12 @@ from one parent to the other in order to generate the children.
 Elitism is a method of enhancing the GA by keeping track of very good solutions. The parameter \code{elitism}
 specifies how many "very good" solutions should be kept.
 
-Scaling the fitness values can help the algorithm to find good solution faster when the fitness value
-is bounded by definition (e.g., SEP is bounded by 0, it can not be less). When setting \code{fitnessScaling} to \code{"exp"}, the fitness
-\eqn{f} will be scaled by \eqn{exp(f * s)},
-where \eqn{s} is the given \code{fitnessScalingParameter} or, if no value was supplied, a constant
-automatically chosen. Depending on the value of \eqn{s}, good solutions will be more or less promoted.
-The automatic value for \eqn{s} is chosen such that the average value of \eqn{f * s} is 4.
+Before the selection probabilities are determined, the fitness values \eqn{f} of the chromosomes are
+standardized to the z-scores (\eqn{z = (f - mu) / sd}). Scaling the fitness values afterwards with
+the exponential function can help the algorithm to faster find good solutions. When setting
+\code{fitnessScaling} to \code{"exp"}, the (standardized) fitness \eqn{z} will be scaled by \eqn{exp(z)}.
+This promotes good solutions to get an even higher selection probability, while bad solutions
+will get an even lower selection probability.
 }
 \examples{
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,

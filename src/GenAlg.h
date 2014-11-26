@@ -42,7 +42,6 @@ enum EvaluatorClass {
  *		double badSolutionThreshold ... The better child must not be more than badSolutionThreadshold percent worse than the worse parent
  *		CrossoverType crossover ... Type of crossover to use
  *		FitnessScaling fitnessScaling ... How to scale the fitness (0 = NONE, 1 = EXP)
- *		double fitnessScalingParameter ... An optional parameter for scaling the fitness
  *		VerbosityLevel verbosity ... Level of verbosity
  *		EvaluatorClass evaluatorClass ... The evaluator to use
  *		Rcpp::Function userEvalFunction ... The function to be called for evaluating the fitness of a chromosome
