@@ -192,6 +192,8 @@ protected:
 		for(SortedChromosomes::iterator eliteIt = this->elite.begin(); eliteIt != this->elite.end(); ++eliteIt, ++i) {
 			*(this->currentGeneration[i]) = *(eliteIt);
 
+			this->fitStats.update(this->currentGeneration[i]->getFitness());
+
 			fitt = (eliteIt->getFitness() - fitMean) / fitSD;
 			sumFitness += (this->*transformFitness)(fitt, minFitness);
 
