@@ -121,14 +121,14 @@ public:
 	}
 
 private:
-	double (Population::*transformFitness)(double&, double&) const;
+	double (Population::*transformFitness)(double&) const;
 
-	inline double transformFitnessExp(double& fitness, double& min) const {
+	inline double transformFitnessExp(double& fitness) const {
 		return std::exp(fitness);
 	}
 
-	inline double transformFitnessNone(double& fitness, double& min) const {
-		return fitness - min;
+	inline double transformFitnessNone(double& fitness) const {
+		return fitness;
 	}
 
 protected:
@@ -150,7 +150,6 @@ protected:
 		double sumFitness = 0.0, fitt, fitMean, fitSD;
 
 		if (first) {
-			this->fitStats.reset();
 			for(; i < this->ctrl.populationSize; ++i) {
 				this->fitStats.update(newGeneration[i]->getFitness());
 			}
@@ -166,6 +165,7 @@ protected:
 		}
 
 		minFitness = (minFitness - fitMean) / fitSD;
+		minFitness = (this->*transformFitness)(minFitness);
 
 		IF_DEBUG(GAout << "Fitness map:\n")
 
@@ -185,7 +185,7 @@ protected:
 			this->fitStats.update(this->currentGeneration[i]->getFitness());
 
 			fitt = (this->currentGeneration[i]->getFitness() - fitMean) / fitSD;
-			sumFitness += (this->*transformFitness)(fitt, minFitness);
+			sumFitness += (this->*transformFitness)(fitt);
 
 			this->currentGenFitnessMap[i] = sumFitness;
 
@@ -201,8 +201,10 @@ protected:
 		for(SortedChromosomes::iterator eliteIt = this->elite.begin(); eliteIt != this->elite.end(); ++eliteIt, ++i) {
 			*(this->currentGeneration[i]) = *(eliteIt);
 
+			this->fitStats.update(this->currentGeneration[i]->getFitness());
+
 			fitt = (eliteIt->getFitness() - fitMean) / fitSD;
-			sumFitness += (this->*transformFitness)(fitt, minFitness);
+			sumFitness += (this->*transformFitness)(fitt);
 
 			this->currentGenFitnessMap[i] = sumFitness;
 
