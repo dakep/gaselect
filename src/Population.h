@@ -86,8 +86,10 @@ public:
 		switch (this->ctrl.fitnessScaling) {
 			case EXP:
 				this->transformFitness = &Population::transformFitnessExp;
+				break;
 			default:
 				this->transformFitness = &Population::transformFitnessNone;
+				break;
 		}
 	}
 	
