@@ -89,7 +89,6 @@ setMethod("toCControlList", signature(object = "GenAlgControl"), function(object
 		"maxDuplicateEliminationTries" = object@maxDuplicateEliminationTries,
 		"badSolutionThreshold" = object@badSolutionThreshold,
 		"verbosity" = object@verbosity,
-		"fitnessScaling" = object@fitnessScalingId,
-		"fitnessScalingParameter" = object@fitnessScalingParameter
+		"fitnessScaling" = object@fitnessScalingId
 	));
 });

@@ -109,15 +109,6 @@ void SingleThreadPopulation::run() {
 	 */
 	sumFitness = this->updateCurrentGeneration(newGeneration, minFitness);
 
-	/*
-	 * If the user didn't supply a SEP scaling constant, set proportional to the mean of the
-	 * initial generation
-	 */
-	if (this->ctrl.fitnessScalingParameter <= 0) {
-		this->fitScale = Population::DEFAULT_SCALING_MEAN / this->getCurrentMeanFitness();
-	}
-
-
 	if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
 		this->printCurrentGeneration();
 	}

@@ -13,12 +13,14 @@
 #include <vector>
 #include <set>
 #include <utility>
+#include <algorithm>
 
 #include "Logger.h"
 #include "RNG.h"
 #include "Chromosome.h"
 #include "Evaluator.h"
 #include "Control.h"
+#include "OnlineStddev.h"
 
 #ifdef ENABLE_DEBUG_VERBOSITY
 #define IF_DEBUG(expr) if(this->ctrl.verbosity == DEBUG_GA || this->ctrl.verbosity == DEBUG_ALL) { expr; }
@@ -43,7 +45,7 @@ protected:
 	typedef std::vector<Chromosome*>::reverse_iterator ChVecRIt;
 
 	static const uint8_t MAX_DISCARDED_SOLUTIONS_RATIO = 20;
-	static const int16_t DEFAULT_SCALING_MEAN = -4;
+	static const int16_t DEFAULT_SCALING_MEAN = 6;
 
 	const Control& ctrl;
 	::Evaluator& evaluator;
@@ -54,9 +56,8 @@ protected:
 	double minEliteFitness;
 	bool interrupted;
 
-	double fitScale;
-
 private:
+	OnlineStddev fitStats;
 	ChVec currentGeneration;
 	std::vector<double> fitnessHistory;
 
@@ -72,16 +73,12 @@ public:
 	
 	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) :
 		ctrl(ctrl), evaluator(evaluator), seed(seed), currentGenFitnessMap(ctrl.populationSize + ctrl.elitism, 0.0),
-		interrupted(false), fitScale(ctrl.fitnessScalingParameter) {
+		interrupted(false) {
 		this->currentGeneration.reserve(this->ctrl.populationSize + this->ctrl.elitism);
 
 		this->minEliteFitness = 0.0;
 
 		this->fitnessHistory.reserve(2 * this->ctrl.numGenerations);
-
-		if (this->fitScale <= 0) {
-			this->fitScale = 1.0;
-		}
 
 		switch (this->ctrl.fitnessScaling) {
 			case EXP:
@@ -124,14 +121,14 @@ public:
 	}
 
 private:
-	double (Population::*transformFitness)(double&) const;
+	double (Population::*transformFitness)(double&, double&) const;
 
-	inline double transformFitnessExp(double& fitness) const {
-		return std::exp(fitness * this->fitScale);
+	inline double transformFitnessExp(double& fitness, double& min) const {
+		return std::exp(fitness);
 	}
 
-	inline double transformFitnessNone(double& fitness) const {
-		return fitness;
+	inline double transformFitnessNone(double& fitness, double& min) const {
+		return fitness - min;
 	}
 
 protected:
@@ -150,12 +147,17 @@ protected:
 	 */
 	inline double updateCurrentGeneration(const ChVec &newGeneration, double minFitness, bool updateElite = false) {
 		uint16_t i = 0;
-		double sumFitness = 0.0, sumFitnessScaled = 0.0, fitt;
+		double sumFitness = 0.0, fitt;
+		double fitMean = this->fitStats.mean(), fitSD = this->fitStats.stddev();
+
+		this->fitStats.reset();
 
 		if(this->ctrl.elitism > 0 && this->elite.size() > 0 && minFitness > this->elite.rbegin()->getFitness()) {
 			minFitness = this->elite.rbegin()->getFitness();
 		}
-		
+
+		minFitness = (minFitness - fitMean) / fitSD;
+
 		IF_DEBUG(GAout << "Fitness map:\n")
 
 		/*
@@ -171,15 +173,16 @@ protected:
 
 			*(this->currentGeneration[i]) = *(newGeneration[i]);
 
-			fitt = this->currentGeneration[i]->getFitness() - minFitness;
-			sumFitness += fitt;
-			sumFitnessScaled += (this->*transformFitness)(fitt);
+			this->fitStats.update(this->currentGeneration[i]->getFitness());
 
-			this->currentGenFitnessMap[i] = sumFitnessScaled;
+			fitt = (this->currentGeneration[i]->getFitness() - fitMean) / fitSD;
+			sumFitness += (this->*transformFitness)(fitt, minFitness);
+
+			this->currentGenFitnessMap[i] = sumFitness;
 
 			IF_DEBUG(
 				GAout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
-				<< TAB_DELIMITER << sumFitness << (sumFitnessScaled) << "\n";
+				<< TAB_DELIMITER << sumFitness << "\n";
 			)
 		}
 
@@ -189,27 +192,23 @@ protected:
 		for(SortedChromosomes::iterator eliteIt = this->elite.begin(); eliteIt != this->elite.end(); ++eliteIt, ++i) {
 			*(this->currentGeneration[i]) = *(eliteIt);
 
-			fitt = eliteIt->getFitness() - minFitness;
-			sumFitness += fitt;
-			sumFitnessScaled += (this->*transformFitness)(fitt);
+			fitt = (eliteIt->getFitness() - fitMean) / fitSD;
+			sumFitness += (this->*transformFitness)(fitt, minFitness);
 
-			this->currentGenFitnessMap[i] = sumFitnessScaled;
+			this->currentGenFitnessMap[i] = sumFitness;
+
 			IF_DEBUG(
 				GAout << (std::stringstream() << std::fixed << std::setw(4) << i).rdbuf()
-				<< TAB_DELIMITER << sumFitness << (sumFitnessScaled) << "\n";
+				<< TAB_DELIMITER << sumFitness << "\n";
 			)
 		}
 
 		IF_DEBUG(GAout << std::endl)
 
 		this->fitnessHistory.push_back(this->elite.begin()->getFitness());
-		this->fitnessHistory.push_back(sumFitness + minFitness * i);
+		this->fitnessHistory.push_back(this->fitStats.mean());
 
-		return sumFitnessScaled;
-	}
-
-	inline double getCurrentMeanFitness() const {
-		return this->fitnessHistory.back() / (this->ctrl.populationSize + this->elite.size());
+		return sumFitness;
 	}
 	
 	/**
