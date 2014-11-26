@@ -145,10 +145,19 @@ protected:
 	 * @param double minFitness The minimum fitness of the new generation
 	 * @param bool updateElite Set to true if the elite should be updated as well
 	 */
-	inline double updateCurrentGeneration(const ChVec &newGeneration, double minFitness, bool updateElite = false) {
+	inline double updateCurrentGeneration(const ChVec &newGeneration, double minFitness, bool first = false, bool updateElite = false) {
 		uint16_t i = 0;
-		double sumFitness = 0.0, fitt;
-		double fitMean = this->fitStats.mean(), fitSD = this->fitStats.stddev();
+		double sumFitness = 0.0, fitt, fitMean, fitSD;
+
+		if (first) {
+			this->fitStats.reset();
+			for(; i < this->ctrl.populationSize; ++i) {
+				this->fitStats.update(newGeneration[i]->getFitness());
+			}
+		}
+
+		fitMean = this->fitStats.mean();
+		fitSD = this->fitStats.stddev();
 
 		this->fitStats.reset();
 

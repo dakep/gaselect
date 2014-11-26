@@ -107,7 +107,7 @@ void SingleThreadPopulation::run() {
 	 * Transform the fitness map of the current generation to start at 0
 	 * and copy old generation to new generation
 	 */
-	sumFitness = this->updateCurrentGeneration(newGeneration, minFitness);
+	sumFitness = this->updateCurrentGeneration(newGeneration, minFitness, true);
 
 	if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
 		this->printCurrentGeneration();
