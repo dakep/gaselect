@@ -13,11 +13,6 @@ getFitnessEvolution <- function(object, type = c("avg", "best")) {
     type <- match.arg(type);
     column <- switch(type, avg = "sum", "best");
     fit <- object@rawFitnessEvolution[ , column, drop = TRUE];
-
-    if (type == "avg") {
-        fit <- fit / (object@control@populationSize + object@control@elitism);
-    }
-
 	return(trueFitnessVal(object@evaluator, fit));
 }
 
