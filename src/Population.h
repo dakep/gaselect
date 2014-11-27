@@ -175,7 +175,7 @@ protected:
 		 * neglectable, as the number of chromosomes is usally much greater than
 		 * the number of elite chromosomes
 		 */
-		for(; i < this->ctrl.populationSize; ++i) {
+		for(i = 0; i < this->ctrl.populationSize; ++i) {
 			if(updateElite == true) {
 				this->addChromosomeToElite(*newGeneration[i]);
 			}
