@@ -185,7 +185,7 @@ protected:
 			this->fitStats.update(this->currentGeneration[i]->getFitness());
 
 			fitt = (this->currentGeneration[i]->getFitness() - fitMean) / fitSD;
-			sumFitness += (this->*transformFitness)(fitt);
+			sumFitness += (this->*transformFitness)(fitt) - minFitness;
 
 			this->currentGenFitnessMap[i] = sumFitness;
 
@@ -204,7 +204,7 @@ protected:
 			this->fitStats.update(this->currentGeneration[i]->getFitness());
 
 			fitt = (eliteIt->getFitness() - fitMean) / fitSD;
-			sumFitness += (this->*transformFitness)(fitt);
+			sumFitness += (this->*transformFitness)(fitt) - minFitness;
 
 			this->currentGenFitnessMap[i] = sumFitness;
 
