@@ -216,7 +216,7 @@ protected:
 
 		IF_DEBUG(GAout << std::endl)
 
-		this->fitnessHistory.push_back(this->elite.back()->getFitness());
+		this->fitnessHistory.push_back(this->elite.rbegin()->getFitness());
 		this->fitnessHistory.push_back(this->fitStats.mean());
 
 		return sumFitness;
