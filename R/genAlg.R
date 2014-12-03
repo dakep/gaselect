@@ -128,7 +128,7 @@ genAlg <- function(y, X, control, evaluator = evaluatorPLS(), seed) {
 	ret@subsets <- res$subsets;
 	ret@segmentation <- formatSegmentation(ret@evaluator, res$segmentation);
 	ret@rawFitness <- res$fitness;
-	ret@rawFitnessEvolution <- matrix(res$fitnessEvolution, ncol = 2L, byrow = TRUE, dimnames = list(NULL, c("best", "sum")));
+	ret@rawFitnessEvolution <- matrix(res$fitnessEvolution, ncol = 3L, byrow = TRUE, dimnames = list(NULL, c("best", "mean", "std.dev")));
 
 	return(ret);
 }

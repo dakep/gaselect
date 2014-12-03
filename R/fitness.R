@@ -5,15 +5,25 @@
 #' Returns the progress of the fitness of the best or average chromosome.
 #'
 #' @param object The \code{\link{GenAlg}} object returned by \code{\link{genAlg}}
-#' @param type can be \code{"best"} to return the fitness of the best chromosome for each generation
-#' or \code{"avg"} to return the average fitness during each generation
+#' @param what can be one ore more of \code{"best"} (to return the fitness of the best chromosome for each generation),
+#' \code{"mean"} (to return the arithmetic mean fitness during each generation), and \code{"std.dev"} (for
+#' the standard deviation of the fitness values in each generation).
+#' @param type one of \code{"true"} or \code{"raw"}. \emph{raw} means the raw fitness value used
+#' within the GA, while \emph{true} tries to convert it to the standard error of prediction (like
+#' \code{\link{fitness}}). If the standard deviation (\code{what = "std.dev"}) is requested, the
+#' \code{type} will always be \emph{raw}.
 #' @return A vector with the best or average fitness value after each generation
 #' @export
-getFitnessEvolution <- function(object, type = c("avg", "best")) {
+fitnessEvolution <- function(object, what = c("mean", "best", "std.dev"), type = c("true", "raw")) {
+    what <- match.arg(what, c("mean", "best", "std.dev"), several.ok = TRUE);
     type <- match.arg(type);
-    column <- switch(type, avg = "sum", "best");
-    fit <- object@rawFitnessEvolution[ , column, drop = TRUE];
-	return(trueFitnessVal(object@evaluator, fit));
+    fit <- object@rawFitnessEvolution[ , what, drop = FALSE];
+
+    if ("std.dev" %in% what || type == "raw") {
+        return(fit);
+    } else {
+        return(apply(fit, 2, function(x) { trueFitnessVal(object@evaluator, x); }));
+    }
 }
 
 #' Get the fitness of a variable subset
