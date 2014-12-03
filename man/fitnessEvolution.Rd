@@ -3,14 +3,20 @@
 \alias{fitnessEvolution}
 \title{Get the evolution of the fitness}
 \usage{
-fitnessEvolution(object, type = c("mean", "best", "std.dev"))
+fitnessEvolution(object, what = c("mean", "best", "std.dev"),
+  type = c("true", "raw"))
 }
 \arguments{
 \item{object}{The \code{\link{GenAlg}} object returned by \code{\link{genAlg}}}
 
-\item{type}{can be one ore more of \code{"best"} (to return the fitness of the best chromosome for each generation),
+\item{what}{can be one ore more of \code{"best"} (to return the fitness of the best chromosome for each generation),
 \code{"mean"} (to return the arithmetic mean fitness during each generation), and \code{"std.dev"} (for
 the standard deviation of the fitness values in each generation).}
+
+\item{type}{one of \code{"true"} or \code{"raw"}. \emph{raw} means the raw fitness value used
+within the GA, while \emph{true} tries to convert it to the standard error of prediction (like
+\code{\link{fitness}}). If the standard deviation (\code{what = "std.dev"}) is requested, the
+\code{type} will always be \emph{raw}.}
 }
 \value{
 A vector with the best or average fitness value after each generation
