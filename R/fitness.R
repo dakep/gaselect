@@ -5,13 +5,13 @@
 #' Returns the progress of the fitness of the best or average chromosome.
 #'
 #' @param object The \code{\link{GenAlg}} object returned by \code{\link{genAlg}}
-#' @param type can be \code{"best"} to return the fitness of the best chromosome for each generation
-#' or \code{"avg"} to return the average fitness during each generation
+#' @param type can be one ore more of \code{"best"} (to return the fitness of the best chromosome for each generation),
+#' \code{"mean"} (to return the arithmetic mean fitness during each generation), and \code{"std.dev"} (for
+#' the standard deviation of the fitness values in each generation).
 #' @return A vector with the best or average fitness value after each generation
 #' @export
-getFitnessEvolution <- function(object, type = c("avg", "best")) {
-    type <- match.arg(type);
-    column <- switch(type, avg = "sum", "best");
+fitnessEvolution <- function(object, type = c("mean", "best", "std.dev")) {
+    type <- match.arg(type, c("mean", "best", "std.dev"), several.ok = TRUE);
     fit <- object@rawFitnessEvolution[ , column, drop = TRUE];
 	return(trueFitnessVal(object@evaluator, fit));
 }
