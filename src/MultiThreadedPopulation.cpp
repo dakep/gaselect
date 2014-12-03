@@ -102,7 +102,7 @@ void MultiThreadedPopulation::generateInitialChromosomes(uint16_t numChromosomes
 			} catch(const ::Evaluator::EvaluatorException &ee) {
 				delete (*it);
 				if(this->ctrl.verbosity >= VERBOSE) {
-					GAout << GAout.lock() << "Could not evaluate chromosome: " << ee.what() << GAout.lock() << "\n";
+					GAout << GAout.lock() << "Could not evaluate chromosome: " << ee.what() << GAout.unlock() << "\n";
 				}
 			}
 		} else {
@@ -328,9 +328,9 @@ void MultiThreadedPopulation::run() {
 	CHECK_PTHREAD_RETURN_CODE(pthread_attr_destroy(&threadAttr))
 	
 	if(this->actuallySpawnedThreads < maxThreadsToSpawn) {
-		GAerr << "Warning: Only " << this->actuallySpawnedThreads << " threads could be spawned" << std::endl;
+		GAerr << GAerr.lock() << "Warning: Only " << this->actuallySpawnedThreads << " threads could be spawned\n" << GAerr.unlock();
 	} else if(this->ctrl.verbosity >= ON) {
-		GAout << "Spawned " << this->actuallySpawnedThreads << " threads" << std::endl;
+		GAout  << GAout.lock() << "Spawned " << this->actuallySpawnedThreads << " threads\n" << GAout.unlock();
 	}
 
 	/*****************************************************************************************
