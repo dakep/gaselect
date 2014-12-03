@@ -78,7 +78,7 @@ public:
 
 		this->minEliteFitness = 0.0;
 
-		this->fitnessHistory.reserve(2 * this->ctrl.numGenerations);
+		this->fitnessHistory.reserve(3 * this->ctrl.numGenerations);
 
 		switch (this->ctrl.fitnessScaling) {
 			case EXP:
@@ -218,6 +218,7 @@ protected:
 
 		this->fitnessHistory.push_back(this->elite.rbegin()->getFitness());
 		this->fitnessHistory.push_back(this->fitStats.mean());
+		this->fitnessHistory.push_back(this->fitStats.stddev());
 
 		return sumFitness;
 	}
