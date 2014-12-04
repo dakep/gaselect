@@ -92,7 +92,7 @@ void MultiThreadedPopulation::generateInitialChromosomes(uint16_t numChromosomes
 	ChVecIt it = rangeBeginIt;
 	ChVecIt rangeEndIt = rangeBeginIt + numChromosomes;
 
-	while(it != rangeEndIt) {
+	while(it != rangeEndIt && !this->interrupted) {
 		(*it) = new Chromosome(this->ctrl, shuffledSet, rng);
 
 		if(std::find_if(rangeBeginIt, it, CompChromsomePtr(*it)) == it) {
@@ -102,7 +102,7 @@ void MultiThreadedPopulation::generateInitialChromosomes(uint16_t numChromosomes
 			} catch(const ::Evaluator::EvaluatorException &ee) {
 				delete (*it);
 				if(this->ctrl.verbosity >= VERBOSE) {
-					GAout << GAout.lock() << "Could not evaluate chromosome: " << ee.what() << GAout.lock() << "\n";
+					GAout << GAout.lock() << "Could not evaluate chromosome: " << ee.what() << GAout.unlock() << "\n";
 				}
 			}
 		} else {
@@ -117,7 +117,6 @@ void MultiThreadedPopulation::generateInitialChromosomes(uint16_t numChromosomes
 			GAerr.flushThreadSafeBuffer();
 			if(check_interrupt()) {
 				this->interrupted = true;
-				throw InterruptException();
 			}
 		}
 	}
@@ -145,11 +144,14 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	uint8_t child2Tries = 0;
 	std::pair<bool, bool> duplicated(false, false);
 	double cutoff = 0.0;
+	bool childrenDifferent = true;
 
 	uint32_t discSol1 = 0;
 	uint32_t discSol2 = 0;
 
-	while(child1It != child2It.base() && child1It != (child2It + 1).base()) {
+	while(child1It < child2It.base() && !this->interrupted) {
+		childrenDifferent = (child1It + 1 != child2It.base());
+
 		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
 		do {
 			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
@@ -160,7 +162,10 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 
 		(*child1It)->mutate(rng);
-		(*child2It)->mutate(rng);
+
+		if (childrenDifferent) {
+			(*child2It)->mutate(rng);
+		}
 
 		/*
 		 * Simple rejection
@@ -203,7 +208,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			}
 		}
 
-		if((duplicated.second == false) || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
+		if(childrenDifferent && ((duplicated.second == false) || (++child2Tries > this->ctrl.maxDuplicateEliminationTries))) {
 			/*
 			 * If the child is a duplicate and we have tried too often
 			 * just reset the chromosome to a random point
@@ -241,7 +246,6 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 			GAerr.flushThreadSafeBuffer();
 			if(check_interrupt()) {
 				this->interrupted = true;
-				throw InterruptException();
 			}
 		}
 	}
@@ -328,20 +332,16 @@ void MultiThreadedPopulation::run() {
 	CHECK_PTHREAD_RETURN_CODE(pthread_attr_destroy(&threadAttr))
 	
 	if(this->actuallySpawnedThreads < maxThreadsToSpawn) {
-		GAerr << "Warning: Only " << this->actuallySpawnedThreads << " threads could be spawned" << std::endl;
+		GAerr << GAerr.lock() << "Warning: Only " << this->actuallySpawnedThreads << " threads could be spawned\n" << GAerr.unlock();
 	} else if(this->ctrl.verbosity >= ON) {
-		GAout << "Spawned " << this->actuallySpawnedThreads << " threads" << std::endl;
+		GAout  << GAout.lock() << "Spawned " << this->actuallySpawnedThreads << " threads\n" << GAout.unlock();
 	}
 
 	/*****************************************************************************************
 	 * Generate initial population
 	 *****************************************************************************************/
 
-	try {
-		this->generateInitialChromosomes(numChildrenMainThread, this->evaluator, rng, shuffledSet, offset, true);
-	} catch (InterruptException) {
-		this->interrupted = true;
-	}
+	this->generateInitialChromosomes(numChildrenMainThread, this->evaluator, rng, shuffledSet, offset, true);
 
 	/*****************************************************************************************
 	 * Wait for threads to create current generation and further process the initial population
@@ -374,7 +374,7 @@ void MultiThreadedPopulation::run() {
 	 * Generate remaining generations
 	 *****************************************************************************************/
 	
-	for(i = this->ctrl.numGenerations; i > 0 && (this->interrupted == false); --i) {
+	for(i = this->ctrl.numGenerations; i > 0 && !this->interrupted; --i) {
 		IF_DEBUG(GAout << "Unique chromosomes: " << this->countUniques() << std::endl;)
 		
 		if(this->ctrl.verbosity > OFF) {
@@ -404,11 +404,7 @@ void MultiThreadedPopulation::run() {
 		 * to generate 2 children
 		 *
 		 */
-		try {
-			this->mate(numChildrenMainThread, this->evaluator, rng, shuffledSet, offset, true);
-		} catch (InterruptException) {
-			this->interrupted = true;
-		}
+		this->mate(numChildrenMainThread, this->evaluator, rng, shuffledSet, offset, true);
 		
 		this->waitForAllThreadsToFinishMating();
 		/*

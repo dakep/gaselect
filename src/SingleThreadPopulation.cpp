@@ -59,6 +59,7 @@ void SingleThreadPopulation::run() {
 	uint8_t child2Tries = 0;
 	std::pair<bool, bool> duplicated(false, false);
 	double cutoff = 0.0;
+	bool childrenDifferent = true;
 
 	uint32_t discSol1 = 0;
 	uint32_t discSol2 = 0;
@@ -70,7 +71,7 @@ void SingleThreadPopulation::run() {
 		GAout << "Generating initial population" << std::endl;
 	}
 	
-	while(newGeneration.size() < this->ctrl.populationSize) {
+	while(newGeneration.size() < this->ctrl.populationSize && !this->interrupted) {
 		tmpChromosome1 = new Chromosome(this->ctrl, shuffledSet, rng);
 		
 		/* Check if chromosome is already in the initial population */
@@ -97,7 +98,6 @@ void SingleThreadPopulation::run() {
 
 		if(check_interrupt()) {
 			this->interrupted = true;
-			throw InterruptException();
 		}
 	}
 
@@ -126,8 +126,12 @@ void SingleThreadPopulation::run() {
 		
 		child1It = newGeneration.begin();
 		child2It = newGeneration.rbegin();
-		
-		while(child1It != child2It.base() && child1It != (child2It + 1).base() && !this->interrupted) {
+
+
+
+		while(child1It < child2It.base() && !this->interrupted) {
+			childrenDifferent = (child1It + 1 != child2It.base());
+
 			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
 			do {
 				tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
@@ -138,7 +142,10 @@ void SingleThreadPopulation::run() {
 			minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 
 			(*child1It)->mutate(rng);
-			(*child2It)->mutate(rng);
+
+			if (childrenDifferent) {
+				(*child2It)->mutate(rng);
+			}
 
 			/*
 			 * Simple rejection
@@ -186,7 +193,7 @@ void SingleThreadPopulation::run() {
 				}
 			}
 
-			if((duplicated.second == false) || (++child2Tries > this->ctrl.maxDuplicateEliminationTries)) {
+			if(childrenDifferent && ((duplicated.second == false) || (++child2Tries > this->ctrl.maxDuplicateEliminationTries))) {
 				/*
 				 * If the child is a duplicate and we have tried too often
 				 * just reset the chromosome to a random point
