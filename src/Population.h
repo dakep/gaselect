@@ -62,15 +62,6 @@ private:
 	std::vector<double> fitnessHistory;
 
 public:
-	class InterruptException : public std::exception {
-	public:
-		InterruptException() {};
-		virtual ~InterruptException() throw() {};
-		virtual const char* what() const throw() {
-			return "The genetic algorithm was interrupted";
-		}
-	};
-	
 	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) :
 		ctrl(ctrl), evaluator(evaluator), seed(seed), currentGenFitnessMap(ctrl.populationSize + ctrl.elitism, 0.0),
 		interrupted(false) {
