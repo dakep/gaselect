@@ -127,7 +127,7 @@ void SingleThreadPopulation::run() {
 		child1It = newGeneration.begin();
 		child2It = newGeneration.rbegin();
 		
-		while(child1It != child2It.base() && child1It != (child2It + 1).base() && !this->interrupted) {
+		while(child1It < child2It.base() && !this->interrupted) {
 			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
 			do {
 				tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
