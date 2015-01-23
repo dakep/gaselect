@@ -4,15 +4,12 @@
 \title{LM Evaluator}
 \usage{
 evaluatorLM(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"),
-  numThreads = NULL, maxCor = NULL)
+  numThreads = NULL)
 }
 \arguments{
 \item{statistic}{The statistic used to evaluate the fitness}
 
 \item{numThreads}{The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads)}
-
-\item{maxCor}{If the correlation-matrix of the covariates has an entry (absolutely) greater than this value
-the principal components are used to calculate the fit}
 }
 \value{
 Returns an S4 object of type \code{\link{GenAlgLMEvaluator}}
@@ -26,13 +23,18 @@ absolute correlation is given the algorithm will be very slow (as the C++ implem
 be used anymore) and multithreading is not available.
 }
 \examples{
-ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,
-	minVariables = 5, maxVariables = 15)
-evaluator <- evaluatorLM(statistic = "adjusted.r.squared", maxCor = 0.8)
+ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
+    maxVariables = 12, verbosity = 1)
+evaluator <- evaluatorLM(statistic = "BIC", numThreads = 2)
 
-\dontrun{
-result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
-}
+# Generate demo-data
+set.seed(12345)
+X <- matrix(rnorm(10000, sd = 1:5), ncol = 50, byrow = TRUE)
+y <- drop(-1.2 + rowSums(X[, seq(1, 43, length = 8)]) + rnorm(nrow(X), 1.5));
+
+result <- genAlg(y, X, control = ctrl, evaluator = evaluator, seed = 123)
+
+subsets(result, 1:5)
 }
 \seealso{
 Other GenAlg.Evaluators: \code{\link{evaluatorFit}};

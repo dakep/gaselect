@@ -11,6 +11,7 @@
 #' @slot seed The seed the algorithm is started with.
 #' @aliases GenAlg
 #' @include Evaluator.R GenAlgControl.R
+#' @import methods
 #' @rdname GenAlg-class
 setClass("GenAlg", representation(
 	subsets = "matrix",
@@ -78,7 +79,8 @@ setClass("GenAlg", representation(
 #' @param y The numeric response vector of length n
 #' @param X A n x p numeric matrix with all p covariates
 #' @param control Options for controlling the genetic algorithm. See \code{\link{genAlgControl}} for details.
-#' @param evaluator The evaluator used to evaluate the fitness of a variable subset. See \code{\link{evaluatorPLS}}, \code{\link{evaluatorLM}} or \code{\link{evaluatorUserFunction}} for details.
+#' @param evaluator The evaluator used to evaluate the fitness of a variable subset. See
+#'      \code{\link{evaluatorPLS}}, \code{\link{evaluatorLM}} or \code{\link{evaluatorUserFunction}} for details.
 #' @param seed Integer with the seed for the random number generator or NULL to automatically seed the RNG
 #' @export
 #' @import Rcpp

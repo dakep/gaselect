@@ -22,14 +22,20 @@ Get a list of variable indices/names of the found variable subsets.
 This method is used to get the names or indices of the variables used in specified variable subsets.
 }
 \examples{
-ctrl <- genAlgControl(populationSize = 200, numGenerations = 30,
-	minVariables = 5, maxVariables = 15)
-evaluator <- evaluatorPLS(numReplications = 3L, innerSegments = 4L, numThreads = 2L)
+ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
+    maxVariables = 12, verbosity = 1)
 
-\dontrun{
-result <- genAlg(y, x, control = ctrl, evaluator = evaluator)
+evaluator <- evaluatorPLS(numReplications = 2L, innerSegments = 7L, testSetSize = 0.4,
+    numThreads = 2L)
+
+# Generate demo-data
+set.seed(12345)
+X <- matrix(rnorm(10000, sd = 1:5), ncol = 50, byrow = TRUE)
+y <- drop(-1.2 + rowSums(X[, seq(1, 43, length = 8)]) + rnorm(nrow(X), 1.5));
+
+result <- genAlg(y, X, control = ctrl, evaluator = evaluator, seed = 123)
+
 subsets(result, names = TRUE, indices = 1:5) # best 5 variable subsets as a list of names
 result@subsets[ , 1:5] # best 5 variable subsets as a logical matrix with the subsets in the columns
-}
 }
 

@@ -1,8 +1,6 @@
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
     maxVariables = 12, verbosity = 1)
-
-evaluator <- evaluatorPLS(numReplications = 2L, innerSegments = 7L, testSetSize = 0.4,
-    numThreads = 2L)
+evaluator <- evaluatorFit(statistic = "BIC", numThreads = 2)
 
 # Generate demo-data
 set.seed(12345)
@@ -11,5 +9,4 @@ y <- drop(-1.2 + rowSums(X[, seq(1, 43, length = 8)]) + rnorm(nrow(X), 1.5));
 
 result <- genAlg(y, X, control = ctrl, evaluator = evaluator, seed = 123)
 
-subsets(result, names = TRUE, indices = 1:5) # best 5 variable subsets as a list of names
-result@subsets[ , 1:5] # best 5 variable subsets as a logical matrix with the subsets in the columns
+subsets(result, 1:5)
