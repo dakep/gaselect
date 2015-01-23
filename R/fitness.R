@@ -13,6 +13,7 @@
 #' \code{\link{fitness}}). If the standard deviation (\code{what = "std.dev"}) is requested, the
 #' \code{type} will always be \emph{raw}.
 #' @return A vector with the best or average fitness value after each generation
+#' @example examples/fitness.R
 #' @export
 fitnessEvolution <- function(object, what = c("mean", "best", "std.dev"), type = c("true", "raw")) {
     what <- match.arg(what, c("mean", "best", "std.dev"), several.ok = TRUE);

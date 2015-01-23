@@ -121,21 +121,6 @@ setClass("GenAlgFitEvaluator", representation(
 	}
 },contains = "GenAlgEvaluator");
 
-#' User Function Evaluator
-#'
-#' @slot evalFunction The function that is called to evaluate the variable subset.
-#' @slot sepFunction The function that calculates the standard error of prediction for the found subsets.
-#' @aliases GenAlgUserEvaluator
-#' @rdname GenAlgUserEvaluator-class
-setClass("GenAlgUserEvaluator", representation(
-	evalFunction = "function",
-	sepFunction = "function"
-), prototype(
-	sepFunction = function(genAlg) {
-		warning("Evaluator doesn't support SEP calculation -- using raw fitness");
-		return(genAlg@rawFitness);
-	}
-), contains = "GenAlgEvaluator");
 
 #' LM Evaluator
 #'
@@ -275,7 +260,7 @@ evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegment
 #'      a call of \code{\link{genAlg}}.
 #' @export
 #' @family GenAlg Evaluators
-#' @example examples/genAlg.R
+#' @example examples/evaluatorFit.R
 #' @rdname GenAlgFitEvaluator-constructor
 evaluatorFit <- function(numSegments = 7L, statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"),
     numThreads = NULL, maxNComp = NULL, sdfact = 1) {
@@ -370,68 +355,30 @@ evaluatorUserFunction <- function(FUN, sepFUN = NULL, ...) {
 #'
 #' @param statistic The statistic used to evaluate the fitness
 #' @param numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads)
-#' @param maxCor If the correlation-matrix of the covariates has an entry (absolutely) greater than this value
-#'			the principal components are used to calculate the fit
 #' @return Returns an S4 object of type \code{\link{GenAlgLMEvaluator}}
 #' @export
 #' @family GenAlg Evaluators
 #' @example examples/evaluatorLM.R
 #' @rdname GenAlgLMEvaluator-constructor
-evaluatorLM <- function(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"), numThreads = NULL, maxCor = NULL) {
+evaluatorLM <- function(statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"), numThreads = NULL) {
 	statistic <- match.arg(statistic);
 
-	if(!missing(maxCor) && !is.null(maxCor) && (maxCor < 0 || maxCor > 1)) {
-		maxCor <- NULL;
+	statId = switch(statistic,
+		BIC = 0L,
+		AIC = 1L,
+		adjusted.r.squared = 2L,
+		r.squared = 3L
+	);
+
+	if(missing(numThreads) || is.null(numThreads)) {
+		numThreads <- 1L;
+	} else if(is.numeric(numThreads)) {
+		numThreads <- as.integer(numThreads);
 	}
 
-	if(!is.null(maxCor)) {
-		FUN <- function(y, X) {
-			corrs <- cor(X);
-			if(any(abs(corrs[upper.tri(corrs)]) > maxCor)) { #PCA
-				X <- prcomp(X)$x;
-			}
-			m <- lm(y ~ X);
-			mss <- sum((m$fitted.values - mean(m$fitted.values)) ^ 2);
-			rss <- sum(m$residuals ^ 2);
-
-			switch(statistic,
-				adjusted.r.squared = 1 - (1 - (mss / (mss + rss))) * ((nrow(m$qr$qr) - 1) / m$df.residual),
-				r.squared = mss / (mss + rss),
-				BIC = -BIC(m),
-				AIC = -AIC(m)
-			)
-		};
-
-		sepFUN <- function(genAlg) {
-			apply(genAlg@subsets, 2, function(subset) {
-				m <- lm(genAlg@response ~ genAlg@covariates[, subset]);
-				return(sd(m$residuals));
-			});
-		};
-
-		return(new("GenAlgUserEvaluator",
-			evalFunction = FUN,
-			sepFunction = sepFUN
-		));
-
-	} else {
-		statId = switch(statistic,
-			BIC = 0L,
-			AIC = 1L,
-			adjusted.r.squared = 2L,
-			r.squared = 3L
-		);
-
-		if(missing(numThreads) || is.null(numThreads)) {
-			numThreads <- 1L;
-		} else if(is.numeric(numThreads)) {
-			numThreads <- as.integer(numThreads);
-		}
-
-		return(new("GenAlgLMEvaluator",
-			statistic = statistic,
-			statisticId = statId,
-			numThreads = numThreads
-		));
-	}
+	return(new("GenAlgLMEvaluator",
+		statistic = statistic,
+		statisticId = statId,
+		numThreads = numThreads
+	));
 };
