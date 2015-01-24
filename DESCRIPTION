@@ -1,8 +1,8 @@
 Package: gaselect
 Type: Package
 Title: Genetic Algorithm (GA) for Variable Selection from High-Dimensional Data
-Version: 1.0.0
-Date: 2015-01-23
+Version: 1.0.1
+Date: 2015-01-24
 Author: David Kepplinger
 Maintainer: David Kepplinger <david.kepplinger@gmail.com>
 Description: Provides a genetic algorithm for finding variable
