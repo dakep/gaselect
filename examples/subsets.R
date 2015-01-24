@@ -1,4 +1,4 @@
-ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
+ctrl <- genAlgControl(populationSize = 200, numGenerations = 15, minVariables = 5,
     maxVariables = 12, verbosity = 1)
 
 evaluator <- evaluatorPLS(numReplications = 2, innerSegments = 7, testSetSize = 0.4,
