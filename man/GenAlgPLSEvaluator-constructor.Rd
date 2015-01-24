@@ -53,14 +53,14 @@ The whole procedure is repeated \code{numReplications} times to get a more relia
 prediction power.
 }
 \examples{
-ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
+ctrl <- genAlgControl(populationSize = 100, numGenerations = 15, minVariables = 5,
     maxVariables = 12, verbosity = 1)
 
-evaluatorSRCV <- evaluatorPLS(numReplications = 2L, innerSegments = 7L, testSetSize = 0.4,
-    numThreads = 2L)
+evaluatorSRCV <- evaluatorPLS(numReplications = 2, innerSegments = 7, testSetSize = 0.4,
+    numThreads = 1)
 
-evaluatorRDCV <- evaluatorPLS(numReplications = 2L, innerSegments = 7L, outerSegments = 4L,
-    numThreads = 2L)
+evaluatorRDCV <- evaluatorPLS(numReplications = 2, innerSegments = 5, outerSegments = 3,
+    numThreads = 1)
 
 # Generate demo-data
 set.seed(12345)

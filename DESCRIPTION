@@ -1,13 +1,13 @@
 Package: gaselect
 Type: Package
-Title: Genetic Algorithm (GA) for Variable Selection from High Dimensional Data
-Version: 1.0.0
-Date: 2015-01-23
+Title: Genetic Algorithm (GA) for Variable Selection from High-Dimensional Data
+Version: 1.0.1
+Date: 2015-01-24
 Author: David Kepplinger
 Maintainer: David Kepplinger <david.kepplinger@gmail.com>
 Description: Provides a genetic algorithm for finding variable
     subsets in high dimensional data with high prediction performance. The
-    genetic algorithm can use oridnary least squares (OLS) regression models or
+    genetic algorithm can use ordinary least squares (OLS) regression models or
     partial least squares (PLS) regression models to evaluate the prediction
     power of variable subsets. By supporting different cross-validation
     schemes, the user can fine-tune the tradeoff between speed and quality of

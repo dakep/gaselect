@@ -1,6 +1,6 @@
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
     maxVariables = 12, verbosity = 1)
-evaluator <- evaluatorLM(statistic = "BIC", numThreads = 2)
+evaluator <- evaluatorLM(statistic = "BIC", numThreads = 1)
 
 # Generate demo-data
 set.seed(12345)
