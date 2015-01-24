@@ -35,14 +35,14 @@ selected for mating based on their fitness. A total of \code{numGenerations} gen
 The algorithm returns the last generation as well as the best \code{elitism} chromosomes from all generations.
 }
 \examples{
-ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
+ctrl <- genAlgControl(populationSize = 100, numGenerations = 15, minVariables = 5,
     maxVariables = 12, verbosity = 1)
 
 evaluatorSRCV <- evaluatorPLS(numReplications = 2L, innerSegments = 7L, testSetSize = 0.4,
-    numThreads = 2L)
+    numThreads = 1L)
 
-evaluatorRDCV <- evaluatorPLS(numReplications = 2L, innerSegments = 7L, outerSegments = 4L,
-    numThreads = 2L)
+evaluatorRDCV <- evaluatorPLS(numReplications = 2L, innerSegments = 5L, outerSegments = 3L,
+    numThreads = 1L)
 
 # Generate demo-data
 set.seed(12345)

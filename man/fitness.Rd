@@ -19,7 +19,7 @@ This method is used to get the fitness of all variable subsets
 found by the genetic algorithm.
 }
 \examples{
-ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
+ctrl <- genAlgControl(populationSize = 100, numGenerations = 15, minVariables = 5,
     maxVariables = 12, verbosity = 1)
 
 evaluator <- evaluatorPLS(numReplications = 2L, innerSegments = 7L, testSetSize = 0.4,

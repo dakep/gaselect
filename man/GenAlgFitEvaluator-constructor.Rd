@@ -35,7 +35,7 @@ the optimal number of components for the PLS model, cross-validation is used.
 \examples{
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
     maxVariables = 12, verbosity = 1)
-evaluator <- evaluatorFit(statistic = "BIC", numThreads = 2)
+evaluator <- evaluatorFit(statistic = "BIC", numThreads = 1)
 
 # Generate demo-data
 set.seed(12345)

@@ -25,7 +25,7 @@ Additionally the user can specify a function that takes a \code{\link{GenAlg}} o
 the standard error of prediction of the found variable subsets.
 }
 \examples{
-ctrl <- genAlgControl(populationSize = 200, numGenerations = 15, minVariables = 5,
+ctrl <- genAlgControl(populationSize = 100, numGenerations = 10, minVariables = 5,
     maxVariables = 12, verbosity = 1)
 
 # Use the BIC of a linear model to evaluate the fitness of a variable subset
