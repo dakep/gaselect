@@ -31,8 +31,8 @@ Returns the progress of the fitness of the best or average chromosome.
 ctrl <- genAlgControl(populationSize = 100, numGenerations = 15, minVariables = 5,
     maxVariables = 12, verbosity = 1)
 
-evaluator <- evaluatorPLS(numReplications = 2L, innerSegments = 7L, testSetSize = 0.4,
-    numThreads = 2L)
+evaluator <- evaluatorPLS(numReplications = 2, innerSegments = 7, testSetSize = 0.4,
+    numThreads = 1)
 
 # Generate demo-data
 set.seed(12345)
