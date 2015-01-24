@@ -22,11 +22,11 @@ Get a list of variable indices/names of the found variable subsets.
 This method is used to get the names or indices of the variables used in specified variable subsets.
 }
 \examples{
-ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
+ctrl <- genAlgControl(populationSize = 200, numGenerations = 15, minVariables = 5,
     maxVariables = 12, verbosity = 1)
 
-evaluator <- evaluatorPLS(numReplications = 2L, innerSegments = 7L, testSetSize = 0.4,
-    numThreads = 2L)
+evaluator <- evaluatorPLS(numReplications = 2, innerSegments = 7, testSetSize = 0.4,
+    numThreads = 1)
 
 # Generate demo-data
 set.seed(12345)
