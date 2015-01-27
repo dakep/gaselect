@@ -16,7 +16,7 @@ License: GPL (>= 2)
 NeedsCompilation: yes
 Roxygen: list(wrap = FALSE)
 Depends:
-    R (>= 3.0.2)
+    R (>= 3.0.2),
     methods (>= 2.10.0)
 Imports:
     Rcpp (>= 0.10.5)
