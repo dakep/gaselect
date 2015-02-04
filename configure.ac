@@ -1,9 +1,25 @@
-AC_INIT(GenAlgPLSConfig, version-1.2)
+AC_INIT(gaselect, version-1.2)
+
+: ${R_HOME=`R RHOME`}
+if test -z "${R_HOME}"; then
+  echo "could not determine R_HOME"
+  exit 1
+fi
+
+CXX=`"${R_HOME}/bin/R" CMD config CXX`
+CXXCPP=`"${R_HOME}/bin/R" CMD config CXXCPP`
+CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXXFLAGS`
+CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 
 AC_PROG_CXX
+AC_PROG_CXXCPP
+
 AC_LANG(C++)
 
 AC_CHECK_HEADERS(stdint.h inttypes.h limits.h climits)
+
+m4_include([tools/m4/ax_cxx_compile_stdcxx_11.m4])
+AX_CXX_COMPILE_STDCXX_11(noext,optional)
 
 # Check if unsigned long long is supported (its not standard yet)
 AC_COMPILE_IFELSE([
@@ -102,4 +118,8 @@ AC_CHECK_HEADERS(pthread.h)
 
 CFLAGS="$oldCFLAGS"
 
-cp confdefs.h src/autoconfig.h
+AC_SUBST(CXX11FLAGS)
+
+AC_CONFIG_HEADERS([src/autoconfig.h])
+AC_CONFIG_FILES([src/Makevars])
+AC_OUTPUT
