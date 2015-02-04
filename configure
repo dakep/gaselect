@@ -3109,7 +3109,7 @@ $as_echo "$ax_cv_cxx_compile_cxx11" >&6; }
     ac_success=yes
   fi
 
-  CXX11FLAGS=" halllo"
+  CXX11FLAGS=""
 
 
 

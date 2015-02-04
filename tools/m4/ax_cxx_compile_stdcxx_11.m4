@@ -83,7 +83,7 @@ AC_DEFUN([AX_CXX_COMPILE_STDCXX_11], [dnl
     ac_success=yes
   fi
 
-  CXX11FLAGS=" halllo"
+  CXX11FLAGS=""
 
   m4_if([$1], [noext], [], [dnl
   if test x$ac_success = xno; then
