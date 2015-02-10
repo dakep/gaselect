@@ -21,7 +21,7 @@
 BICEvaluator::BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
 	uint16_t numSegments, BICEvaluator::Statistic stat, double sdfact) :
 		Evaluator(verbosity), numSegments(numSegments),	nrows(pls->getNumberOfObservations()),
-		sdfact(sdfact / sqrt(numSegments)), stat(stat), cloned(false), pls(pls), maxNComp(maxNComp)
+		sdfact(sdfact / sqrt((double) numSegments)), stat(stat), cloned(false), pls(pls), maxNComp(maxNComp)
 {
 	if(pls->getNumberOfResponseVariables() > 1) {
 		throw std::invalid_argument("PLS evaluator only available for models with 1 response variable");
@@ -65,7 +65,7 @@ double BICEvaluator::evaluate(arma::uvec &columnSubset) {
 
 	switch(this->stat) {
 		case BIC: {
-			ret = -(this->nrows * log(RSS / this->nrows) + columnSubset.n_elem * log(this->nrows));
+			ret = -(this->nrows * log(RSS / this->nrows) + columnSubset.n_elem * log((double) this->nrows));
 			break;
 		}
 		case AIC: {
