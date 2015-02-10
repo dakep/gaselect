@@ -38,7 +38,7 @@ double LMEvaluator::evaluate(arma::uvec &columnSubset) {
 		
 		switch(this->statistic) {
 			case BIC: {
-				ret = -(Xsub.n_rows * log(RSS / Xsub.n_rows) + Xsub.n_cols * log(Xsub.n_rows));
+				ret = -(Xsub.n_rows * log(RSS / Xsub.n_rows) + Xsub.n_cols * log((double) Xsub.n_rows));
 				break;
 			}
 			case AIC: {

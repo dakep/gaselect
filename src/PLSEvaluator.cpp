@@ -28,7 +28,7 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 		Evaluator(verbosity), numReplications(numReplications),
 		outerSegments((outerSegments < 1) ? 1 : outerSegments),
 		innerSegments((outerSegments <= 1 && testSetSize == 0.0) ? innerSegments - 1 : innerSegments),
-		sdfact(sdfact / sqrt(this->innerSegments)),
+		sdfact(sdfact / sqrt((double) this->innerSegments)),
 		nrows(pls->getNumberOfObservations()), cloned(false), pls(pls), maxNComp(maxNComp)
 {
 	/* assert outerSegments > 0 */
