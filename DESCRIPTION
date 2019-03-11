@@ -1,8 +1,8 @@
 Package: gaselect
 Type: Package
 Title: Genetic Algorithm (GA) for Variable Selection from High-Dimensional Data
-Version: 1.0.5
-Date: 2015-02-10
+Version: 1.0.6
+Date: 2019-03-11
 Author: David Kepplinger
 Maintainer: David Kepplinger <david.kepplinger@gmail.com>
 Description: Provides a genetic algorithm for finding variable
@@ -14,6 +14,7 @@ Description: Provides a genetic algorithm for finding variable
     the solution.
 License: GPL (>= 2)
 NeedsCompilation: yes
+Biarch: true
 Roxygen: list(wrap = FALSE)
 Depends:
     R (>= 3.0.2),

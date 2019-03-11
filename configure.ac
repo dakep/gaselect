@@ -1,4 +1,4 @@
-AC_INIT(gaselect, version-1.2)
+AC_INIT(gaselect, 1.0.6)
 
 : ${R_HOME=`R RHOME`}
 if test -z "${R_HOME}"; then
@@ -27,7 +27,7 @@ AC_COMPILE_IFELSE([
 	],
 	[
 		AC_MSG_RESULT([Type unsigned long long is supported])
-		AC_DEFINE_UNQUOTED(HAVE_UNSIGNED_LONG_LONG)
+		AC_DEFINE([HAVE_UNSIGNED_LONG_LONG], [1], [Define to 1 if unsigned long long is supported])
 	],
 	[AC_MSG_RESULT([Type unsigned long long is not supported])]
 )
@@ -41,7 +41,7 @@ if test "$ac_cv_header_stdint_h" == yes; then
 	],
 	[
 		AC_MSG_RESULT([uint16_t and unit8_t are available in stdint.h])
-		AC_DEFINE_UNQUOTED(HAVE_UINT8_16_MAX)
+		AC_DEFINE([HAVE_UINT8_16_MAX], [1], [Define to 1 if types uint16_t and uint8_t are in stdint.h])
 		suitable_integer=yes
 	],
 	[AC_MSG_RESULT([uint16_t and uint8_t are not available in stdint.h])]
@@ -55,7 +55,7 @@ if test "$ac_cv_header_inttypes_h" == yes; then
 	],
 	[
 		AC_MSG_RESULT([uint16_t and unit8_t are available in inttypes.h])
-		AC_DEFINE_UNQUOTED(HAVE_UINT8_16_MAX)
+		AC_DEFINE([HAVE_UINT8_16_MAX], [1], [Define to 1 if types uint16_t and uint8_t are in inttypes.h])
 		suitable_integer=yes
 	],
 	[AC_MSG_RESULT([uint16_t and uint8_t are not available in inttypes.h])]
@@ -72,7 +72,7 @@ AC_COMPILE_IFELSE([
 	],
 	[
 		AC_MSG_RESULT([Found builtin CTZ method (for unsigned long)])
-		AC_DEFINE_UNQUOTED(HAVE_GCC_CTZL)
+		AC_DEFINE([HAVE_GCC_CTZL], [1], [Define to 1 if you have function __builtin_ctzl(unsigned long)])
 	],
 	[AC_MSG_RESULT([No builtin CTZ method (for unsigned long)])]
 )
@@ -82,7 +82,7 @@ AC_COMPILE_IFELSE([
 	],
 	[
 		AC_MSG_RESULT([Found builtin CTZ method (for unsigned long long)])
-		AC_DEFINE_UNQUOTED(HAVE_GCC_CTZLL)
+		AC_DEFINE([HAVE_GCC_CTZLL], [1], [Define to 1 if you have function __builtin_ctzll(unsigned long long)])
 	],
 	[AC_MSG_RESULT([No builtin CTZ method (for unsigned long long)])]
 )
@@ -96,7 +96,7 @@ AC_COMPILE_IFELSE([
 ],
 	[
 		AC_MSG_RESULT([Found builtin popcount method (for unsigned long)])
-		AC_DEFINE_UNQUOTED(HAVE_BUILTIN_POPCOUNTL)
+		AC_DEFINE([HAVE_BUILTIN_POPCOUNTL], [1], [Define to 1 if you have function __builtin_popcountl(unsigned long)])
 	],
 	[AC_MSG_RESULT([No builtin popcount method (for unsigned long)])]
 )
@@ -106,7 +106,7 @@ AC_COMPILE_IFELSE([
 ],
 	[
 		AC_MSG_RESULT([Found builtin popcount method (for unsigned long long)])
-		AC_DEFINE_UNQUOTED(HAVE_BUILTIN_POPCOUNTLL)
+		AC_DEFINE([HAVE_BUILTIN_POPCOUNTLL], [1], [Define to 1 if you have function __builtin_popcountl(unsigned long long)])
 	],
 	[AC_MSG_RESULT([No builtin popcount method (for unsigned long long)])]
 )
