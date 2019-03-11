@@ -27,12 +27,30 @@
 
 using namespace Rcpp;
 
-SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy, SEXP Sseed) {
+/**
+ * .C entry point definitions for R
+ */
+static const R_CallMethodDef exportedCallMethods[] = {
+    {"C_genAlgPLS", (DL_FUNC) &genAlgPLS, 4},
+    {"C_evaluate", (DL_FUNC) &evaluate, 5},
+    {"C_simpls", (DL_FUNC) &simpls, 5},
+    {NULL, NULL, 0}
+};
+
+
+extern "C" void R_init_gaselect(DllInfo *dll)
+{
+    R_registerRoutines(dll, NULL, exportedCallMethods, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
+    R_forceSymbols(dll, TRUE);
+}
+
+RcppExport SEXP genAlgPLS(SEXP Scontrol, SEXP SX, SEXP Sy, SEXP Sseed) {
 	::Evaluator *eval;
 	PLS *pls;
 	Population *pop;
 	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls; 3rd bit set ==> free globalUnifGen; 4th bit set ==> free pop
-BEGIN_RCPP	
+BEGIN_RCPP
 	List control = List(Scontrol);
 	uint32_t singleSeed = as<uint32_t>(Sseed);
 	std::vector<uint32_t> seed;
@@ -56,7 +74,7 @@ BEGIN_RCPP
 	} else if(numThreads < 1) {
 		numThreads = 1;
 	}
-	
+
 	// All checks are disabled and must be performed in the R code calling this script
 	// Otherwise unexpected behaviour
 	Control ctrl(as<uint16_t>(control["chromosomeSize"]),
@@ -81,7 +99,7 @@ BEGIN_RCPP
 	for(uint32_t i = 0; i < RNG::SEED_SIZE; ++i) {
 		seed.push_back(rng());
 	}
-	
+
 	switch(evalClass) {
 		case USER: {
 			eval = new UserFunEvaluator(as<Rcpp::Function>(control["userEvalFunction"]), ctrl.verbosity);
@@ -93,10 +111,10 @@ BEGIN_RCPP
 			arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
-			
+
 			pls = PLS::getInstance(method, X, Y.col(0));
 			toFree |= 2; // pls has to be freed
-			
+
 			eval = new PLSEvaluator(pls, as<uint16_t>(control["numReplications"]),
 				as<uint16_t>(control["maxNComp"]), seed, ctrl.verbosity,
 				as<uint16_t>(control["innerSegments"]),
@@ -112,7 +130,7 @@ BEGIN_RCPP
 			arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
-			
+
 			pls = PLS::getInstance(method, X, Y.col(0));
 			toFree |= 2; // pls has to be freed
 
@@ -134,17 +152,17 @@ BEGIN_RCPP
 			arma::mat X(XMat.begin(), XMat.nrow(), XMat.ncol(), false);
 			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 			arma::colvec y = Y.col(0);
-			
+
 			LMEvaluator::Statistic stat = (LMEvaluator::Statistic) as<int>(control["statistic"]);
 			eval = new LMEvaluator(X, y, stat, verbosity);
-			
+
 			break;
 		}
 		default:
 			throw Rcpp::exception("No valid evaluation method was selected.", __FILE__, __LINE__);
 			break;
 	}
-	
+
 	toFree |= 1; // eval has to be freed
 
 	if(ctrl.verbosity >= VERBOSE) {
@@ -199,7 +217,7 @@ BEGIN_RCPP
 	}
 
 	delete eval;
-	
+
 	if((toFree & 8) > 0) {
 		delete pop;
 	}
@@ -226,16 +244,14 @@ VOID_END_RCPP
 	return R_NilValue;
 }
 
-
-
 /**
  *
  */
-SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
+RcppExport SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 	::Evaluator *eval;
 	PLS *pls;
 	uint8_t toFree = 0; // first bit is set ==> free eval; 2nd bit set ==> free pls; 3rd bit set ==> free globalUnifGen; 4th bit set ==> free pop
-	
+
 	BEGIN_RCPP
 	List evaluator = List(Sevaluator);
 	Rcpp::NumericMatrix XMat(SX);
@@ -247,7 +263,7 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 	arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 	EvaluatorClass evalClass = (EvaluatorClass) as<int>(evaluator["evaluatorClass"]);
 	std::vector<uint32_t> seed;
-	
+
 	switch(evalClass) {
 		case USER: {
 			eval = new UserFunEvaluator(as<Rcpp::Function>(evaluator["userEvalFunction"]), OFF);
@@ -261,17 +277,17 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 			for (uint32_t i = 0; i < RNG::SEED_SIZE; ++i) {
 				seed.push_back(rng());
 			}
-			
+
 			pls = PLS::getInstance(method, X, Y.col(0));
 			toFree |= 2; // pls has to be freed
-		
+
 			eval = new PLSEvaluator(pls, as<uint16_t>(evaluator["numReplications"]),
 				as<uint16_t>(evaluator["maxNComp"]), seed, (VerbosityLevel) as<int>(evaluator["verbosity"]),
 				as<uint16_t>(evaluator["innerSegments"]),
 				as<uint16_t>(evaluator["outerSegments"]),
 				as<double>(evaluator["testSetSize"]),
 				as<double>(evaluator["sdfact"]));
-			
+
 			break;
 		}
 		case PLS_FIT: {
@@ -304,16 +320,16 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 		}
 		case LM: {
 			arma::colvec y = Y.col(0);
-			
+
 			LMEvaluator::Statistic stat = (LMEvaluator::Statistic) as<int>(evaluator["statistic"]);
 			eval = new LMEvaluator(X, y, stat, (VerbosityLevel) as<int>(evaluator["verbosity"]));
-			
+
 			break;
 		}
 		default:
 			break;
 	}
-	
+
 	toFree |= 1; // eval has to be freed
 
 	int row = 0;
@@ -341,10 +357,10 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 	if((toFree & 2) > 0) {
 		delete pls;
 	}
-	
+
 	return Rcpp::List::create(Rcpp::Named("fitness") = Rcpp::wrap(fitness),
 							  Rcpp::Named("segmentation") = Rcpp::wrap(segmentation));
-	
+
 	VOID_END_RCPP
 	if((toFree & 1) > 0) {
 		delete eval;
@@ -352,26 +368,26 @@ SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP Sseed) {
 	if((toFree & 2) > 0) {
 		delete pls;
 	}
-	
+
 	return R_NilValue;
 }
 
 //RcppExport SEXP WELL19937a(SEXP Sn, SEXP Sseed) {
 //	uint32_t n = as<uint32_t>(Sn);
 //	uint32_t seed = as<uint32_t>(Sseed);
-//	
+//
 //	RNG rng(seed);
-//	
+//
 //	Rcpp::NumericVector retMat(n);
 //
 //	for(uint16_t row = 0; row < n; ++row) {
 //		retMat[row] = rng();
 //	}
-//	
+//
 //	return Rcpp::wrap(retMat);
 //}
 
-SEXP simpls(SEXP Xs, SEXP Ys, SEXP ncomps, SEXP newXs, SEXP reps) {
+RcppExport SEXP simpls(SEXP Xs, SEXP Ys, SEXP ncomps, SEXP newXs, SEXP reps) {
 BEGIN_RCPP
 	Rcpp::NumericMatrix XMat(Xs);
 	Rcpp::NumericVector YVec(Ys);
