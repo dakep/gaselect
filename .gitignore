@@ -1,10 +1,12 @@
 *.so
 *.o
 config.log
+config.status
 .Rapp.history
 autoconfig.h
 .Rproj.user
-GenAlgPLS.Rproj
+*.Rproj
 .Rbuildignore
 .Rhistory
 .Renviron
+Makevars
