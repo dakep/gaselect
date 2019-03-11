@@ -9,9 +9,6 @@
 /* Define to 1 if you have the <climits> header file. */
 #undef HAVE_CLIMITS
 
-/* define if the compiler supports basic C++11 syntax */
-#undef HAVE_CXX11
-
 /* Define to 1 if you have the `ffsl' function. */
 #undef HAVE_FFSL
 

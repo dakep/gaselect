@@ -18,9 +18,6 @@ AC_LANG(C++)
 
 AC_CHECK_HEADERS(stdint.h inttypes.h limits.h climits)
 
-m4_include([tools/m4/ax_cxx_compile_stdcxx_11.m4])
-AX_CXX_COMPILE_STDCXX_11(noext,optional)
-
 # Check if unsigned long long is supported (its not standard yet)
 AC_COMPILE_IFELSE([
 	AC_LANG_SOURCE([[int main() {  unsigned long long x = 100LL; return 0; }]])

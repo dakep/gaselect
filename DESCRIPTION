@@ -12,10 +12,12 @@ Description: Provides a genetic algorithm for finding variable
     power of variable subsets. By supporting different cross-validation
     schemes, the user can fine-tune the tradeoff between speed and quality of
     the solution.
+URL: https://github.com/dakep/gaselect
+BugReports: https://github.com/dakep/gaselect/issues
 License: GPL (>= 2)
 NeedsCompilation: yes
 Biarch: true
-Roxygen: list(wrap = FALSE)
+SystemRequirements: C++11
 Depends:
     R (>= 3.0.2),
     methods (>= 2.10.0)

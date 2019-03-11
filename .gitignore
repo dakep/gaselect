@@ -10,3 +10,4 @@ autoconfig.h
 .Rhistory
 .Renviron
 Makevars
+Makevars.rel
