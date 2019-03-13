@@ -87,7 +87,7 @@ setClass("GenAlg", representation(
 #' @include Evaluator.R GenAlgControl.R formatSegmentation.R
 #' @return An object of type \code{\link{GenAlg}}
 #' @rdname GenAlg-constructor
-#' @useDynLib gaselect
+#' @useDynLib gaselect, .registration = TRUE
 #' @example examples/genAlg.R
 genAlg <- function(y, X, control, evaluator = evaluatorPLS(), seed) {
     seed <- as.integer(seed)[1];
@@ -122,9 +122,9 @@ genAlg <- function(y, X, control, evaluator = evaluatorPLS(), seed) {
 	ctrlArg$userEvalFunction <- getEvalFun(ret@evaluator, ret);
 
 	if(ctrlArg$evaluatorClass == 0) {
-		res <- .Call("genAlgPLS", ctrlArg, NULL, NULL, seed, PACKAGE = "gaselect");
+		res <- .Call(C_genAlgPLS, ctrlArg, NULL, NULL, seed);
 	} else {
-		res <- .Call("genAlgPLS", ctrlArg, ret@covariates, as.matrix(ret@response), ret@seed, PACKAGE = "gaselect");
+		res <- .Call(C_genAlgPLS, ctrlArg, ret@covariates, as.matrix(ret@response), ret@seed);
 	}
 
 	ret@subsets <- res$subsets;

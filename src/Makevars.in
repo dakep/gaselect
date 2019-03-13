@@ -1,6 +1,5 @@
-## Use the R_HOME indirection to support installations of multiple R version
-PKG_LIBS = `$(R_HOME)/bin/Rscript -e "Rcpp:::LdFlags()"` $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -pthread
-
-PKG_CFLAGS= -D__STDC_LIMIT_MACROS @CXX11FLAGS@
-PKG_CXXFLAGS= -D__STDC_LIMIT_MACROS @CXX11FLAGS@
+CXX_STD = CXX11
+PKG_LIBS = $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) -pthread
+PKG_CFLAGS= -D__STDC_LIMIT_MACROS
+PKG_CXXFLAGS= -D__STDC_LIMIT_MACROS
 PKG_CPPFLAGS= -pthread

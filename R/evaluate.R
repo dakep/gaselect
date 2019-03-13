@@ -9,7 +9,7 @@
 #' @param seed The value to seed the random number generator before evaluating
 #' @param verbosity A value between 0 (no output at all) and 5 (maximum verbosity)
 #' @import Rcpp
-#' @useDynLib gaselect
+#' @useDynLib gaselect, .registration = TRUE
 #' @include Evaluator.R formatSegmentation.R
 #' @rdname evaluate-methods
 setGeneric("evaluate", function(object, X, y, subsets, seed, verbosity) { standardGeneric("evaluate"); });
@@ -38,7 +38,7 @@ function(object, X, y, subsets, seed, verbosity) {
     ctrlArg <- toCControlList(object);
     ctrlArg$userEvalFunction <- getEvalFun(object, cbind(y, X));
     ctrlArg$verbosity <- verbosity;
-    res <- .Call("evaluate", ctrlArg, as.matrix(X), as.matrix(y), subsets, seed, PACKAGE = "gaselect");
+    res <- .Call(C_evaluate, ctrlArg, as.matrix(X), as.matrix(y), subsets, seed);
 
     res$fitness <- trueFitnessVal(object, res$fitness);
     res$segmentation <- formatSegmentation(object, res$segmentation);

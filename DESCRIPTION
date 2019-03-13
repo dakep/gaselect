@@ -1,8 +1,8 @@
 Package: gaselect
 Type: Package
 Title: Genetic Algorithm (GA) for Variable Selection from High-Dimensional Data
-Version: 1.0.5
-Date: 2015-02-10
+Version: 1.0.7
+Date: 2019-03-13
 Author: David Kepplinger
 Maintainer: David Kepplinger <david.kepplinger@gmail.com>
 Description: Provides a genetic algorithm for finding variable
@@ -12,9 +12,13 @@ Description: Provides a genetic algorithm for finding variable
     power of variable subsets. By supporting different cross-validation
     schemes, the user can fine-tune the tradeoff between speed and quality of
     the solution.
+URL: https://github.com/dakep/gaselect
+BugReports: https://github.com/dakep/gaselect/issues
 License: GPL (>= 2)
 NeedsCompilation: yes
-Roxygen: list(wrap = FALSE)
+Encoding: UTF-8
+Biarch: true
+SystemRequirements: C++11
 Depends:
     R (>= 3.0.2),
     methods (>= 2.10.0)
@@ -35,3 +39,4 @@ Collate:
     'validData.R'
 Suggests:
     chemometrics
+RoxygenNote: 6.1.1
