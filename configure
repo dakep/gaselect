@@ -2085,7 +2085,7 @@ if test -z "${R_HOME}"; then
 fi
 
 CXX=`"${R_HOME}/bin/R" CMD config CXX`
-CXXCPP=`"${R_HOME}/bin/R" CMD config CXXCPP`
+CXXCPP="${CXX} -E"
 CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXXFLAGS`
 CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 
