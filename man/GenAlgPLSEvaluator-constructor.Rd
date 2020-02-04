@@ -4,9 +4,16 @@
 \alias{evaluatorPLS}
 \title{PLS Evaluator}
 \usage{
-evaluatorPLS(numReplications = 30L, innerSegments = 7L,
-  outerSegments = 1L, testSetSize = NULL, numThreads = NULL,
-  maxNComp = NULL, method = c("simpls"), sdfact = 1)
+evaluatorPLS(
+  numReplications = 30L,
+  innerSegments = 7L,
+  outerSegments = 1L,
+  testSetSize = NULL,
+  numThreads = NULL,
+  maxNComp = NULL,
+  method = c("simpls"),
+  sdfact = 1
+)
 }
 \arguments{
 \item{numReplications}{The number of replications used to evaluate a variable subset (must be between 1 and 2^16)}
@@ -75,8 +82,9 @@ subsets(resultSRCV, 1:5)
 subsets(resultRDCV, 1:5)
 }
 \seealso{
-Other GenAlg Evaluators: \code{\link{evaluatorFit}},
-  \code{\link{evaluatorLM}},
-  \code{\link{evaluatorUserFunction}}
+Other GenAlg Evaluators: 
+\code{\link{evaluatorFit}()},
+\code{\link{evaluatorLM}()},
+\code{\link{evaluatorUserFunction}()}
 }
 \concept{GenAlg Evaluators}
