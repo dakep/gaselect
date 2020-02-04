@@ -8,6 +8,7 @@
 
 #include "config.h"
 
+#include <memory>
 #include <algorithm>
 #include "Logger.h"
 #include "PLSEvaluator.h"
@@ -23,13 +24,14 @@
 uint32_t PLSEvaluator::counter = 0;
 #endif
 
-PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
-	uint16_t innerSegments, uint16_t outerSegments, double testSetSize, double sdfact) :
-		Evaluator(verbosity), numReplications(numReplications),
-		outerSegments((outerSegments < 1) ? 1 : outerSegments),
-		innerSegments((outerSegments <= 1 && testSetSize == 0.0) ? innerSegments - 1 : innerSegments),
-		sdfact(sdfact / sqrt((double) this->innerSegments)),
-		nrows(pls->getNumberOfObservations()), cloned(false), pls(pls), maxNComp(maxNComp)
+PLSEvaluator::PLSEvaluator(std::unique_ptr<PLS> _pls, uint16_t _numReplications, uint16_t _maxNComp,
+                           const std::vector<uint32_t> &_seed, VerbosityLevel _verbosity, uint16_t _innerSegments,
+                           uint16_t _outerSegments, double testSetSize, double _sdfact)
+    : Evaluator(_verbosity), numReplications(_numReplications),
+      outerSegments((_outerSegments < 1) ? 1 : _outerSegments),
+		  innerSegments((outerSegments <= 1 && testSetSize == 0.0) ? _innerSegments - 1 : _innerSegments),
+		  sdfact(_sdfact / sqrt((double) this->innerSegments)),
+		  nrows(pls->getNumberOfObservations()), pls(std::move(_pls)), maxNComp(_maxNComp)
 {
 	/* assert outerSegments > 0 */
 	if(pls->getNumberOfResponseVariables() > 1) {
@@ -37,7 +39,7 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 	}
 
 	if(outerSegments > 1) {
-		testSetSize = 1.0 / (double) outerSegments;
+	  testSetSize = 1.0 / (double) outerSegments;
 	}
 
 	if(testSetSize < 0.0 || testSetSize >= 1.0) {
@@ -46,16 +48,16 @@ PLSEvaluator::PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp
 
 	IF_DEBUG(GAout << "Test set size: " << testSetSize << " -- outerSegments: " << outerSegments << std::endl);
 
-	this->initSegmentation(testSetSize, seed);
+	this->initSegmentation(testSetSize, _seed);
 }
 
 PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
 	Evaluator(other.verbosity), numReplications(other.numReplications),
 	outerSegments(other.outerSegments), innerSegments(other.innerSegments),
-	sdfact(other.sdfact), nrows(other.nrows), cloned(true), maxNComp(other.maxNComp),
+	sdfact(other.sdfact), nrows(other.nrows), maxNComp(other.maxNComp),
 	segmentation(other.segmentation)
 {
-	this->pls = other.pls->clone();
+	this->pls.reset(other.pls->clone());
 }
 
 double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
@@ -267,7 +269,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 
 				cutoff = trainMSEP.mean(0);
 				minNComp = 0;
-				
+
 				for(comp = 1; comp < maxNComp; ++comp) {
 					if(trainMSEP.mean(comp) < cutoff) {
 						minNComp = comp;
@@ -276,7 +278,7 @@ double PLSEvaluator::estSEP(uint16_t maxNComp) {
 				}
 
 				IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << minNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
-				
+
 				cutoff += trainMSEP.stddev(minNComp) * this->sdfact;
 
 				if(minNComp == 0) {

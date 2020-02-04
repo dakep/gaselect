@@ -1,5 +1,6 @@
-This release updates the autoconf script to remove the deprecated call to `R CMD config CXXCPP`.
-The `cleanup` script is updated to use `/bin/sh` instead of `/bin/bash`.
+This release updates the autoconf script to remove the deprecated call to `R CMD config CXXCPP`,
+addresses an issue with potentially uninitialized memory (reported by valgrind),
+and updates the `cleanup` script to use `/bin/sh` instead of `/bin/bash`.
 
 ## Test environments
 

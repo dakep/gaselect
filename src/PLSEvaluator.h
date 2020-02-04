@@ -11,6 +11,7 @@
 
 #include "config.h"
 
+#include <memory>
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
@@ -23,15 +24,12 @@
 
 class PLSEvaluator : public Evaluator {
 public:
-	PLSEvaluator(PLS* pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
-	uint16_t innerSegments, uint16_t outerSegments = 1, double testSetSize = 0.0, double sdfact = 1.0);
+	PLSEvaluator(std::unique_ptr<PLS> pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed,
+               VerbosityLevel verbosity, uint16_t innerSegments, uint16_t outerSegments = 1, double testSetSize = 0.0,
+               double sdfact = 1.0);
 
-	~PLSEvaluator() {
-		if(this->cloned == true) {
-			delete this->pls;
-		}
-	}
-	
+	~PLSEvaluator() {}
+
 	double evaluate(Chromosome &ch) {
 		arma::uvec columnSubset = ch.toColumnSubset();
 		double fitness = this->evaluate(columnSubset);
@@ -44,7 +42,7 @@ public:
 	std::vector<arma::uvec> getSegmentation() const {
 		return this->segmentation;
 	}
-	
+
 	Evaluator* clone() const;
 
 #ifdef ENABLE_DEBUG_VERBOSITY
@@ -57,9 +55,8 @@ private:
 	const uint16_t innerSegments;
 	const double sdfact;
 	const arma::uword nrows;
-	const bool cloned;
 
-	PLS *pls;
+	std::unique_ptr<PLS> pls;
 	uint16_t maxNComp;
 	std::vector<arma::uvec> segmentation;
 
