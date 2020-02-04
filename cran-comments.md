@@ -1,4 +1,5 @@
 This release updates the autoconf script to remove the deprecated call to `R CMD config CXXCPP`.
+The `cleanup` script is updated to use `/bin/sh` instead of `/bin/bash`.
 
 ## Test environments
 
@@ -12,6 +13,7 @@ This release updates the autoconf script to remove the deprecated call to `R CMD
   * Windows Server 2008 R2 SP1, R-oldrel, 32/64 bit
   * Windows Server 2008 R2 SP1, R-patched, 32/64 bit
   * Windows Server 2008 R2 SP1, R-devel, 32/64 bit
+
 ## R CMD check results
 
 0 ERRORs | 0 WARNINGs | 1 NOTE.
