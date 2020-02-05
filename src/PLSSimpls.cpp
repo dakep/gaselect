@@ -21,17 +21,8 @@ PLSSimpls::PLSSimpls(const arma::mat &X, const arma::vec &Y) : PLS(X, Y) {
 PLSSimpls::~PLSSimpls() {
 }
 
-PLS* PLSSimpls::clone() const {
-	PLSSimpls* clone = new PLSSimpls(arma::mat(this->X), arma::mat(this->Y));
-	
-//	clone->resultNComp = this->resultNComp;
-//	clone->fittedValues = this->fittedValues;
-//	clone->coef = this->coef;
-//	clone->intercepts = this->intercepts;
-//	clone->Ymean = this->Ymean;
-//	clone->Xmean = this->Xmean;
-	
-	return clone;
+std::unique_ptr<PLS> PLSSimpls::clone() const {
+	return std::unique_ptr<PLS>(new PLSSimpls(arma::mat(this->X), arma::mat(this->Y)));
 }
 
 inline void PLSSimpls::centerView() {

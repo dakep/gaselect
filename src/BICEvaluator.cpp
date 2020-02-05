@@ -22,7 +22,7 @@
 BICEvaluator::BICEvaluator(std::unique_ptr<PLS> _pls, uint16_t _maxNComp, const std::vector<uint32_t> &seed,
                            VerbosityLevel _verbosity, uint16_t _numSegments, BICEvaluator::Statistic _stat,
                            double _sdfact) :
-		Evaluator(_verbosity), numSegments(_numSegments),	nrows(pls->getNumberOfObservations()),
+		Evaluator(_verbosity), numSegments(_numSegments),	nrows(_pls->getNumberOfObservations()),
 		sdfact(_sdfact / sqrt((double) _numSegments)), stat(_stat), pls(std::move(_pls)), maxNComp(_maxNComp)
 {
 	if(pls->getNumberOfResponseVariables() > 1) {
@@ -48,7 +48,7 @@ BICEvaluator::BICEvaluator(const BICEvaluator &other) :
 	sdfact(other.sdfact), stat(other.stat),
 	maxNComp(other.maxNComp), segmentation(other.segmentation), r2denom(other.r2denom)
 {
-	this->pls.reset(other.pls->clone());
+	this->pls = other.pls->clone();
 }
 
 double BICEvaluator::evaluate(arma::uvec &columnSubset) {

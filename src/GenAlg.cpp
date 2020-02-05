@@ -112,7 +112,7 @@ BEGIN_RCPP
 			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
 
-			pls.reset(PLS::getInstance(method, X, Y.col(0)));
+			pls = PLS::getInstance(method, X, Y.col(0));
 
 			eval.reset(new PLSEvaluator(std::move(pls), as<uint16_t>(control["numReplications"]),
                                as<uint16_t>(control["maxNComp"]), seed, ctrl.verbosity,
@@ -130,7 +130,7 @@ BEGIN_RCPP
 			arma::mat Y(YMat.begin(), YMat.nrow(), YMat.ncol(), false);
 			PLSMethod method = (PLSMethod) as<int>(control["plsMethod"]);
 
-			pls.reset(PLS::getInstance(method, X, Y.col(0)));
+			pls = PLS::getInstance(method, X, Y.col(0));
 
 			BICEvaluator::Statistic stat = (BICEvaluator::Statistic) as<int>(control["statistic"]);
 
@@ -252,7 +252,7 @@ RcppExport SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP 
 				seed.push_back(rng());
 			}
 
-			pls.reset(PLS::getInstance(method, X, Y.col(0)));
+			pls = PLS::getInstance(method, X, Y.col(0));
 
 			eval.reset(new PLSEvaluator(std::move(pls), as<uint16_t>(evaluator["numReplications"]),
                                as<uint16_t>(evaluator["maxNComp"]), seed,
@@ -277,7 +277,7 @@ RcppExport SEXP evaluate(SEXP Sevaluator, SEXP SX, SEXP Sy, SEXP Ssubsets, SEXP 
 				seed.push_back(rng());
 			}
 
-			pls.reset(PLS::getInstance(method, X, Y.col(0)));
+			pls = PLS::getInstance(method, X, Y.col(0));
 
 			BICEvaluator::Statistic stat = (BICEvaluator::Statistic) as<int>(evaluator["statistic"]);
 

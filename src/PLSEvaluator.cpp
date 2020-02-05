@@ -30,8 +30,8 @@ PLSEvaluator::PLSEvaluator(std::unique_ptr<PLS> _pls, uint16_t _numReplications,
     : Evaluator(_verbosity), numReplications(_numReplications),
       outerSegments((_outerSegments < 1) ? 1 : _outerSegments),
 		  innerSegments((outerSegments <= 1 && testSetSize == 0.0) ? _innerSegments - 1 : _innerSegments),
-		  sdfact(_sdfact / sqrt((double) this->innerSegments)),
-		  nrows(pls->getNumberOfObservations()), pls(std::move(_pls)), maxNComp(_maxNComp)
+		  sdfact(_sdfact / sqrt((double) innerSegments)),
+		  nrows(_pls->getNumberOfObservations()), pls(std::move(_pls)), maxNComp(_maxNComp)
 {
 	/* assert outerSegments > 0 */
 	if(pls->getNumberOfResponseVariables() > 1) {
@@ -57,7 +57,7 @@ PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
 	sdfact(other.sdfact), nrows(other.nrows), maxNComp(other.maxNComp),
 	segmentation(other.segmentation)
 {
-	this->pls.reset(other.pls->clone());
+	this->pls = other.pls->clone();
 }
 
 double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
