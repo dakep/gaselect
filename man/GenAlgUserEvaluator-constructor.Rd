@@ -54,7 +54,9 @@ result <- genAlg(y, X, control = ctrl, evaluator = evaluator, seed = 123)
 subsets(result, 1:5)
 }
 \seealso{
-Other GenAlg Evaluators: \code{\link{evaluatorFit}},
-  \code{\link{evaluatorLM}}, \code{\link{evaluatorPLS}}
+Other GenAlg Evaluators: 
+\code{\link{evaluatorFit}()},
+\code{\link{evaluatorLM}()},
+\code{\link{evaluatorPLS}()}
 }
 \concept{GenAlg Evaluators}

@@ -4,8 +4,10 @@
 \alias{evaluatorLM}
 \title{LM Evaluator}
 \usage{
-evaluatorLM(statistic = c("BIC", "AIC", "adjusted.r.squared",
-  "r.squared"), numThreads = NULL)
+evaluatorLM(
+  statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"),
+  numThreads = NULL
+)
 }
 \arguments{
 \item{statistic}{The statistic used to evaluate the fitness}
@@ -38,8 +40,9 @@ result <- genAlg(y, X, control = ctrl, evaluator = evaluator, seed = 123)
 subsets(result, 1:5)
 }
 \seealso{
-Other GenAlg Evaluators: \code{\link{evaluatorFit}},
-  \code{\link{evaluatorPLS}},
-  \code{\link{evaluatorUserFunction}}
+Other GenAlg Evaluators: 
+\code{\link{evaluatorFit}()},
+\code{\link{evaluatorPLS}()},
+\code{\link{evaluatorUserFunction}()}
 }
 \concept{GenAlg Evaluators}

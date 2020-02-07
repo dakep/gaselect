@@ -13,6 +13,7 @@
 
 #include <stdexcept>
 #include <vector>
+#include <memory>
 #include <RcppArmadillo.h>
 
 #include "RNG.h"
@@ -29,15 +30,11 @@ public:
 		R2 = 3
 	};
 
-	BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
+	BICEvaluator(std::unique_ptr<PLS> pls, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
 		uint16_t numSegments = 7, Statistic stat = BIC, double sdfact = 1.0);
 
-	~BICEvaluator() {
-		if(this->cloned == true) {
-			delete this->pls;
-		}
-	};
-	
+	~BICEvaluator() {};
+
 	double evaluate(Chromosome &ch) {
 		arma::uvec columnSubset = ch.toColumnSubset();
 		double fitness = this->evaluate(columnSubset);
@@ -50,7 +47,7 @@ public:
 	}
 
 	double evaluate(arma::uvec &columnSubset);
-	
+
 	Evaluator* clone() const;
 
 private:
@@ -58,9 +55,8 @@ private:
 	const arma::uword nrows;
 	const double sdfact;
 	const BICEvaluator::Statistic stat;
-	const bool cloned;
 
-	PLS *pls;
+	std::unique_ptr<PLS> pls;
 	uint16_t maxNComp;
 	std::vector<arma::uvec> segmentation;
 	double r2denom;

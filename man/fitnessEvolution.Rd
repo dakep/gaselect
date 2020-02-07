@@ -4,8 +4,11 @@
 \alias{fitnessEvolution}
 \title{Get the evolution of the fitness}
 \usage{
-fitnessEvolution(object, what = c("mean", "best", "std.dev"),
-  type = c("true", "raw"))
+fitnessEvolution(
+  object,
+  what = c("mean", "best", "std.dev"),
+  type = c("true", "raw")
+)
 }
 \arguments{
 \item{object}{The \code{\link{GenAlg}} object returned by \code{\link{genAlg}}}

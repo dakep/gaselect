@@ -1,4 +1,4 @@
-AC_INIT(gaselect, 1.0.7)
+AC_INIT(gaselect, 1.0.9)
 
 : ${R_HOME=`R RHOME`}
 if test -z "${R_HOME}"; then
@@ -7,7 +7,7 @@ if test -z "${R_HOME}"; then
 fi
 
 CXX=`"${R_HOME}/bin/R" CMD config CXX`
-CXXCPP=`"${R_HOME}/bin/R" CMD config CXXCPP`
+CXXCPP="${CXX} -E"
 CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXXFLAGS`
 CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 

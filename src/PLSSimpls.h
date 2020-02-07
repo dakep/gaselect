@@ -23,7 +23,7 @@ public:
 	const arma::mat& getCoefficients() const { return this->coef; }
 	const arma::vec& getIntercepts() const { return this->intercepts; };
 
-	virtual PLS* clone() const;
+	virtual std::unique_ptr<PLS> clone() const;
 
 private:
 	static const double NORM_TOL;
