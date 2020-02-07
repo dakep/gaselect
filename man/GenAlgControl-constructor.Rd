@@ -4,10 +4,19 @@
 \alias{genAlgControl}
 \title{Set control arguments for the genetic algorithm}
 \usage{
-genAlgControl(populationSize, numGenerations, minVariables, maxVariables,
-  elitism = 10L, mutationProbability = 0.01, crossover = c("single",
-  "random"), maxDuplicateEliminationTries = 0L, verbosity = 0L,
-  badSolutionThreshold = 2, fitnessScaling = c("none", "exp"))
+genAlgControl(
+  populationSize,
+  numGenerations,
+  minVariables,
+  maxVariables,
+  elitism = 10L,
+  mutationProbability = 0.01,
+  crossover = c("single", "random"),
+  maxDuplicateEliminationTries = 0L,
+  verbosity = 0L,
+  badSolutionThreshold = 2,
+  fitnessScaling = c("none", "exp")
+)
 }
 \arguments{
 \item{populationSize}{The number of "chromosomes" in the population (between 1 and 2^16)}

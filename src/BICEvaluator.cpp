@@ -8,6 +8,7 @@
 #include "config.h"
 
 #include <algorithm>
+#include <memory>
 #include "Logger.h"
 #include "BICEvaluator.h"
 #include "OnlineStddev.h"
@@ -18,10 +19,11 @@
 #define IF_DEBUG(expr)
 #endif
 
-BICEvaluator::BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32_t> &seed, VerbosityLevel verbosity,
-	uint16_t numSegments, BICEvaluator::Statistic stat, double sdfact) :
-		Evaluator(verbosity), numSegments(numSegments),	nrows(pls->getNumberOfObservations()),
-		sdfact(sdfact / sqrt((double) numSegments)), stat(stat), cloned(false), pls(pls), maxNComp(maxNComp)
+BICEvaluator::BICEvaluator(std::unique_ptr<PLS> _pls, uint16_t _maxNComp, const std::vector<uint32_t> &seed,
+                           VerbosityLevel _verbosity, uint16_t _numSegments, BICEvaluator::Statistic _stat,
+                           double _sdfact) :
+		Evaluator(_verbosity), numSegments(_numSegments),	nrows(_pls->getNumberOfObservations()),
+		sdfact(_sdfact / sqrt((double) _numSegments)), stat(_stat), pls(std::move(_pls)), maxNComp(_maxNComp)
 {
 	if(pls->getNumberOfResponseVariables() > 1) {
 		throw std::invalid_argument("PLS evaluator only available for models with 1 response variable");
@@ -43,7 +45,7 @@ BICEvaluator::BICEvaluator(PLS* pls, uint16_t maxNComp, const std::vector<uint32
 
 BICEvaluator::BICEvaluator(const BICEvaluator &other) :
 	Evaluator(other.verbosity), numSegments(other.numSegments), nrows(other.nrows),
-	sdfact(other.sdfact), stat(other.stat), cloned(true),
+	sdfact(other.sdfact), stat(other.stat),
 	maxNComp(other.maxNComp), segmentation(other.segmentation), r2denom(other.r2denom)
 {
 	this->pls = other.pls->clone();
@@ -187,7 +189,7 @@ double BICEvaluator::getRSS(uint16_t maxNComp) {
 
 		cutoff = trainMSEP.mean(0);
 		minNComp = 0;
-		
+
 		for(comp = 1; comp < maxNComp; ++comp) {
 			if(trainMSEP.mean(comp) < cutoff) {
 				minNComp = comp;
@@ -196,7 +198,7 @@ double BICEvaluator::getRSS(uint16_t maxNComp) {
 		}
 
 		IF_DEBUG(GAout << "EVALUATOR: Nr. of components with min. MSE: " << optNComp + 1 << " (max. " << maxNComp << ")" << std::endl)
-		
+
 		cutoff += trainMSEP.stddev(minNComp) * this->sdfact;
 
 		if(minNComp == 0) {

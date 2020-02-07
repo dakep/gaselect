@@ -4,9 +4,13 @@
 \alias{evaluatorFit}
 \title{Fit Evaluator}
 \usage{
-evaluatorFit(numSegments = 7L, statistic = c("BIC", "AIC",
-  "adjusted.r.squared", "r.squared"), numThreads = NULL,
-  maxNComp = NULL, sdfact = 1)
+evaluatorFit(
+  numSegments = 7L,
+  statistic = c("BIC", "AIC", "adjusted.r.squared", "r.squared"),
+  numThreads = NULL,
+  maxNComp = NULL,
+  sdfact = 1
+)
 }
 \arguments{
 \item{numSegments}{The number of CV segments used to estimate the optimal number of PLS components (between 2 and 2^16).}
@@ -48,8 +52,9 @@ result <- genAlg(y, X, control = ctrl, evaluator = evaluator, seed = 123)
 subsets(result, 1:5)
 }
 \seealso{
-Other GenAlg Evaluators: \code{\link{evaluatorLM}},
-  \code{\link{evaluatorPLS}},
-  \code{\link{evaluatorUserFunction}}
+Other GenAlg Evaluators: 
+\code{\link{evaluatorLM}()},
+\code{\link{evaluatorPLS}()},
+\code{\link{evaluatorUserFunction}()}
 }
 \concept{GenAlg Evaluators}

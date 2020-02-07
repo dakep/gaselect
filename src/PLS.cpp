@@ -58,15 +58,12 @@ arma::mat PLS::predict(const arma::mat &newX) const {
 	return pred;
 }
 
-PLS* PLS::getInstance(PLSMethod method, const arma::mat &X, const arma::vec &Y) {
-	PLS *ret;
-	switch(method) {
-		case SIMPLS:
-			ret = new PLSSimpls(X, Y);
-			break;
-	}
-
-	return ret;
+std::unique_ptr<PLS> PLS::getInstance(PLSMethod method, const arma::mat &X, const arma::vec &Y) {
+  return std::unique_ptr<PLS>(new PLSSimpls(X, Y));
+	// switch(method) {
+	// 	case SIMPLS:
+			// return std::unique_ptr<PLS>(new PLSSimpls(X, Y));
+	// }
 }
 
 

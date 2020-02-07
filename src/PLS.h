@@ -5,6 +5,7 @@
 #ifndef GenAlgPLS_PLS_h
 #define GenAlgPLS_PLS_h
 
+#include <memory>
 #include "config.h"
 
 #include <RcppArmadillo.h>
@@ -25,7 +26,7 @@ public:
 	PLS(const arma::mat &X, const arma::vec &Y) : X(X), Y(Y), currentViewState(UNKNOWN) {};
 	virtual ~PLS() {};
 
-	static PLS* getInstance(PLSMethod method, const arma::mat &X, const arma::vec &Y);
+	static std::unique_ptr<PLS> getInstance(PLSMethod method, const arma::mat &X, const arma::vec &Y);
 
 	/**
 	 * Reset the current view to be the original X and original Y matrix
@@ -84,12 +85,12 @@ public:
 	 */
 	arma::vec predict(const arma::mat &newX, uint16_t ncomp) const;
 	arma::mat predict(const arma::mat &newX) const;
-	
+
 	const arma::mat & getXColumnView() const { return this->viewXCol; }
 	const arma::vec & getY() const { return this->Y; }
-	
-	virtual PLS* clone() const = 0;
-	
+
+	virtual std::unique_ptr<PLS> clone() const = 0;
+
 protected:
 	const arma::mat X;
 	const arma::vec Y;
