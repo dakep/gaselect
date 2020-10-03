@@ -61,7 +61,7 @@
 #define ARMA_NO_DEBUG 1
 #endif
 
-#define ARMA_DONT_USE_CXX11 1
+//#define ARMA_DONT_USE_CXX11 1
 #define ARMA_DONT_USE_WRAPPER 1
 
 #endif
