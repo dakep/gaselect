@@ -49,28 +49,28 @@ MultiThreadedPopulation::MultiThreadedPopulation(const Control &ctrl, ::Evaluato
 	if(this->ctrl.numThreads <= 1) {
 		throw new std::logic_error("This population should only be used if multiple threads are requested");
 	}
-	
+
 	this->nextGeneration.reserve(this->ctrl.populationSize);
 
 	int pthreadRC = pthread_mutex_init(&this->syncMutex, NULL);
 	if(pthreadRC != 0) {
 		throw ThreadingError("Mutex for synchronization could not be initialized");
 	}
-	
+
 	pthreadRC = pthread_cond_init(&this->startMatingCond, NULL);
 	if(pthreadRC != 0) {
 		throw ThreadingError("Condition for synchronization (start mating) could not be initialized");
 	}
-	
+
 	pthreadRC = pthread_cond_init(&this->allThreadsFinishedMatingCond, NULL);
 	if(pthreadRC != 0) {
 		throw ThreadingError("Condition for synchronization (finished mating) could not be initialized");
 	}
-	
+
 	this->startMating = false;
 	this->allThreadsFinishedMating = false;
 	this->killThreads = false;
-	
+
 	this->actuallySpawnedThreads = 0;
 	this->numThreadsFinishedMating = 0;
 }
@@ -131,15 +131,15 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 	bool checkUserInterrupt) {
 
 	double minParentFitness = 0.0;
-	
+
 	ChVecIt rangeBeginIt = this->nextGeneration.begin() + offset;
 	std::reverse_iterator<ChVecIt> rangeEndIt(rangeBeginIt + numChildren);
-	
+
 	Chromosome* tmpChromosome1;
 	Chromosome* tmpChromosome2;
 	ChVecIt child1It = rangeBeginIt;
 	std::reverse_iterator<ChVecIt> child2It = rangeEndIt;
-	
+
 	uint8_t child1Tries = 0;
 	uint8_t child2Tries = 0;
 	std::pair<bool, bool> duplicated(false, false);
@@ -158,7 +158,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		} while (tmpChromosome1 == tmpChromosome2);
 
 		tmpChromosome1->mateWith(*tmpChromosome2, rng, *(*child1It), *(*child2It));
-		
+
 		minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 
 		(*child1It)->mutate(rng);
@@ -259,14 +259,12 @@ void MultiThreadedPopulation::run() {
 	RNG rng(this->seed);
 	double minFitness = 0.0;
 	ShuffledSet shuffledSet(this->ctrl.chromosomeSize);
-	MultiThreadedPopulation::ThreadArgsWrapper* threadArgs;
 	uint16_t maxThreadsToSpawn = this->ctrl.numThreads - 1;
 	uint16_t numChildrenPerThread = this->ctrl.populationSize / this->ctrl.numThreads;
 	int remainingChildren = this->ctrl.populationSize % this->ctrl.numThreads;
 	uint16_t numChildrenMainThread = numChildrenPerThread;
 	uint16_t offset = 0;
 	pthread_attr_t threadAttr;
-	pthread_t* threads;
 
 	/*****************************************************************************************
 	 * Initialize the current/next generation and enable thread safety for the output
@@ -287,24 +285,24 @@ void MultiThreadedPopulation::run() {
 	/*****************************************************************************************
 	 * Setup threads
 	 *****************************************************************************************/
-	
-	threadArgs = new MultiThreadedPopulation::ThreadArgsWrapper[maxThreadsToSpawn];
-	threads = new pthread_t[maxThreadsToSpawn];
-	
+
+	auto threadArgs = std::vector<MultiThreadedPopulation::ThreadArgsWrapper>(maxThreadsToSpawn);
+	auto threads = std::vector<pthread_t>(maxThreadsToSpawn);
+
 	int pthreadRC = pthread_attr_init(&threadAttr);
 	if(pthreadRC != 0) {
 		throw ThreadingError("Thread attributes could not be initialized");
 	}
-	
+
 	pthreadRC = pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_JOINABLE);
-	
+
 	if(pthreadRC != 0) {
 		throw ThreadingError("Thread attributes could not be modified to make the thread joinable");
 	}
-	
+
 	for(i = maxThreadsToSpawn - 1; i >= 0; --i) {
 		threadArgs[i].numChildren = numChildrenPerThread;
-		
+
 		if(remainingChildren > 0) {
 			--remainingChildren;
 			++threadArgs[i].numChildren;
@@ -318,8 +316,10 @@ void MultiThreadedPopulation::run() {
 		/*
 		 * Once created, the threads already start generating the initial generation!
 		 */
-		pthreadRC = pthread_create((threads + i), &threadAttr, &MultiThreadedPopulation::matingThreadStart, (void *) (threadArgs + i));
-		
+		pthreadRC = pthread_create(
+		  &threads[i], &threadAttr, &MultiThreadedPopulation::matingThreadStart,
+		  reinterpret_cast<void*>(&threadArgs[i]));
+
 		if(pthreadRC == 0) {
 			++this->actuallySpawnedThreads;
 			offset += threadArgs[i].numChildren;
@@ -328,9 +328,9 @@ void MultiThreadedPopulation::run() {
 			IF_DEBUG(GAerr << "Warning: Thread " << i << " could not be created: " << strerror(pthreadRC) << std::endl;)
 		}
 	}
-	
+
 	CHECK_PTHREAD_RETURN_CODE(pthread_attr_destroy(&threadAttr))
-	
+
 	if(this->actuallySpawnedThreads < maxThreadsToSpawn) {
 		GAerr << GAerr.lock() << "Warning: Only " << this->actuallySpawnedThreads << " threads could be spawned\n" << GAerr.unlock();
 	} else if(this->ctrl.verbosity >= ON) {
@@ -348,7 +348,7 @@ void MultiThreadedPopulation::run() {
 	 *****************************************************************************************/
 	this->waitForAllThreadsToFinishMating();
 
-	/* Maybe check the initial generation for duplicats ??? */
+	/* Maybe check the initial generation for duplicates ??? */
 
 	/*
 	 * Signal output streams that multithreading is over
@@ -373,10 +373,10 @@ void MultiThreadedPopulation::run() {
 	/*****************************************************************************************
 	 * Generate remaining generations
 	 *****************************************************************************************/
-	
+
 	for(i = this->ctrl.numGenerations; i > 0 && !this->interrupted; --i) {
 		IF_DEBUG(GAout << "Unique chromosomes: " << this->countUniques() << std::endl;)
-		
+
 		if(this->ctrl.verbosity > OFF) {
 			GAout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
@@ -391,13 +391,13 @@ void MultiThreadedPopulation::run() {
 		 * broadcast to all threads to start mating
 		 *****************************************************************************************/
 		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->syncMutex))
-		
+
 		this->startMating = true;
-		
+
 		CHECK_PTHREAD_RETURN_CODE(pthread_cond_broadcast(&this->startMatingCond))
-		
+
 		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->syncMutex))
-		
+
 		/*
 		 * Mate two chromosomes to generate two children that are eventually mutated
 		 * To get the same population size, a total of popSize / 2 mating pairs have
@@ -405,7 +405,7 @@ void MultiThreadedPopulation::run() {
 		 *
 		 */
 		this->mate(numChildrenMainThread, this->evaluator, rng, shuffledSet, offset, true);
-		
+
 		this->waitForAllThreadsToFinishMating();
 		/*
 		 * Signal output streams that multithreading is over
@@ -425,34 +425,31 @@ void MultiThreadedPopulation::run() {
 			this->printCurrentGeneration();
 		}
 	}
-	
+
 	/*****************************************************************************************
 	 * Signal threads to end
 	 *****************************************************************************************/
 	GAout.enableThreadSafety(true);
 	GAerr.enableThreadSafety(true);
 	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->syncMutex))
-	
+
 	this->startMating = true;
 	this->killThreads = true;
-	
+
 	CHECK_PTHREAD_RETURN_CODE(pthread_cond_broadcast(&this->startMatingCond))
-	
+
 	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->syncMutex))
-	
-	
+
+
 	for(i = maxThreadsToSpawn - 1; i >= 0; --i) {
 		/*
 		 * If the thread was never created (i.e. pthread_create failed) the call will return an
 		 * error code, but it will not block the thread!
 		 */
 		CHECK_PTHREAD_RETURN_CODE(pthread_join(threads[i], NULL))
-		
+
 		delete threadArgs[i].evalObj;
 	}
-	
-	delete threadArgs;
-	delete threads;
 
 	GAout.enableThreadSafety(false);
 	GAerr.enableThreadSafety(false);
@@ -461,7 +458,7 @@ void MultiThreadedPopulation::run() {
 	 * Update elite and the generation
 	 * and delete the old `nextGeneration`
 	 *****************************************************************************************/
-	
+
 	for(j = 0; j < this->ctrl.populationSize; ++j) {
 		if(this->nextGeneration[j]) {
 			delete this->nextGeneration[j];
@@ -474,7 +471,7 @@ void MultiThreadedPopulation::run() {
  * Setup and start the mating threads
  */
 void* MultiThreadedPopulation::matingThreadStart(void* obj) {
-	ThreadArgsWrapper* args = static_cast<ThreadArgsWrapper*>(obj);
+	ThreadArgsWrapper* args = reinterpret_cast<ThreadArgsWrapper*>(obj);
 	RNG rng(args->seed);
 	ShuffledSet shuffledSet(args->chromosomeSize);
 
@@ -497,11 +494,11 @@ void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& 
 		 * Wait until the thread is started
 		 *****************************************************************************************/
 		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->syncMutex))
-		
+
 		while(this->startMating == false) {
 			CHECK_PTHREAD_RETURN_CODE(pthread_cond_wait(&this->startMatingCond, &this->syncMutex))
 		}
-		
+
 		/*****************************************************************************************
 		 * Check if the thread is killed
 		 *****************************************************************************************/
@@ -509,14 +506,14 @@ void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& 
 			CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->syncMutex))
 			break;
 		}
-		
+
 		CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->syncMutex))
-		
+
 		/*****************************************************************************************
 		 * Do actual mating
 		 *****************************************************************************************/
 		this->mate(numMatingCouples, evaluator, rng, shuffledSet, offset, false);
-		
+
 		/*****************************************************************************************
 		 * Signal that the thread has finished mating
 		 *****************************************************************************************/
@@ -529,26 +526,26 @@ void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& 
  */
 inline void MultiThreadedPopulation::waitForAllThreadsToFinishMating() {
 	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->syncMutex))
-	
+
 	if(++this->numThreadsFinishedMating > this->actuallySpawnedThreads) { // > because the main thread must finish mating as well
 		this->allThreadsFinishedMating = true;
 		this->numThreadsFinishedMating = 0;
 		this->startMating = false;
-		
+
 		CHECK_PTHREAD_RETURN_CODE(pthread_cond_broadcast(&this->allThreadsFinishedMatingCond))
 	} else {
 		this->allThreadsFinishedMating = false;
 	}
-	
+
 	//	pthreadRC = pthread_mutex_unlock(&this->syncMutex);
 	//	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
 	//	int pthreadRC = pthread_mutex_lock(&this->syncMutex);
 	//	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
-	
+
 	while(this->allThreadsFinishedMating == false) {
 		CHECK_PTHREAD_RETURN_CODE(pthread_cond_wait(&this->allThreadsFinishedMatingCond, &this->syncMutex))
 	}
-	
+
 	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_unlock(&this->syncMutex))
 }
 
