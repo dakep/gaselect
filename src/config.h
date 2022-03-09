@@ -61,4 +61,8 @@
 #  define ARMA_NO_DEBUG 1
 #endif
 
+#ifndef ARMA_DONT_USE_WRAPPER
+#  define ARMA_DONT_USE_WRAPPER 1
+#endif
+
 #endif
