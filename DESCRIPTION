@@ -25,7 +25,7 @@ Depends:
 Imports:
     Rcpp (>= 0.10.5)
 LinkingTo: Rcpp (>= 0.10.5),
-    RcppArmadillo (>= 0.4.000)
+    RcppArmadillo (>= 0.9.800.4)
 Collate:
     'Evaluator.R'
     'GenAlgControl.R'
