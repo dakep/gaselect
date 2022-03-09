@@ -3,18 +3,21 @@ As requested by Prof. Brian Ripley this release updates the C++ preprocessor fla
 WARNING: option ARMA_DONT_USE_CXX11 ignored [-W#pragma-messages]
 ```
 
+
+CRAN checks on `r-devel-linux-x86_64-debian-gcc` raise several warnings:
+
+* Warnings related to a mismatch between allocator and delete have been addressed by replacing the corresponding raw pointers with std::vector.
+* Warnings regarding the use of deprecated C++11 features are due to Rcpp. Rcpp developers are aware of these warnings and are working on a fix.
+
 ## Test environments
 
 * macOS 12.2.1, R 4.1.2
 * win-builder (devel and release)
 * Rhub
   * Debian Linux, R-release, GCC
-  * Debian Linux, R-devel, GCC ASAN/UBSAN
+  * Debian Linux, R-devel, GCC
   * Fedora Linux, R-devel, GCC
   * Fedora Linux, R-devel, clang, gfortran
-  * Windows Server 2008 R2 SP1, R-oldrel, 32/64 bit
-  * Windows Server 2008 R2 SP1, R-patched, 32/64 bit
-  * Windows Server 2008 R2 SP1, R-devel, 32/64 bit
 
 ## R CMD check results
 
