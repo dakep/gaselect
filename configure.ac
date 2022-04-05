@@ -1,4 +1,4 @@
-AC_INIT(gaselect, 1.0.9)
+AC_INIT(gaselect, 1.0.10)
 
 : ${R_HOME=`R RHOME`}
 if test -z "${R_HOME}"; then
