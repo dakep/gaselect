@@ -28,22 +28,22 @@
 #include "RNG.h"
 
 class MultiThreadedPopulation : public Population {
-	
+
 public:
 	MultiThreadedPopulation(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed);
 	~MultiThreadedPopulation();
-	
+
 	/**
 	 * Returns the last generation and the elite (if any)
 	 * Invalid once the Population object is destroyed!
 	 */
-	
+
 	class ThreadingError : public std::runtime_error {
 	public:
 		ThreadingError(const char* what) : std::runtime_error(what) {};
 		virtual ~ThreadingError() throw() {};
 	};
-	
+
 	void run();
 private:
 	struct ThreadArgsWrapper {
@@ -57,14 +57,14 @@ private:
 
 	ChVec nextGeneration;
 	double sumCurrentGenFitness;
-	
+
 	/*
 	 * Mutex and condition variables
 	 */
 	pthread_mutex_t syncMutex;
 	pthread_cond_t startMatingCond;
 	pthread_cond_t allThreadsFinishedMatingCond;
-	
+
 	bool startMating;
 	bool killThreads;
 	bool allThreadsFinishedMating;
@@ -79,15 +79,15 @@ private:
 	inline void mate(uint16_t numChildren, ::Evaluator& evaluator,
 		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset,
 		bool checkUserInterrupt = true);
-	
+
 	static void* matingThreadStart(void* obj);
 
 	inline void runMating(uint16_t numMatingCoupls, ::Evaluator& evaluator,
 		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset);
 
 	inline void waitForAllThreadsToFinishMating();
-	
-	class OrderChromosomePtr : public std::binary_function<Chromosome*, Chromosome*, bool> {
+
+	class OrderChromosomePtr : public std::function<bool(Chromosome*, Chromosome*)> {
 	public:
 		bool operator()(const Chromosome* const ch1, const Chromosome* const ch2) {
 			return (ch1->getFitness() < ch2->getFitness());

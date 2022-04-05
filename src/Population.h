@@ -30,7 +30,7 @@
 
 class Population {
 public:
-	class ChromosomeComparator : public std::binary_function<Chromosome, Chromosome, bool> {
+	class ChromosomeComparator : public std::binary_function<bool(Chromosome, Chromosome)> {
 	public:
 		bool operator() (const Chromosome &lhs, const Chromosome &rhs) const {
 			return rhs.isFitterThan(lhs);
