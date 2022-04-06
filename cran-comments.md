@@ -1,5 +1,6 @@
-This release fixes the warnings generated on r-devel-linux-x86_64-debian-gcc and r-devel-linux-x86_64-debian-clang related to deprecated 
-C++ features.
+This release fixes the warnings generated on r-devel-linux-x86_64-debian-gcc and r-devel-linux-x86_64-debian-clang 
+related to deprecated C++ features.
+Thanks to Kurt Hornik for alerting me to these warnings.
 
 ## Test environments
 
