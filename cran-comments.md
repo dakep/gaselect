@@ -1,16 +1,9 @@
-As requested by Prof. Brian Ripley this release updates the C++ preprocessor flags for RcppArmadillo to fix the warning
-```
-WARNING: option ARMA_DONT_USE_CXX11 ignored [-W#pragma-messages]
-```
-
-CRAN checks on `r-devel-linux-x86_64-debian-gcc` raise several warnings:
-
-* Warnings related to a mismatch between allocator and delete have been addressed by replacing the corresponding raw pointers with std::vector.
-* Warnings regarding the use of deprecated C++11 features are due to Rcpp. Rcpp developers are aware of these warnings and are working on a fix.
+This release fixes the warnings generated on r-devel-linux-x86_64-debian-gcc and r-devel-linux-x86_64-debian-clang related to deprecated 
+C++ features.
 
 ## Test environments
 
-* macOS 12.2.1, R 4.1.2
+* macOS 12.3, R 4.1.3 Patched (2022-03-10 r82100)
 * win-builder (devel and release)
 * Rhub
   * Debian Linux, R-release, GCC
