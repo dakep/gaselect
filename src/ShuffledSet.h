@@ -23,9 +23,15 @@ public:
 	ShuffledSet();
 	ShuffledSet(arma::uword size);
 //	~ShuffledSet();
-	
-	class iterator : public std::iterator<std::input_iterator_tag, arma::uword> {
-	public:
+
+	class iterator {
+	 public:
+	  using iterator_category = std::input_iterator_tag;
+	  using value_type = arma::uword;
+	  using difference_type = std::ptrdiff_t;
+	  using pointer = arma::uword*;
+	  using reference = arma::uword&;
+
 		/**
 		 * Attention: The first element in obj.set must already
 		 * be a shuffled element!
@@ -35,7 +41,7 @@ public:
 			this->shifted = false;
 #endif
 		};
-		
+
 		arma::uword operator*() const;
 		iterator& operator++();
 		bool operator==(const iterator &it) const;
@@ -47,7 +53,7 @@ public:
 		 */
 		iterator operator+(const arma::uword &shift);
 		iterator& operator+=(const arma::uword &shift);
-	private:
+	 private:
 		ShuffledSet &obj;
 		RNG &rng;
 		arma::uword pos;
@@ -62,7 +68,7 @@ public:
 	 * will be invalid once the ShuffledSet object is destroyed)
 	 */
 	const arma::uvec& shuffleAll(RNG &rng);
-	
+
 	/**
 	 *
 	 */
@@ -76,7 +82,7 @@ public:
 	 * @param bool onlyOne ... If this is TRUE, only one element is guaranteed to be shuffled
 	 */
 	iterator shuffle(arma::uword size, RNG &rng, bool onlyOne = false);
-	
+
 	/**
 	 * Reset the set to a sorted stated with `size` elements
 	 * (i.e. have values 0, 1, 2, 3, ..., size - 1)

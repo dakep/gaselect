@@ -55,9 +55,14 @@
 #endif
 
 #ifndef ENABLE_DEBUG_VERBOSITY
-#  define ARMA_DONT_PRINT_RUNTIME_ERRORS 1
-#  define ARMA_DONT_PRINT_ERRORS 1
-#  undef  ARMA_PRINT_ERRORS
+#  undef ARMA_WARN_LEVEL
+#  undef ARMA_NO_DEBUG
+#  define ARMA_WARN_LEVEL 0
+#  define ARMA_NO_DEBUG 0
+#else
+#  undef ARMA_WARN_LEVEL
+#  undef ARMA_NO_DEBUG
+#  define ARMA_WARN_LEVEL 3
 #  define ARMA_NO_DEBUG 1
 #endif
 

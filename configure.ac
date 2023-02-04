@@ -1,4 +1,4 @@
-AC_INIT(gaselect, 1.0.11)
+AC_INIT(gaselect, 1.0.21)
 
 : ${R_HOME=`R RHOME`}
 if test -z "${R_HOME}"; then
@@ -6,9 +6,14 @@ if test -z "${R_HOME}"; then
   exit 1
 fi
 
-CXX=`"${R_HOME}/bin/R" CMD config CXX`
+CXX17=`"${R_HOME}/bin/R" CMD config CXX14`
+if test -z "$CXX17"; then
+  AC_MSG_ERROR([No C++17 compiler is available])
+fi
+CXX17STD=`"${R_HOME}/bin/R" CMD config CXX17STD`
+CXX="${CXX17} ${CXX17STD}"
+CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXX17FLAGS`
 CXXCPP="${CXX} -E"
-CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXXFLAGS`
 CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 
 AC_PROG_CXX

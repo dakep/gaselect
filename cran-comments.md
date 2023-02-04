@@ -1,10 +1,9 @@
-This release fixes the warnings generated on r-devel-linux-x86_64-debian-gcc and r-devel-linux-x86_64-debian-clang 
-related to deprecated C++ features.
-Thanks to Kurt Hornik for alerting me to these warnings.
+This release fixes the issue with the incorrect C++ flags in the configure script as reported by Prof. Ripley.
+The package now complies with C++17.
 
 ## Test environments
 
-* macOS 12.3, R 4.1.3 Patched (2022-03-10 r82100)
+* macOS 12.6.2, R 4.2.2 Patched (2023-02-03 r83757)
 * win-builder (devel and release)
 * Rhub
   * Debian Linux, R-release, GCC
