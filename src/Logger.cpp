@@ -26,7 +26,7 @@ inline std::streamsize LoggerStreamBuffer<false>::xsputn(const char *s, std::str
 	if(this->threadSafe) {
 		this->tsBuffer.append(s, n);
 	} else {
-		Rprintf("%.*s", n, s);
+		Rprintf("%.*s", (int) n, s);
 	}
 	return n;
 }
@@ -36,7 +36,7 @@ inline std::streamsize LoggerStreamBuffer<true>::xsputn(const char *s, std::stre
 	if(this->threadSafe) {
 		this->tsBuffer.append(s, n);
 	} else {
-		REprintf("%.*s", n, s);
+		REprintf("%.*s", (int) n, s);
 	}
 	return n;
 }
@@ -47,7 +47,8 @@ inline int LoggerStreamBuffer<false>::overflow(int c) {
 		if(this->threadSafe) {
 			this->tsBuffer.append(1, (char) c);
 		} else {
-			Rprintf("%.1s", &c);
+		  const char cc = (char) c;
+			Rprintf("%.1s", &cc);
 		}
 	}
 	return c;
@@ -59,7 +60,8 @@ inline int LoggerStreamBuffer<true>::overflow(int c) {
 		if(this->threadSafe) {
 			this->tsBuffer.append(1, (char) c);
 		} else {
-			Rprintf("%.1s", &c);
+		  const char cc = (char) c;
+			Rprintf("%.1s", &cc);
 		}
 	}
 	return c;
@@ -84,7 +86,7 @@ inline int LoggerStreamBuffer<true>::sync() {
 template <>
 void LoggerStreamBuffer<false>::flushThreadSafeBuffer() {
 	if(this->tsBuffer.length() > 0) {
-		Rprintf("%.*s", this->tsBuffer.length(), this->tsBuffer.c_str());
+		Rprintf("%.*s", (int) this->tsBuffer.length(), this->tsBuffer.c_str());
 		R_FlushConsole();
 		this->tsBuffer.clear();
 	}
@@ -93,7 +95,7 @@ void LoggerStreamBuffer<false>::flushThreadSafeBuffer() {
 template <>
 void LoggerStreamBuffer<true>::flushThreadSafeBuffer() {
 	if(this->tsBuffer.length() > 0) {
-		Rprintf("%.*s", this->tsBuffer.length(), this->tsBuffer.c_str());
+		Rprintf("%.*s", (int) this->tsBuffer.length(), this->tsBuffer.c_str());
 		R_FlushConsole();
 		this->tsBuffer.clear();
 	}
@@ -187,20 +189,21 @@ void Logger<true>::placeMutexLock(bool lock) {
  */
 template <>
 inline std::streamsize LoggerStreamBuffer<false>::xsputn(const char *s, std::streamsize n) {
-	Rprintf("%.*s", n, s);
+	Rprintf("%.*s", (int) n, s);
 	return n;
 }
 
 template <>
 inline std::streamsize LoggerStreamBuffer<true>::xsputn(const char *s, std::streamsize n) {
-	REprintf("%.*s", n, s);
+	REprintf("%.*s", (int) n, s);
 	return n;
 }
 
 template <>
 inline int LoggerStreamBuffer<false>::overflow(int c) {
 	if(c != traits_type::eof()) {
-		Rprintf("%.1s", &c);
+	  const char cc = (char) c;
+		Rprintf("%.1s", &cc);
 	}
 	return c;
 }
@@ -208,7 +211,8 @@ inline int LoggerStreamBuffer<false>::overflow(int c) {
 template <>
 inline int LoggerStreamBuffer<true>::overflow(int c) {
 	if(c != traits_type::eof()) {
-		REprintf("%.1s", &c);
+	  const char cc = (char) c;
+		REprintf("%.1s", &cc);
 	}
 	return c;
 }

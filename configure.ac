@@ -35,7 +35,7 @@ AC_COMPILE_IFELSE([
 )
 
 # Check if support for uint16_t and uint8_t is complete
-if test "$ac_cv_header_stdint_h" == yes; then
+if test "$ac_cv_header_stdint_h" = yes; then
 	AC_COMPILE_IFELSE([
 		AC_LANG_PROGRAM([[#define __STDC_LIMIT_MACROS 1
 		#include <stdint.h>]],
@@ -49,7 +49,7 @@ if test "$ac_cv_header_stdint_h" == yes; then
 	[AC_MSG_RESULT([uint16_t and uint8_t are not available in stdint.h])]
 	)
 fi
-if test "$ac_cv_header_inttypes_h" == yes; then
+if test "$ac_cv_header_inttypes_h" = yes; then
 	AC_COMPILE_IFELSE([
 		AC_LANG_PROGRAM([[#define __STDC_LIMIT_MACROS 1
 		#include <inttypes.h>]],
