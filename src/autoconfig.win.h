@@ -1,8 +1,8 @@
 /* confdefs.h */
 #define PACKAGE_NAME "gaselect"
 #define PACKAGE_TARNAME "gaselect"
-#define PACKAGE_VERSION "1.0.21"
-#define PACKAGE_STRING "gaselect 1.0.21"
+#define PACKAGE_VERSION "1.0.23"
+#define PACKAGE_STRING "gaselect 1.0.23"
 #define PACKAGE_BUGREPORT ""
 #define PACKAGE_URL ""
 #define STDC_HEADERS 1

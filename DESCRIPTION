@@ -3,8 +3,10 @@ Type: Package
 Title: Genetic Algorithm (GA) for Variable Selection from High-Dimensional Data
 Version: 1.0.23
 Date: 2025-04-14
-Author: David Kepplinger
-Maintainer: David Kepplinger <david.kepplinger@gmail.com>
+Authors@R: person(given = "David",
+                  family = "Kepplinger",
+                  role = c("aut", "cre"),
+                  email = "david.kepplinger@gmail.com")
 Description: Provides a genetic algorithm for finding variable
     subsets in high dimensional data with high prediction performance. The
     genetic algorithm can use ordinary least squares (OLS) regression models or
