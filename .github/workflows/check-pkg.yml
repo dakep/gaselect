@@ -4,7 +4,7 @@ name: Check package
 
 on:
   push:
-    branches: [ main, release/* ]
+    branches: [ main, master, release/* ]
 
 permissions: read-all
 
