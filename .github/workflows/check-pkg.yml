@@ -1,35 +1,62 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-#
-# See https://github.com/r-lib/actions/tree/master/examples#readme for
-# additional example workflows available for the R community.
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
 
 name: Check package
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ main, release/* ]
+
+permissions: read-all
 
 jobs:
-  build:
-    runs-on: macos-latest
+  R-CMD-Check:
+    runs-on: ${{ matrix.config.os }}
+
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
     strategy:
+      fail-fast: false
       matrix:
-        r-version: ['release', 'devel']
+        config:
+          - {os: macos-latest,   r: 'release'}
+          - {os: macos-latest,   r: 'devel'}
+
+          - {os: windows-latest, r: 'devel', rtools-version: '42'}
+          - {os: windows-latest, r: 'release'}
+
+          - {os: ubuntu-latest, r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest, r: 'release'}
+
+          # Use older ubuntu to maximise backward compatibility
+          # - {os: ubuntu-18.04, r: 'devel', http-user-agent: 'release'}
+          # - {os: ubuntu-18.04, r: 'release'}
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
+      _R_INSTALL_USE_FC_LEN_T_: 1
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Set up R ${{ matrix.r-version }}
+      # If pandoc is needed for vignettes
+      #- uses: r-lib/actions/setup-pandoc@v2
+
+      - name: Set up R ${{ matrix.config.r }}
         uses: r-lib/actions/setup-r@v2
         with:
-          r-version: ${{ matrix.r-version }}
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
 
       - name: Setup dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
+          needs: check
+
       - name: Check
         uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual","--compact-vignettes=gs+qpdf")'

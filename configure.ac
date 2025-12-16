@@ -6,13 +6,11 @@ if test -z "${R_HOME}"; then
   exit 1
 fi
 
-CXX17=`"${R_HOME}/bin/R" CMD config CXX14`
-if test -z "$CXX17"; then
-  AC_MSG_ERROR([No C++17 compiler is available])
+CXX=`"${R_HOME}/bin/R" CMD config CXX`
+if test -z "$CXX"; then
+  AC_MSG_ERROR([No C++ compiler is available])
 fi
-CXX17STD=`"${R_HOME}/bin/R" CMD config CXX17STD`
-CXX="${CXX17} ${CXX17STD}"
-CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXX17FLAGS`
+CXXFLAGS=`"${R_HOME}/bin/R" CMD config CXXFLAGS`
 CXXCPP="${CXX} -E"
 CPPFLAGS=`"${R_HOME}/bin/R" CMD config CPPFLAGS`
 

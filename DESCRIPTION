@@ -1,8 +1,8 @@
 Package: gaselect
 Type: Package
 Title: Genetic Algorithm (GA) for Variable Selection from High-Dimensional Data
-Version: 1.0.23
-Date: 2025-04-14
+Version: 1.0.24
+Date: 2025-12-16
 Authors@R: person(given = "David",
                   family = "Kepplinger",
                   role = c("aut", "cre"),
@@ -40,4 +40,4 @@ Collate:
     'validData.R'
 Suggests:
     chemometrics
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
