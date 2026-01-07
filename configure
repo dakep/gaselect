@@ -3042,7 +3042,6 @@ if test "$ac_cv_header_stdint_h" = yes; then
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-		#define __STDC_LIMIT_MACROS 1
 		#include <stdint.h>
 int
 main ()
@@ -3073,7 +3072,6 @@ if test "$ac_cv_header_inttypes_h" = yes; then
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-		#define __STDC_LIMIT_MACROS 1
 		#include <inttypes.h>
 int
 main ()
