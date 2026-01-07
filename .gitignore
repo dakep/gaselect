@@ -11,3 +11,4 @@ autoconfig.h
 .Renviron
 Makevars
 Makevars.rel
+Makevars.dbg
