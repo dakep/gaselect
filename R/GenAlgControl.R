@@ -166,9 +166,9 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 		verbosity <- as.integer(verbosity);
 	}
 
-    if(is.null(maxDuplicateEliminationTries)) {
-        maxDuplicateEliminationTries <- 0L;
-    }
+  if(is.null(maxDuplicateEliminationTries)) {
+      maxDuplicateEliminationTries <- 0L;
+  }
 
 	crossover <- match.arg(crossover);
 
@@ -177,8 +177,8 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 		random = 1L
 	);
 
-    fitnessScaling <- match.arg(fitnessScaling);
-    fitnessScalingId <- switch(fitnessScaling,
+  fitnessScaling <- match.arg(fitnessScaling);
+  fitnessScalingId <- switch(fitnessScaling,
 		none = 0L,
 		exp = 1L
 	);
@@ -197,4 +197,4 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 				fitnessScaling = fitnessScaling,
 				fitnessScalingId = fitnessScalingId,
 				verbosity = verbosity));
-};
+}

@@ -12,3 +12,6 @@ autoconfig.h
 Makevars
 Makevars.rel
 Makevars.dbg
+run-checks
+prepare-bundle
+CRAN-SUBMISSION

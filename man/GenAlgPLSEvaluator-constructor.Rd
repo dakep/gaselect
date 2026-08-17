@@ -12,7 +12,8 @@ evaluatorPLS(
   numThreads = NULL,
   maxNComp = NULL,
   method = c("simpls"),
-  sdfact = 1
+  sdfact = 1,
+  complexityPenalty = 0
 )
 }
 \arguments{
@@ -37,6 +38,10 @@ the number of components is not constrained)}
 
 \item{sdfact}{The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
 of components. For the "one standard error rule", \code{sdfact} is 1.}
+
+\item{complexityPenalty}{The penalty parameter \eqn{\gamma} that penalizes the complexity of the model
+as \eqn{SD(m) * (1 + \gamma \| m \|_0)}.
+A value of 0 means no penalty.}
 }
 \value{
 Returns an S4 object of type \code{\link{GenAlgPLSEvaluator}} to be used as argument to
@@ -61,14 +66,15 @@ The whole procedure is repeated \code{numReplications} times to get a more relia
 prediction power.
 }
 \examples{
+library(gaselect)
 ctrl <- genAlgControl(populationSize = 100, numGenerations = 15, minVariables = 5,
-    maxVariables = 12, verbosity = 1)
+    maxVariables = 12, verbosity = 4)
 
 evaluatorSRCV <- evaluatorPLS(numReplications = 2, innerSegments = 7, testSetSize = 0.4,
-    numThreads = 1)
+                              complexityPenalty = 2, numThreads = 1)
 
 evaluatorRDCV <- evaluatorPLS(numReplications = 2, innerSegments = 5, outerSegments = 3,
-    numThreads = 1)
+                              numThreads = 1)
 
 # Generate demo-data
 set.seed(12345)

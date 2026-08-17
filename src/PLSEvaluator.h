@@ -26,7 +26,7 @@ class PLSEvaluator : public Evaluator {
 public:
 	PLSEvaluator(std::unique_ptr<PLS> pls, uint16_t numReplications, uint16_t maxNComp, const std::vector<uint32_t> &seed,
                VerbosityLevel verbosity, uint16_t innerSegments, uint16_t outerSegments = 1, double testSetSize = 0.0,
-               double sdfact = 1.0);
+               double sdfact = 1.0, double complexityPenalty = 0.0);
 
 	~PLSEvaluator() {}
 
@@ -54,6 +54,7 @@ private:
 	const uint16_t outerSegments;
 	const uint16_t innerSegments;
 	const double sdfact;
+  const double complexityPenalty;
 	const arma::uword nrows;
 
 	std::unique_ptr<PLS> pls;

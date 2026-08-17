@@ -1,8 +1,8 @@
 Package: gaselect
 Type: Package
 Title: Genetic Algorithm (GA) for Variable Selection from High-Dimensional Data
-Version: 1.0.25
-Date: 2026-01-07
+Version: 1.1.90
+Date: 2026-08-17
 Authors@R: person(given = "David",
                   family = "Kepplinger",
                   role = c("aut", "cre"),

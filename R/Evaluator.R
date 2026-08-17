@@ -13,6 +13,7 @@ setClass("GenAlgEvaluator", representation(), contains = "VIRTUAL");
 #' @slot testSetSize The relative size of the test set (between 0 and 1).
 #' @slot sdfact The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
 #'      of components. For the "one standard error rule", \code{sdfact} is 1.
+#' @slot complexityPenalty The penalty parameter that penalizes the complexity of the model.
 #' @slot numThreads The maximum number of threads the algorithm is allowed to spawn (a value less than 1 or NULL means no threads).
 #' @slot maxNComp The maximum number of components to consider in the PLS model.
 #' @slot method The PLS method used to fit the PLS model (currently only SIMPLS is implemented).
@@ -25,8 +26,9 @@ setClass("GenAlgPLSEvaluator", representation(
 	outerSegments = "integer",
 	testSetSize = "numeric",
 	sdfact = "numeric",
+  complexityPenalty = "numeric",
 	numThreads = "integer",
-    maxNComp = "integer",
+  maxNComp = "integer",
 	method = "character",
 	methodId = "integer"
 ), validity = function(object) {
@@ -37,21 +39,25 @@ setClass("GenAlgPLSEvaluator", representation(
 		errors <- c(errors, paste("The maximum number of threads must be greater than or equal 0 and less than", MAXUINT16));
 	}
 
-    if(object@innerSegments <= 1L || object@innerSegments > MAXUINT16) {
-        errors <- c(errors, paste("The number of inner segments must be between 2 and", MAXUINT16));
-    }
+  if(object@innerSegments <= 1L || object@innerSegments > MAXUINT16) {
+    errors <- c(errors, paste("The number of inner segments must be between 2 and", MAXUINT16));
+  }
 
-    if(object@maxNComp < 0L || object@maxNComp > MAXUINT16) {
-        errors <- c(errors, paste("The maximum number of components must be greater than or equal 0 and less than", MAXUINT16));
-    }
+  if(object@maxNComp < 0L || object@maxNComp > MAXUINT16) {
+    errors <- c(errors, paste("The maximum number of components must be greater than or equal 0 and less than", MAXUINT16));
+  }
 
-    if(object@testSetSize < 0 || object@testSetSize >= 1) {
-        errors <- c(errors, "The test set size must be between 0 and 1.");
-    }
+  if(object@testSetSize < 0 || object@testSetSize >= 1) {
+    errors <- c(errors, "The test set size must be between 0 and 1.");
+  }
 
-    if(object@sdfact < 0) {
-        errors <- c(errors, "The `sdfact` must be greater than or equal 0.");
-    }
+  if(object@sdfact < 0) {
+    errors <- c(errors, "The `sdfact` must be greater than or equal 0.");
+  }
+
+  if(object@complexityPenalty < 0) {
+    errors <- c(errors, "The `complexityPenalty` must be greater than or equal 0.");
+  }
 
 	if(length(errors) == 0) {
 		return(TRUE);
@@ -90,7 +96,7 @@ setClass("GenAlgUserEvaluator", representation(
 setClass("GenAlgFitEvaluator", representation(
 	numSegments = "integer",
 	numThreads = "integer",
-    maxNComp = "integer",
+  maxNComp = "integer",
 	sdfact = "numeric",
 	statistic = "character",
 	statisticId = "integer"
@@ -102,17 +108,17 @@ setClass("GenAlgFitEvaluator", representation(
 		errors <- c(errors, paste("The maximum number of threads must be greater than or equal 0 and less than", MAXUINT16));
 	}
 
-    if(object@numSegments <= 1L || object@numSegments > MAXUINT16) {
-        errors <- c(errors, paste("The number of segments must be between 2 and", MAXUINT16));
-    }
+  if(object@numSegments <= 1L || object@numSegments > MAXUINT16) {
+    errors <- c(errors, paste("The number of segments must be between 2 and", MAXUINT16));
+  }
 
-    if(object@maxNComp < 0L || object@maxNComp > MAXUINT16) {
-        errors <- c(errors, paste("The maximum number of components must be greater than or equal 0 and less than", MAXUINT16));
-    }
+  if(object@maxNComp < 0L || object@maxNComp > MAXUINT16) {
+    errors <- c(errors, paste("The maximum number of components must be greater than or equal 0 and less than", MAXUINT16));
+  }
 
-    if(object@sdfact < 0) {
-        errors <- c(errors, "The `sdfact` must be greater than or equal 0.");
-    }
+  if(object@sdfact < 0) {
+    errors <- c(errors, "The `sdfact` must be greater than or equal 0.");
+  }
 
 	if(length(errors) == 0) {
 		return(TRUE);
@@ -182,6 +188,9 @@ validity = function(object) {
 #' @param method The PLS method used to fit the PLS model (currently only SIMPLS is implemented)
 #' @param sdfact The factor to scale the stand. dev. of the MSEP values when selecting the optimal number
 #'      of components. For the "one standard error rule", \code{sdfact} is 1.
+#' @param complexityPenalty The penalty parameter \eqn{\gamma} that penalizes the complexity of the model
+#'      as \eqn{SD(m) * (1 + \gamma \| m \|_0)}.
+#'      A value of 0 means no penalty.
 #' @return Returns an S4 object of type \code{\link{GenAlgPLSEvaluator}} to be used as argument to
 #'      a call of \code{\link{genAlg}}.
 #' @export
@@ -189,32 +198,20 @@ validity = function(object) {
 #' @example examples/genAlg.R
 #' @rdname GenAlgPLSEvaluator-constructor
 evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegments = 1L, testSetSize = NULL,
-    numThreads = NULL, maxNComp = NULL, method = c("simpls"), sdfact = 1) {
+    numThreads = NULL, maxNComp = NULL, method = c("simpls"), sdfact = 1, complexityPenalty = 0) {
 	method <- match.arg(method);
 
 	methodId <- switch(method,
 		simpls = 0L
-	);
+	)
+  outerSegments <- as.integer(outerSegments)
+  if(outerSegments > 1 && is.numeric(testSetSize)) {
+    warning("outerSegments AND testSetSize have been set. testSetSize will be ignored and rdCV with outerSegments will be used.");
+  }
 
-	if(is.numeric(numReplications)) {
-		numReplications <- as.integer(numReplications);
-	}
-
-	if(is.numeric(innerSegments)) {
-		innerSegments <- as.integer(innerSegments);
-	}
-
-	if(is.numeric(outerSegments)) {
-		outerSegments <- as.integer(outerSegments);
-	}
-
-    if(outerSegments > 1 && is.numeric(testSetSize)) {
-        warning("outerSegments AND testSetSize have been set. testSetSize will be ignored and rdCV with outerSegments will be used.");
-    }
-
-    if(!is.numeric(testSetSize)) {
-        testSetSize <- 0;
-    }
+  if(!is.numeric(testSetSize)) {
+    testSetSize <- 0L
+  }
 
 	if(missing(numThreads) || is.null(numThreads)) {
 		numThreads <- 1L;
@@ -222,20 +219,21 @@ evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegment
 		numThreads <- as.integer(numThreads);
 	}
 
-    if(missing(maxNComp) || is.null(maxNComp)) {
-        maxNComp <- 0L;
-    } else if(is.numeric(maxNComp)) {
-        maxNComp <- as.integer(maxNComp);
-    }
+  if(missing(maxNComp) || is.null(maxNComp)) {
+    maxNComp <- 0L;
+  } else if(is.numeric(maxNComp)) {
+    maxNComp <- as.integer(maxNComp);
+  }
 
 	return(new("GenAlgPLSEvaluator",
-		numReplications = numReplications,
-		innerSegments = innerSegments,
+		numReplications = as.integer(numReplications),
+		innerSegments = as.integer(innerSegments),
 		outerSegments = outerSegments,
+		complexityPenalty = as.numeric(complexityPenalty),
 		testSetSize = testSetSize,
 		numThreads = numThreads,
 		sdfact = sdfact,
-        maxNComp = maxNComp,
+    maxNComp = maxNComp,
 		method = method,
 		methodId = methodId
 	));
@@ -266,18 +264,18 @@ evaluatorFit <- function(numSegments = 7L, statistic = c("BIC", "AIC", "adjusted
     numThreads = NULL, maxNComp = NULL, sdfact = 1) {
 	statistic <- match.arg(statistic);
 
-    statId = switch(statistic,
-        BIC = 0L,
-        AIC = 1L,
-        adjusted.r.squared = 2L,
-        r.squared = 3L
-    );
+  statId = switch(statistic,
+    BIC = 0L,
+    AIC = 1L,
+    adjusted.r.squared = 2L,
+    r.squared = 3L
+  );
 
-    if(missing(numThreads) || is.null(numThreads)) {
-        numThreads <- 1L;
-    } else if(is.numeric(numThreads)) {
-        numThreads <- as.integer(numThreads);
-    }
+  if(missing(numThreads) || is.null(numThreads)) {
+    numThreads <- 1L;
+  } else if(is.numeric(numThreads)) {
+    numThreads <- as.integer(numThreads);
+  }
 
 	if(is.numeric(numSegments)) {
 		numSegments <- as.integer(numSegments);
@@ -289,17 +287,17 @@ evaluatorFit <- function(numSegments = 7L, statistic = c("BIC", "AIC", "adjusted
 		numThreads <- as.integer(numThreads);
 	}
 
-    if(missing(maxNComp) || is.null(maxNComp)) {
-        maxNComp <- 0L;
-    } else if(is.numeric(maxNComp)) {
-        maxNComp <- as.integer(maxNComp);
-    }
+  if(missing(maxNComp) || is.null(maxNComp)) {
+    maxNComp <- 0L;
+  } else if(is.numeric(maxNComp)) {
+    maxNComp <- as.integer(maxNComp);
+  }
 
 	return(new("GenAlgFitEvaluator",
 		numSegments = numSegments,
 		numThreads = numThreads,
-        maxNComp = maxNComp,
-        sdfact = sdfact,
+    maxNComp = maxNComp,
+    sdfact = sdfact,
 		statistic = statistic,
 		statisticId = statId
 	));

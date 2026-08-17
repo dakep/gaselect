@@ -90,11 +90,11 @@ setClass("GenAlg", representation(
 #' @useDynLib gaselect, .registration = TRUE
 #' @example examples/genAlg.R
 genAlg <- function(y, X, control, evaluator = evaluatorPLS(), seed) {
-    seed <- as.integer(seed)[1];
+  seed <- as.integer(seed)[1];
 
-    if (!is.numeric(seed) | is.na(seed)) {
-        stop("`seed` must be an integer.");
-    }
+  if (!is.numeric(seed) | is.na(seed)) {
+      stop("`seed` must be an integer.");
+  }
 
 	ret <- new("GenAlg",
 		response = y,
@@ -107,7 +107,7 @@ genAlg <- function(y, X, control, evaluator = evaluatorPLS(), seed) {
 	possSubsetCutoff <- 0.85;
 	numPossibleSubsets <- sum(choose(ncol(ret@covariates), seq.int(ret@control@minVariables, ret@control@maxVariables)));
 
-    seed <- as.integer(seed);
+  seed <- as.integer(seed);
 
 	if(ret@control@populationSize > possSubsetCutoff * numPossibleSubsets) {
 		stop(paste("Requested a population that is almost as large as the number of all possible subsets. The population size can be at most ",

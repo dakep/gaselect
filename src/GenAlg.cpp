@@ -115,11 +115,14 @@ BEGIN_RCPP
 			pls = PLS::getInstance(method, X, Y.col(0));
 
 			eval.reset(new PLSEvaluator(std::move(pls), as<uint16_t>(control["numReplications"]),
-                               as<uint16_t>(control["maxNComp"]), seed, ctrl.verbosity,
-                               as<uint16_t>(control["innerSegments"]),
-                               as<uint16_t>(control["outerSegments"]),
-                               as<double>(control["testSetSize"]),
-                               as<double>(control["sdfact"])));
+                                  as<uint16_t>(control["maxNComp"]),
+                                  seed,
+                                  ctrl.verbosity,
+                                  as<uint16_t>(control["innerSegments"]),
+                                  as<uint16_t>(control["outerSegments"]),
+                                  as<double>(control["testSetSize"]),
+                                  as<double>(control["sdfact"]),
+                                  as<double>(control["complexityPenalty"])));
 
 			break;
 		}
@@ -135,12 +138,12 @@ BEGIN_RCPP
 			BICEvaluator::Statistic stat = (BICEvaluator::Statistic) as<int>(control["statistic"]);
 
 			eval.reset(new BICEvaluator(std::move(pls),
-                               as<uint16_t>(control["maxNComp"]),
-                               seed,
-                               ctrl.verbosity,
-                               as<uint16_t>(control["innerSegments"]),
-                               stat,
-                               as<double>(control["sdfact"])));
+                                  as<uint16_t>(control["maxNComp"]),
+                                  seed,
+                                  ctrl.verbosity,
+                                  as<uint16_t>(control["innerSegments"]),
+                                  stat,
+                                  as<double>(control["sdfact"])));
 
 			break;
 		}
@@ -177,7 +180,7 @@ BEGIN_RCPP
 		if(ctrl.verbosity >= DEBUG_GA) {
 			throw te;
 		} else {
-			throw Rcpp::exception("Multithreading could not be initialized. Set numThreads to 0 to avoid this problem.", __FILE__, __LINE__);
+			throw Rcpp::exception("Multithreading could not be initialized. Set numThreads to 0 to silence this message.", __FILE__, __LINE__);
 		}
 	}
 #else
@@ -212,9 +215,9 @@ BEGIN_RCPP
 
 
 	return Rcpp::List::create(Rcpp::Named("subsets") = retMatrix,
-							  Rcpp::Named("fitness") = retFitnesses,
-							  Rcpp::Named("fitnessEvolution") = retFitnessEvolution,
-							  Rcpp::Named("segmentation") = Rcpp::wrap(segmentation));
+							              Rcpp::Named("fitness") = retFitnesses,
+							              Rcpp::Named("fitnessEvolution") = retFitnessEvolution,
+							              Rcpp::Named("segmentation") = Rcpp::wrap(segmentation));
 VOID_END_RCPP
 	return R_NilValue;
 }

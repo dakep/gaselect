@@ -1,11 +1,12 @@
+library(gaselect)
 ctrl <- genAlgControl(populationSize = 100, numGenerations = 15, minVariables = 5,
-    maxVariables = 12, verbosity = 1)
+    maxVariables = 12, verbosity = 4)
 
 evaluatorSRCV <- evaluatorPLS(numReplications = 2, innerSegments = 7, testSetSize = 0.4,
-    numThreads = 1)
+                              complexityPenalty = 2, numThreads = 1)
 
 evaluatorRDCV <- evaluatorPLS(numReplications = 2, innerSegments = 5, outerSegments = 3,
-    numThreads = 1)
+                              numThreads = 1)
 
 # Generate demo-data
 set.seed(12345)

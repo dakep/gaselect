@@ -26,12 +26,17 @@ uint32_t PLSEvaluator::counter = 0;
 
 PLSEvaluator::PLSEvaluator(std::unique_ptr<PLS> _pls, uint16_t _numReplications, uint16_t _maxNComp,
                            const std::vector<uint32_t> &_seed, VerbosityLevel _verbosity, uint16_t _innerSegments,
-                           uint16_t _outerSegments, double testSetSize, double _sdfact)
-    : Evaluator(_verbosity), numReplications(_numReplications),
+                           uint16_t _outerSegments, double testSetSize, double _sdfact,
+                           double _complexityPenalty)
+    : Evaluator(_verbosity),
+      numReplications(_numReplications),
       outerSegments((_outerSegments < 1) ? 1 : _outerSegments),
 		  innerSegments((outerSegments <= 1 && testSetSize == 0.0) ? _innerSegments - 1 : _innerSegments),
 		  sdfact(_sdfact / sqrt((double) innerSegments)),
-		  nrows(_pls->getNumberOfObservations()), pls(std::move(_pls)), maxNComp(_maxNComp)
+      complexityPenalty(_complexityPenalty),
+		  nrows(_pls->getNumberOfObservations()),
+      pls(std::move(_pls)),
+      maxNComp(_maxNComp)
 {
 	/* assert outerSegments > 0 */
 	if(pls->getNumberOfResponseVariables() > 1) {
@@ -54,7 +59,10 @@ PLSEvaluator::PLSEvaluator(std::unique_ptr<PLS> _pls, uint16_t _numReplications,
 PLSEvaluator::PLSEvaluator(const PLSEvaluator &other) :
 	Evaluator(other.verbosity), numReplications(other.numReplications),
 	outerSegments(other.outerSegments), innerSegments(other.innerSegments),
-	sdfact(other.sdfact), nrows(other.nrows), maxNComp(other.maxNComp),
+	sdfact(other.sdfact),
+  complexityPenalty(other.complexityPenalty),
+  nrows(other.nrows),
+  maxNComp(other.maxNComp),
 	segmentation(other.segmentation)
 {
 	this->pls = other.pls->clone();
@@ -70,10 +78,16 @@ double PLSEvaluator::evaluate(arma::uvec &columnSubset) {
 #endif
 	this->pls->viewSelectColumns(columnSubset);
 
-	double sumSEP = this->estSEP(((this->maxNComp < columnSubset.n_elem) ? this->maxNComp : columnSubset.n_elem)) / this->numReplications;
+	double sumSEP = this->estSEP(((this->maxNComp < columnSubset.n_elem) ? this->maxNComp : columnSubset.n_elem));
 
-	IF_DEBUG(GAout << "EVALUATOR: SEP:" << std::endl << sumSEP << std::endl)
-	return -sumSEP;
+	IF_DEBUG(GAout << "EVALUATOR: SEP:" << std::endl << "-"
+                 << sumSEP / this->numReplications
+                 << " * (1 + " << this->complexityPenalty * columnSubset.n_elem << ") = ")
+
+  sumSEP *= -(1.0 + this->complexityPenalty * columnSubset.n_elem) / this->numReplications;
+
+  IF_DEBUG(GAout << sumSEP << std::endl);
+	return sumSEP;
 }
 
 /**
