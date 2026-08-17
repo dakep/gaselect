@@ -245,6 +245,7 @@ evaluatorPLS <- function(numReplications = 30L, innerSegments = 7L, outerSegment
 #'
 #' The fitness of a variable subset is assessed by how well a PLS model fits the data. To estimate
 #' the optimal number of components for the PLS model, cross-validation is used.
+#' Note that the degrees of freedom is the number of predictors + 2 (one d.f. for the variance and intercept).
 #'
 #' @param numSegments The number of CV segments used to estimate the optimal number of PLS components (between 2 and 2^16).
 #' @param statistic The statistic used to evaluate the fitness (BIC, AIC, adjusted R^2, or R^2).

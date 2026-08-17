@@ -61,22 +61,22 @@ double BICEvaluator::evaluate(arma::uvec &columnSubset) {
 
 	double ret = 0.0;
 	double RSS = this->getRSS(((this->maxNComp < columnSubset.n_elem) ? this->maxNComp : columnSubset.n_elem));
-
+  const double eff_df = columnSubset.n_elem + 2; // one DF for the variance, 1 for the intercept
 
 	IF_DEBUG(GAout << "RSS:" << std::endl << RSS << std::endl)
 
 	switch(this->stat) {
 		case BIC: {
-			ret = -(this->nrows * log(RSS / this->nrows) + columnSubset.n_elem * log((double) this->nrows));
+			ret = -(this->nrows * log(RSS / this->nrows) + eff_df * log((double) this->nrows));
 			break;
 		}
 		case AIC: {
-			ret = -(this->nrows * log(RSS / this->nrows) + columnSubset.n_elem * 2.0);
+			ret = -(this->nrows * log(RSS / this->nrows) + eff_df * 2.0);
 			break;
 		}
 		case ADJ_R2: {
 			double r2 = 1 - (RSS / this->r2denom);
-			ret = 1 - (((this->nrows - 1) * (1 - r2)) / (this->nrows - columnSubset.n_elem - 1));
+			ret = 1 - (((this->nrows - 1) * (1 - r2)) / (this->nrows - eff_df - 1));
 			break;
 		}
 		case R2: {

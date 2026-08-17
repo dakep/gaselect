@@ -36,6 +36,7 @@ Creates the object that controls the evaluation step in the genetic algorithm
 \details{
 The fitness of a variable subset is assessed by how well a PLS model fits the data. To estimate
 the optimal number of components for the PLS model, cross-validation is used.
+Note that the degrees of freedom is the number of predictors + 2 (one d.f. for the variance and intercept).
 }
 \examples{
 ctrl <- genAlgControl(populationSize = 200, numGenerations = 30, minVariables = 5,
