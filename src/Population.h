@@ -207,7 +207,18 @@ protected:
 
 		IF_DEBUG(GAout << std::endl)
 
-		this->fitnessHistory.push_back(this->elite.rbegin()->getFitness());
+		double bestFitness = newGeneration[0]->getFitness();
+		if(this->ctrl.elitism > 0) {
+			bestFitness = this->elite.rbegin()->getFitness();
+		} else {
+			for(i = 1; i < this->ctrl.populationSize; ++i) {
+				if(newGeneration[i]->getFitness() > bestFitness) {
+					bestFitness = newGeneration[i]->getFitness();
+				}
+			}
+		}
+
+		this->fitnessHistory.push_back(bestFitness);
 		this->fitnessHistory.push_back(this->fitStats.mean());
 		this->fitnessHistory.push_back(this->fitStats.stddev());
 
@@ -219,7 +230,7 @@ protected:
 	 * where the probability to pick a chromosome is taken from
 	 * the currentGenFitnessMap
 	 */
-	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand) const {
+	inline Chromosome* drawChromosomeFromCurrentGeneration(double rand, const Chromosome* excluded = NULL) const {
 		int imin = 0, imax = static_cast<int>(this->currentGenFitnessMap.size());
 		int imid = 0;
 
@@ -241,6 +252,17 @@ protected:
 		IF_DEBUG(
 			GAout << GAout.lock() << "Selected chromosome " << imin << " for mating (rand = " << rand << ")" << std::endl << GAout.unlock();
 		);
+
+		if(this->currentGeneration[imin] != excluded) {
+			return this->currentGeneration[imin];
+		}
+
+		for(int offset = 1; offset < imax; ++offset) {
+			int candidate = (imin + offset) % imax;
+			if(this->currentGeneration[candidate] != excluded) {
+				return this->currentGeneration[candidate];
+			}
+		}
 
 		return this->currentGeneration[imin];
 	};

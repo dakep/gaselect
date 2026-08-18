@@ -67,10 +67,10 @@ private:
 
 	bool startMating;
 	bool killThreads;
-	bool allThreadsFinishedMating;
 
 	uint16_t actuallySpawnedThreads;
 	uint16_t numThreadsFinishedMating;
+	uint32_t matingGeneration;
 
 	inline void generateInitialChromosomes(uint16_t numChromosomes, ::Evaluator& evaluator,
 		RNG& rng, ShuffledSet& shuffledSet, uint16_t offset,

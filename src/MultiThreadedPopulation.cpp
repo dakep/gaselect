@@ -68,11 +68,11 @@ MultiThreadedPopulation::MultiThreadedPopulation(const Control &ctrl, ::Evaluato
 	}
 
 	this->startMating = false;
-	this->allThreadsFinishedMating = false;
 	this->killThreads = false;
 
 	this->actuallySpawnedThreads = 0;
 	this->numThreadsFinishedMating = 0;
+	this->matingGeneration = 0;
 }
 
 /**
@@ -153,9 +153,7 @@ void MultiThreadedPopulation::mate(uint16_t numChildren, ::Evaluator& evaluator,
 		childrenDifferent = (child1It + 1 != child2It.base());
 
 		tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
-		do {
-			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness));
-		} while (tmpChromosome1 == tmpChromosome2);
+		tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, this->sumCurrentGenFitness), tmpChromosome1);
 
 		tmpChromosome1->mateWith(*tmpChromosome2, rng, *(*child1It), *(*child2It));
 
@@ -472,15 +470,20 @@ void MultiThreadedPopulation::run() {
  */
 void* MultiThreadedPopulation::matingThreadStart(void* obj) {
 	ThreadArgsWrapper* args = reinterpret_cast<ThreadArgsWrapper*>(obj);
-	RNG rng(args->seed);
-	ShuffledSet shuffledSet(args->chromosomeSize);
+	try {
+		RNG rng(args->seed);
+		ShuffledSet shuffledSet(args->chromosomeSize);
 
-	/* First generate a bunch of initial chromosomes */
-	args->popObj->generateInitialChromosomes(args->numChildren, *args->evalObj, rng, shuffledSet, args->offset, false);
-	args->popObj->waitForAllThreadsToFinishMating();
+		/* First generate a bunch of initial chromosomes */
+		args->popObj->generateInitialChromosomes(args->numChildren, *args->evalObj, rng, shuffledSet, args->offset, false);
+		args->popObj->waitForAllThreadsToFinishMating();
 
-	/* The start the mating cycle */
-	args->popObj->runMating(args->numChildren, *args->evalObj, rng, shuffledSet, args->offset);
+		/* Start the mating cycle */
+		args->popObj->runMating(args->numChildren, *args->evalObj, rng, shuffledSet, args->offset);
+	} catch(...) {
+		args->popObj->interrupted = true;
+		args->popObj->waitForAllThreadsToFinishMating();
+	}
 	return NULL;
 }
 
@@ -526,23 +529,17 @@ void MultiThreadedPopulation::runMating(uint16_t numMatingCouples, ::Evaluator& 
  */
 inline void MultiThreadedPopulation::waitForAllThreadsToFinishMating() {
 	CHECK_PTHREAD_RETURN_CODE(pthread_mutex_lock(&this->syncMutex))
+	uint32_t generation = this->matingGeneration;
 
 	if(++this->numThreadsFinishedMating > this->actuallySpawnedThreads) { // > because the main thread must finish mating as well
-		this->allThreadsFinishedMating = true;
 		this->numThreadsFinishedMating = 0;
 		this->startMating = false;
+		++this->matingGeneration;
 
 		CHECK_PTHREAD_RETURN_CODE(pthread_cond_broadcast(&this->allThreadsFinishedMatingCond))
-	} else {
-		this->allThreadsFinishedMating = false;
 	}
 
-	//	pthreadRC = pthread_mutex_unlock(&this->syncMutex);
-	//	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
-	//	int pthreadRC = pthread_mutex_lock(&this->syncMutex);
-	//	CHECK_PTHREAD_RETURN_CODE(pthreadRC)
-
-	while(this->allThreadsFinishedMating == false) {
+	while(generation == this->matingGeneration) {
 		CHECK_PTHREAD_RETURN_CODE(pthread_cond_wait(&this->allThreadsFinishedMatingCond, &this->syncMutex))
 	}
 

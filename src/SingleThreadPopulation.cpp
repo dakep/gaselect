@@ -44,13 +44,13 @@ void SingleThreadPopulation::run() {
 	int i = 0;
 	ShuffledSet shuffledSet(this->ctrl.chromosomeSize);
 	RNG rng(this->seed);
-	
+
 	double sumFitness = 0.0;
 	double minFitness = 0.0;
 	double minParentFitness = 0.0;
-	
+
 	ChVec newGeneration;
-	
+
 	Chromosome* tmpChromosome1;
 	Chromosome* tmpChromosome2;
 	ChVecIt child1It;
@@ -66,14 +66,14 @@ void SingleThreadPopulation::run() {
 	uint32_t maxDiscardedSolutions = Population::MAX_DISCARDED_SOLUTIONS_RATIO * this->ctrl.populationSize;
 
 	newGeneration.reserve(this->ctrl.populationSize);
-	
+
 	if(this->ctrl.verbosity > OFF) {
 		GAout << "Generating initial population" << std::endl;
 	}
-	
+
 	while(newGeneration.size() < this->ctrl.populationSize && !this->interrupted) {
 		tmpChromosome1 = new Chromosome(this->ctrl, shuffledSet, rng);
-		
+
 		/* Check if chromosome is already in the initial population */
 		if(std::find_if(newGeneration.begin(), newGeneration.end(), CompChromsomePtr(tmpChromosome1)) == newGeneration.end()) {
 			try {
@@ -82,9 +82,9 @@ void SingleThreadPopulation::run() {
 				if(tmpChromosome1->getFitness() < minFitness) {
 					minFitness = tmpChromosome1->getFitness();
 				}
-				
+
 				this->addChromosomeToElite(*tmpChromosome1);
-				
+
 				newGeneration.push_back(tmpChromosome1);
 			} catch(const ::Evaluator::EvaluatorException& ee) {
 				delete tmpChromosome1;
@@ -112,7 +112,7 @@ void SingleThreadPopulation::run() {
 	if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
 		this->printCurrentGeneration();
 	}
-	
+
 	for(i = this->ctrl.numGenerations; i > 0 && !this->interrupted; --i) {
 		minFitness = 0.0;
 
@@ -123,7 +123,7 @@ void SingleThreadPopulation::run() {
 		if(this->ctrl.verbosity > OFF) {
 			GAout << "Generating generation " << (this->ctrl.numGenerations - i + 1) << std::endl;
 		}
-		
+
 		child1It = newGeneration.begin();
 		child2It = newGeneration.rbegin();
 
@@ -133,12 +133,10 @@ void SingleThreadPopulation::run() {
 			childrenDifferent = (child1It + 1 != child2It.base());
 
 			tmpChromosome1 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
-			do {
-				tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness));
-			} while(tmpChromosome1 == tmpChromosome2);
+			tmpChromosome2 = this->drawChromosomeFromCurrentGeneration(rng(0.0, sumFitness), tmpChromosome1);
 
 			tmpChromosome1->mateWith(*tmpChromosome2, rng, *(*child1It), *(*child2It));
-			
+
 			minParentFitness = ((tmpChromosome1->getFitness() > tmpChromosome2->getFitness()) ? tmpChromosome1->getFitness() : tmpChromosome2->getFitness());
 
 			(*child1It)->mutate(rng);
@@ -236,7 +234,7 @@ void SingleThreadPopulation::run() {
 		/*
 		 * Transform the fitness map of the current generation to start at 0
 		 * and copy old generation to new generation
-		 */		
+		 */
 		sumFitness = this->updateCurrentGeneration(newGeneration, minFitness, false);
 
 		if(this->ctrl.verbosity >= VERBOSE && this->ctrl.verbosity != DEBUG_EVAL) {
