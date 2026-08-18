@@ -25,6 +25,10 @@ This class controls the general setup of the genetic algorithm
 
 \item{\code{badSolutionThreshold}}{The child must not be more than \code{badSolutionThreshold} percent worse than the worse parent. If less than 0, the child must be even better than the worst parent.}
 
+\item{\code{convergenceThreshold}}{The maximum fitness difference considered unchanged for early stopping.}
+
+\item{\code{convergenceGenerations}}{The number of consecutive unchanged generations before stopping. 0 disables early stopping.}
+
 \item{\code{crossover}}{The crossover method to use}
 
 \item{\code{crossoverId}}{The numeric ID of the crossover method to use}

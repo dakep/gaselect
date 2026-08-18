@@ -8,6 +8,8 @@
 #' @slot elitism The number of absolute best chromosomes to keep across all generations (between 1 and min(\code{populationSize} * \code{numGenerations}, 2^16)).
 #' @slot mutationProbability The probability of mutation (between 0 and 1).
 #' @slot badSolutionThreshold The child must not be more than \code{badSolutionThreshold} percent worse than the worse parent. If less than 0, the child must be even better than the worst parent.
+#' @slot convergenceThreshold The maximum fitness difference considered unchanged for early stopping.
+#' @slot convergenceGenerations The number of consecutive unchanged generations before stopping. 0 disables early stopping.
 #' @slot crossover The crossover method to use
 #' @slot crossoverId The numeric ID of the crossover method to use
 #' @slot maxDuplicateEliminationTries The maximum number of tries to eliminate duplicates
@@ -26,6 +28,8 @@ setClass("GenAlgControl", representation(
 	fitnessScaling = "character",
 	fitnessScalingId = "integer",
 	badSolutionThreshold = "numeric",
+	convergenceThreshold = "numeric",
+	convergenceGenerations = "integer",
 	maxDuplicateEliminationTries = "integer",
 	verbosity = "integer"
 ), validity = function(object) {
@@ -79,6 +83,18 @@ setClass("GenAlgControl", representation(
 		errors <- c(errors, "The verbosity level can not be less than 0 or greater than 5");
 	}
 
+	if(!is.finite(object@convergenceThreshold) || object@convergenceThreshold < 0) {
+		errors <- c(errors, "The convergence threshold must be finite and greater or equal 0");
+	}
+
+	if(object@convergenceGenerations < 0L || object@convergenceGenerations > MAXUINT16) {
+		errors <- c(errors, paste("The number of convergence generations must be between 0 and", MAXUINT16));
+	}
+
+  if(object@convergenceGenerations >= object@numGenerations) {
+    warning("The number of convergence generations is greater than or equal to the number of generations. Early stopping disabled.")
+  }
+
 	if(length(errors) == 0) {
 		return(TRUE);
 	} else {
@@ -128,9 +144,11 @@ setClass("GenAlgControl", representation(
 #' @param crossover The crossover type to use during mating (see details). Partial matching is performed
 #' @param badSolutionThreshold The worst child must not be more than \code{badSolutionThreshold} times worse than the worse parent.
 #'			If less than 0, the child must be even better than the worst parent. If the algorithm can't find a better child
-#'			in a long time it issues a warning and uses the last found child to continue.
+#'			for a while, it issues a warning and uses the last found child to continue.
+#'      (a value of \code{0} or \code{NULL} means that no checks for duplicates are done.
+#' @param convergenceThreshold The maximum fitness difference considered unchanged for early stopping.
+#' @param convergenceGenerations The number of consecutive unchanged generations before stopping. 0 disables early stopping.
 #' @param maxDuplicateEliminationTries The maximum number of tries to eliminate duplicates
-#'        (a value of \code{0} or \code{NULL} means that no checks for duplicates are done.
 #' @param verbosity The level of verbosity. 0 means no output at all, 2 is very verbose.
 #' @param fitnessScaling How the fitness values are internally scaled before the selection probabilities are assigned
 #'          to the chromosomes. See the details for possible values and their meaning.
@@ -141,7 +159,8 @@ setClass("GenAlgControl", representation(
 genAlgControl <- function(populationSize, numGenerations, minVariables, maxVariables,
 							elitism = 10L, mutationProbability = 0.01, crossover = c("single", "random"),
 							maxDuplicateEliminationTries = 0L, verbosity = 0L, badSolutionThreshold = 2,
-							fitnessScaling = c("none", "exp")) {
+							fitnessScaling = c("none", "exp"), convergenceThreshold = 1e-6,
+							convergenceGenerations = 0L) {
 	if(is.numeric(populationSize)) {
 		populationSize <- as.integer(populationSize);
 	}
@@ -164,6 +183,10 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 
 	if(is.numeric(verbosity)) {
 		verbosity <- as.integer(verbosity);
+	}
+
+	if(is.numeric(convergenceGenerations)) {
+		convergenceGenerations <- as.integer(convergenceGenerations);
 	}
 
   if(is.null(maxDuplicateEliminationTries)) {
@@ -194,6 +217,8 @@ genAlgControl <- function(populationSize, numGenerations, minVariables, maxVaria
 				crossoverId = crossoverId,
 				maxDuplicateEliminationTries = as.integer(maxDuplicateEliminationTries),
 				badSolutionThreshold = badSolutionThreshold,
+				convergenceThreshold = convergenceThreshold,
+				convergenceGenerations = convergenceGenerations,
 				fitnessScaling = fitnessScaling,
 				fitnessScalingId = fitnessScalingId,
 				verbosity = verbosity));

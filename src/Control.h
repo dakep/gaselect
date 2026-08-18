@@ -43,6 +43,8 @@ public:
 			const uint16_t numThreads,
 			const uint16_t maxDuplicateEliminationTries,
 			const double badSolutionThreshold,
+			const double convergenceThreshold,
+			const uint16_t convergenceGenerations,
 			const enum CrossoverType crossover,
 			const enum FitnessScaling fitnessScaling,
 			const enum VerbosityLevel verbosity) :
@@ -56,6 +58,8 @@ public:
 	numThreads(numThreads),
 	maxDuplicateEliminationTries(maxDuplicateEliminationTries),
 	badSolutionThreshold(badSolutionThreshold),
+	convergenceThreshold(convergenceThreshold),
+	convergenceGenerations(convergenceGenerations),
 	crossover(crossover),
 	fitnessScaling(fitnessScaling),
 	verbosity(verbosity) {};
@@ -70,6 +74,8 @@ public:
 	const uint16_t numThreads;
 	const uint16_t maxDuplicateEliminationTries;
 	const double badSolutionThreshold;
+	const double convergenceThreshold;
+	const uint16_t convergenceGenerations;
 	const enum CrossoverType crossover;
 	const enum FitnessScaling fitnessScaling;
 	const enum VerbosityLevel verbosity;

@@ -89,6 +89,8 @@ setMethod("toCControlList", signature(object = "GenAlgControl"), function(object
 		"crossover" = object@crossoverId,
 		"maxDuplicateEliminationTries" = object@maxDuplicateEliminationTries,
 		"badSolutionThreshold" = object@badSolutionThreshold,
+		"convergenceThreshold" = object@convergenceThreshold,
+		"convergenceGenerations" = object@convergenceGenerations,
 		"verbosity" = object@verbosity,
 		"fitnessScaling" = object@fitnessScalingId
 	));

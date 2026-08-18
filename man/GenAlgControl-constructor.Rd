@@ -15,7 +15,9 @@ genAlgControl(
   maxDuplicateEliminationTries = 0L,
   verbosity = 0L,
   badSolutionThreshold = 2,
-  fitnessScaling = c("none", "exp")
+  fitnessScaling = c("none", "exp"),
+  convergenceThreshold = 1e-06,
+  convergenceGenerations = 0L
 )
 }
 \arguments{
@@ -33,17 +35,21 @@ genAlgControl(
 
 \item{crossover}{The crossover type to use during mating (see details). Partial matching is performed}
 
-\item{maxDuplicateEliminationTries}{The maximum number of tries to eliminate duplicates
-(a value of \code{0} or \code{NULL} means that no checks for duplicates are done.}
+\item{maxDuplicateEliminationTries}{The maximum number of tries to eliminate duplicates}
 
 \item{verbosity}{The level of verbosity. 0 means no output at all, 2 is very verbose.}
 
 \item{badSolutionThreshold}{The worst child must not be more than \code{badSolutionThreshold} times worse than the worse parent.
-If less than 0, the child must be even better than the worst parent. If the algorithm can't find a better child
-in a long time it issues a warning and uses the last found child to continue.}
+   If less than 0, the child must be even better than the worst parent. If the algorithm can't find a better child
+   for a while, it issues a warning and uses the last found child to continue.
+(a value of \code{0} or \code{NULL} means that no checks for duplicates are done.}
 
 \item{fitnessScaling}{How the fitness values are internally scaled before the selection probabilities are assigned
 to the chromosomes. See the details for possible values and their meaning.}
+
+\item{convergenceThreshold}{The maximum fitness difference considered unchanged for early stopping.}
+
+\item{convergenceGenerations}{The number of consecutive unchanged generations before stopping. 0 disables early stopping.}
 }
 \value{
 An object of type \code{\link{GenAlgControl}}

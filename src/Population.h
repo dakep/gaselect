@@ -14,6 +14,8 @@
 #include <set>
 #include <utility>
 #include <algorithm>
+#include <cmath>
+#include <memory>
 
 #include "Logger.h"
 #include "RNG.h"
@@ -60,6 +62,9 @@ private:
 	OnlineStddev fitStats;
 	ChVec currentGeneration;
 	std::vector<double> fitnessHistory;
+	std::unique_ptr<SortedChromosomes> previousElite;
+	std::unique_ptr<Chromosome> previousBest;
+	uint16_t unchangedGenerations;
 
 public:
 	Population(const Control &ctrl, ::Evaluator &evaluator, const std::vector<uint32_t> &seed) :
@@ -68,6 +73,7 @@ public:
 		this->currentGeneration.reserve(this->ctrl.populationSize + this->ctrl.elitism);
 
 		this->minEliteFitness = 0.0;
+		this->unchangedGenerations = 0;
 
 		this->fitnessHistory.reserve(3 * this->ctrl.numGenerations);
 
@@ -221,6 +227,56 @@ protected:
 		this->fitnessHistory.push_back(bestFitness);
 		this->fitnessHistory.push_back(this->fitStats.mean());
 		this->fitnessHistory.push_back(this->fitStats.stddev());
+
+		if(this->ctrl.elitism > 0 && this->elite.empty() == false) {
+			bool unchanged = (this->previousElite != NULL && this->previousElite->size() == this->elite.size());
+			if(unchanged) {
+				SortedChromosomes::const_iterator previousIt = this->previousElite->begin();
+				for(SortedChromosomes::const_iterator eliteIt = this->elite.begin(); eliteIt != this->elite.end(); ++eliteIt, ++previousIt) {
+					const bool sameSubset = (*eliteIt == *previousIt);
+					const bool sameFitness = std::fabs(eliteIt->getFitness() - previousIt->getFitness()) <= this->ctrl.convergenceThreshold;
+					if(sameSubset == false && sameFitness == false) {
+						unchanged = false;
+						break;
+					}
+				}
+			}
+
+			if(this->previousElite == NULL) {
+				this->previousElite.reset(new SortedChromosomes(this->elite));
+			} else {
+				if(unchanged) {
+					++this->unchangedGenerations;
+				} else {
+					this->unchangedGenerations = 0;
+				}
+				*this->previousElite = this->elite;
+			}
+		} else {
+			const Chromosome* best = newGeneration[0];
+			for(i = 1; i < this->ctrl.populationSize; ++i) {
+				if(newGeneration[i]->isFitterThan(*best)) {
+					best = newGeneration[i];
+				}
+			}
+
+			if(this->previousBest == NULL) {
+				this->previousBest.reset(new Chromosome(*best));
+			} else {
+				const bool sameSubset = (*best == *this->previousBest);
+				const bool sameFitness = std::fabs(best->getFitness() - this->previousBest->getFitness()) <= this->ctrl.convergenceThreshold;
+				if(sameSubset || sameFitness) {
+					++this->unchangedGenerations;
+				} else {
+					this->unchangedGenerations = 0;
+				}
+				*this->previousBest = *best;
+			}
+		}
+
+		if(this->ctrl.convergenceGenerations > 0 && this->unchangedGenerations >= this->ctrl.convergenceGenerations) {
+			this->interrupted = true;
+		}
 
 		return sumFitness;
 	}

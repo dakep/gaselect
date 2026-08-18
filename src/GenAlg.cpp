@@ -87,6 +87,8 @@ BEGIN_RCPP
 				 numThreads,
 				 as<uint16_t>(control["maxDuplicateEliminationTries"]),
 				 as<double>(control["badSolutionThreshold"]),
+					as<double>(control["convergenceThreshold"]),
+					as<uint16_t>(control["convergenceGenerations"]),
 				 (CrossoverType) as<int>(control["crossover"]),
 				 (FitnessScaling) as<int>(control["fitnessScaling"]),
 				 verbosity);
